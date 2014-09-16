@@ -29,7 +29,7 @@ public class MapVerge extends MapAbstract implements Map {
 	private String mapname = "dummy";
 	private String vspname = "";
 	private String musicname= "";
-	private String startupscript = "";
+	private String startupscript = "startmap";
 
 	private Layer[] layers;
 	private byte[] obsLayer; 
@@ -107,7 +107,12 @@ public class MapVerge extends MapAbstract implements Map {
 			this.vspname = f.readFixedString(256);
 			this.musicname = f.readFixedString(256);
 			this.renderstring = f.readFixedString(256);
-			this.startupscript = f.readFixedString(256);
+			String mapScriptName = f.readFixedString(256);
+			if( ! mapScriptName.isEmpty() ) 
+				{
+				// If this is set, override from default (Krybo 2014-09-14)
+				this.startupscript = f.readFixedString(256);
+				}
 			this.startX = f.readUnsignedShortLittleEndian();
 			this.startY = f.readUnsignedShortLittleEndian();
 
@@ -338,6 +343,8 @@ public class MapVerge extends MapAbstract implements Map {
 		
 		if(startupscript != null && !startupscript.trim().equals(""))
 			callfunction(startupscript);
+		
+		log( "Map Loaded, now running "+startupscript );
 
 	}
 	

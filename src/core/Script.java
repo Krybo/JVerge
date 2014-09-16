@@ -466,7 +466,27 @@ public class Script {
 		myself.SetMotionless();
 		myself.obstructable = true;
 	}
-
+	
+	// Krybo (2014-09-15)
+	//  warp: Instantly moves the active entity to an x/y map position
+	//	Speed:  cause the default is too slow
+	public static void playerWarp(int xNew, int yNew)
+		{
+		myself.setx(xNew*16);
+		myself.sety(yNew*16);
+		myself.obstructable = true;
+		playerentitymovecleanup();
+		}
+	public static void playerSetSpeed(int s)
+		{
+		myself.speed = s;
+		}
+	public static int playerGetSpeed()
+		{
+		return(myself.speed);
+		}
+	
+	
 	public static int getplayer()
 	{
 		return player;
