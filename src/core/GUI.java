@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.SystemColor;			// Krybo (2014-09-17)
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,6 +17,7 @@ import java.awt.event.ComponentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
 
 import static core.VergeEngine.*;
@@ -29,6 +31,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
 
 public class GUI extends JFrame implements ActionListener, ItemListener, ComponentListener {
 	
@@ -53,6 +57,9 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	private JCheckBoxMenuItem cbMenuItemshowFPS;
 	private JMenuItem menuItemIncreaseFPS;
 	private JMenuItem menuItemDecreaseFPS;
+	private JMenuItem menuItemTerminate;	// Krybo
+	private JMenuItem menuItemZoomIn;		// Krybo
+	private JMenuItem menuItemZoomOut;	// Krybo
 
 	
 	
@@ -69,10 +76,57 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		canvas.addFocusListener(control);
 		canvas.addKeyListener(control);
 		
+		
+		/* Krybo (2014-09-17) : Since I dispise ALL white backgrounds
+		  mine shall now be to my prefs., while most others will stay white
+		  needs tested on systems other than windows  */
+		try {
+			// Initialize the windows-level menu
+		UIManager.put("Menu.foreground", 
+				java.awt.SystemColor.menuText );
+		UIManager.put("Menu.background", 
+				java.awt.SystemColor.menu );
+		UIManager.put("Menu.selectionForeground", 
+				java.awt.SystemColor.textHighlightText );
+		UIManager.put("Menu.selectionBackground", 
+				java.awt.SystemColor.textHighlight );
+		
+		UIManager.put("MenuItem.foreground", 
+				java.awt.SystemColor.menuText );
+		UIManager.put("MenuItem.background", 
+				java.awt.SystemColor.menu );
+		UIManager.put("MenuItem.selectionForeground", 
+				java.awt.SystemColor.textHighlightText );
+		UIManager.put("MenuItem.selectionBackground", 
+				java.awt.SystemColor.textHighlight );
+		
+		UIManager.put("MenuBar.foreground", 
+				java.awt.SystemColor.menuText );
+		UIManager.put("MenuBar.background", 
+			java.awt.SystemColor.menu );
+		UIManager.put("MenuBar.selectionForeground", 
+				java.awt.SystemColor.textHighlightText );
+		UIManager.put("MenuBar.selectionBackground", 
+				java.awt.SystemColor.textHighlight );
+		
+		UIManager.put("CheckBoxMenuItem.foreground", 
+				java.awt.SystemColor.menuText );
+		UIManager.put("CheckBoxMenuItem.background", 
+				java.awt.SystemColor.menu );
+		UIManager.put("CheckBoxMenuItem.selectionForeground", 
+				java.awt.SystemColor.textHighlightText );
+		UIManager.put("CheckBoxMenuItem.selectionBackground", 
+				java.awt.SystemColor.textHighlight );
+
+		} catch (Exception e) { }  // Whatever ~ noone will care.
+		// 	END Krybo (2014-09-17)
+	
+		
 		// Menus
 		menuBar = new JMenuBar();
-		JMenu menu = new JMenu("Settings"); 
+		JMenu menu = new JMenu("Settings");
 		menuBar.add(menu);
+
 		
 		cbMenuItemSound = new JCheckBoxMenuItem("Enable Sound", true);
 		cbMenuItemSound.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, ActionEvent.CTRL_MASK));
@@ -92,7 +146,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		menuItemDecreaseFPS = new JMenuItem("Decrease FPS");
 		menuItemDecreaseFPS.setActionCommand("decreaseFPS");
 		menuItemDecreaseFPS.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F9, ActionEvent.CTRL_MASK));
-		menuItemDecreaseFPS.addActionListener(this);
+		menuItemDecreaseFPS.addActionListener(this);			
 		menu.add(menuItemDecreaseFPS);
 
 		menuItemIncreaseFPS = new JMenuItem("Increase FPS");
@@ -100,6 +154,34 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		menuItemIncreaseFPS.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F10, ActionEvent.CTRL_MASK));
 		menuItemIncreaseFPS.addActionListener(this);
 		menu.add(menuItemIncreaseFPS);
+		
+			// Krybo (2014-09-17   Zoom and Exit GUI functions
+			//     zooming is done at the very last moment possible
+			//     before the render hits the final destination.  It can
+			// 	only be in solid integers, cause scaling may be too burndensome
+		
+		menuItemZoomIn = new JMenuItem("Zoom-In Map");
+		menuItemZoomIn.setActionCommand("MapZoomIn");
+		menuItemZoomIn.setAccelerator(KeyStroke.getKeyStroke(
+				KeyEvent.VK_UP, ActionEvent.SHIFT_MASK ) );
+		menuItemZoomIn.addActionListener( this );
+		menu.add(menuItemZoomIn);
+		
+		menuItemZoomOut = new JMenuItem("Zoom-Out Map");
+		menuItemZoomOut.setActionCommand("MapZoomOut");
+		menuItemZoomOut.setAccelerator(KeyStroke.getKeyStroke(
+			KeyEvent.VK_DOWN, ActionEvent.SHIFT_MASK  ));
+		menuItemZoomOut.addActionListener( this );
+		menu.add( menuItemZoomOut );
+		
+		menuItemTerminate = new JMenuItem("Exit");
+		menuItemTerminate.setActionCommand("TerminateFromGUI");
+		menuItemTerminate.setAccelerator(KeyStroke.getKeyStroke(
+					KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+		menuItemTerminate.addActionListener( this );
+		menu.add(menuItemTerminate);
+		
+				// END Krybo edits.
 		
 		this.setJMenuBar(menuBar);
 
@@ -329,11 +411,17 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
-		if(e.getActionCommand().equals("increaseFPS")) {
-			GUI.incFrameDelay(-5);
-		} else
-		if(e.getActionCommand().equals("decreaseFPS")) {
-			GUI.incFrameDelay(5);
-		}
+		if( e.getActionCommand().equals("increaseFPS") ) 
+			{	GUI.incFrameDelay(-5);	} 
+		else if(e.getActionCommand().equals("decreaseFPS")) 
+			{	GUI.incFrameDelay(5); }
+					// Krybo (2014-09-17  added some basic functions to GUI
+		else if( e.getActionCommand().equals("TerminateFromGUI") ) 
+			{ 	core.Script.exit(" User Terminated from GUI (Bye) "); }
+		else if( e.getActionCommand().equals("MapZoomIn") ) 
+			{ 	log("**STUB** for map zoom IN call"); }
+		else if( e.getActionCommand().equals("MapZoomOut") ) 
+			{ 	log("**STUB** for map zoom OUT call"); }
+					// END Krybo Edits
 	}
 }
