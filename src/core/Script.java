@@ -43,6 +43,7 @@ public class Script {
 	public static final int  VC_WRITE		=	2;
 	public static final int  VC_WRITE_APPEND	=	3; // Overkill (2006-07-05): Append mode added.	
 	
+	
 
 	public static final int CF_GRAY = 1;
 	public static final int CF_INV_GRAY = 2;
@@ -61,6 +62,7 @@ public class Script {
 	 * When ShowPage() is called the screen bitmap is transfered to the display.
 	 */
 	public static VImage screen;
+	public static VImage ZoomBufferScreen;
 	
 	// For partial screen rendering
 	static VImage virtualScreen = null;
@@ -97,9 +99,11 @@ public class Script {
 	public static int lastplayerdir = 0;
 
 	public static boolean entitiespaused = false;
+		// Krybo (2014-09-18) for V1 VC layer emulation
+	public static boolean vcLayerEmulation = false;	
 	
 	// END OF VERGE ENGINE VARIABLES
-	
+
 	public static String renderfunc, timerfunc; // was VergeCallback (struct)
 
 	public static DefaultPalette palette = new DefaultPalette();
@@ -486,11 +490,17 @@ public class Script {
 		return(myself.speed);
 		}
 	
+	public static int playerGetMapPixelX()
+		{ return( myself.getx() ); }
+	public static int playerGetMapPixelY()
+		{ return( Math.abs( myself.gety()) ); }
+	public static int playerGetMapTileX()
+		{ return( (Integer) ((myself.getx() / 16)+1) ); }
+	public static int playerGetMapTileY()
+		{ return( (Integer) ((Math.abs(myself.gety()) / 16)+1) ); }
 	
 	public static int getplayer()
-	{
-		return player;
-	}
+		{	return player;  }
 	
 /*
 	//VI.g. Sprite Functions
@@ -1494,5 +1504,56 @@ public class Script {
 	}
 	
 
+	// Krybo (2014-09-18)   map zooming functions
+	
+		// Same as above, except the zoom is blit on a new image
+		//    There are overloads for purely centered zooming & offset centered zooming
+	public static void ImageZoom(
+			VImage source,VImage dest, int zoomLevel, 
+			int offsetX, int offsetY )
+		{
+		if( zoomLevel <= 1 ) { return; }
+		Integer xCenter = (Integer) (source.width / 2);		
+		Integer yCenter = (Integer) (source.height / 2);
+		Integer sectionDeltaX = (Integer) (source.width / (zoomLevel*2) );
+		Integer sectionDeltaY = (Integer) (source.height / (zoomLevel*2));
+		
+			// Bound the Offsets ~ cannot push the region off the image
+		if( (Math.abs( offsetX ) > (xCenter - sectionDeltaX)) && offsetX < 0 )
+			{ offsetX = (xCenter - sectionDeltaX) * -1; }
+		if( (Math.abs( offsetX ) > (xCenter - sectionDeltaX)) && offsetX > 0 )
+			{ offsetX = (xCenter - sectionDeltaX); }		
+		if( (Math.abs( offsetY ) > (yCenter - sectionDeltaY)) && offsetY < 0 )
+			{ offsetY = (yCenter - sectionDeltaY) * -1; }
+		if( (Math.abs( offsetY ) > (yCenter - sectionDeltaY)) && (offsetY > 0) )
+			{ offsetY = (yCenter - sectionDeltaY); }
+		
+			// Adjust offsets
+		xCenter += offsetX;
+		yCenter += offsetY;
+		
+		log("Extracting zoom region [ "+
+				Integer.toString( xCenter - sectionDeltaX ) + " : " +
+				Integer.toString( yCenter - sectionDeltaY ) + " : " +
+				Integer.toString( xCenter + sectionDeltaX ) + " : " +
+				Integer.toString( yCenter + sectionDeltaY ) + " ] "
+				);
+
+		ZoomBufferScreen = new VImage(sectionDeltaX*2, sectionDeltaY*2 );
+		ZoomBufferScreen.grabregion( 
+				xCenter - sectionDeltaX, yCenter - sectionDeltaY,
+				xCenter + sectionDeltaX, yCenter + sectionDeltaY,
+				0, 0, source);
+
+		dest.scaleblit(0, 0, zoomLevel, zoomLevel, ZoomBufferScreen);
+		return;
+		}
+
+	public static void ImageZoom(
+		VImage source,VImage dest, int zoomLevel )
+			{  ImageZoom(source, dest, zoomLevel, 0, 0);  }
+	
+	//  END Krybo edits
+	
 	
 }

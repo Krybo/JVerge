@@ -34,6 +34,8 @@ import javax.swing.KeyStroke;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 
+import domain.Map;
+
 public class GUI extends JFrame implements ActionListener, ItemListener, ComponentListener {
 	
 	Canvas canvas = new Canvas();
@@ -49,6 +51,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 
 	static long cycleTime;
 	private static int frameDelay = 20; // 20ms. implies 50fps (1000/20) = 50
+	private static byte GUIzoom = 1;
 	private static boolean showFPS = true;
 
 	JMenuBar menuBar;
@@ -269,18 +272,45 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			updateFPS();
 		}
 		
+	
+		// Krybo (2014-09-18) inserted code dealign with map zone to this routine.
 	public static void updateGUI() {
 	
 		try {
 			Graphics g = strategy.getDrawGraphics();
+			
+			int pX = playerGetMapPixelX();
+			int pY = playerGetMapPixelY();
+			int offX = 0;
+			int offY = 0;
+			
+				// If the player entity is near any edge of the map
+				//    we gotta use offsets
+			if( pX < (screen.width / 2) )
+				{  offX = (Integer) (screen.width / 2) - pX; }
+			if( pY < (screen.height / 2) )
+				{  offY = (Integer) (screen.height / 2) - pY; }
+					// Right and Bottom edge -- lots of math, can likely be optimized
+			 if( pX > ((current_map.getWidth()*16) - (screen.width / 2)) )
+				 {  offX = (Integer) (screen.width / (-2)) - pX; }
+			 if( pY > ((current_map.getHeight()*16) - (screen.height / 2)) )
+				 {  offY = (Integer) (screen.height / (-2)) - pY; }				 
+
+				// If the zoom is off, this passes as if nothing happens
+			domain.VImage zoomScreen = screen;  // "clone"s screen
+			ImageZoom(screen,zoomScreen, GUIzoom, offX*(-1), offY*(-1) );
+			
 			if(alpha != 1f) {
 				Graphics2D g2d = (Graphics2D) g;
 				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_IN, alpha));
-				g2d.drawImage(screen.getImage(), 0, 0, curwidth, curheight, null);
-			}
+				
+				g2d.drawImage( 	zoomScreen.getImage()
+					, 0, 0, curwidth, curheight, null);
+				}
 			else {
-				g.drawImage(screen.getImage(), 0, 0, curwidth, curheight, null);			
-			}
+				g.drawImage( zoomScreen.getImage(), 
+						0, 0, curwidth, curheight, null);			
+				}
 
 			/* Do this to rotate 180 
 			Graphics2D g2d = (Graphics2D) g;
@@ -294,15 +324,20 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 				g.setColor(Color.WHITE);
 				g.drawString("FPS: " + Float.toString(frameInLastSecond), 10, 20);
 			}
-				
+
 			g.dispose();
 			strategy.show();
 		}
-		catch(Exception e) {
+		catch(Exception e) 
+			{
 			System.err.println("Unable to draw screen");
-		}
+			log( " WARNING Exception in main screen drawing function : " + e.getMessage() );
+			e.printStackTrace();
+			}
 
 	}
+			// END Krybo (2014-09-18) edits
+	
 	
 	public static void synchFramerate() {
 		cycleTime = cycleTime + frameDelay;
@@ -419,9 +454,19 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		else if( e.getActionCommand().equals("TerminateFromGUI") ) 
 			{ 	core.Script.exit(" User Terminated from GUI (Bye) "); }
 		else if( e.getActionCommand().equals("MapZoomIn") ) 
-			{ 	log("**STUB** for map zoom IN call"); }
+			{
+			if( GUIzoom == 4 ) { GUIzoom = 8; }
+			if( GUIzoom == 2 ) { GUIzoom = 4; }
+			if( GUIzoom == 1 ) { GUIzoom = 2; }
+			log( "**STUB** for map zoom IN   call value now " + Integer.toString(GUIzoom) ); 
+			}
 		else if( e.getActionCommand().equals("MapZoomOut") ) 
-			{ 	log("**STUB** for map zoom OUT call"); }
+			{
+			if( GUIzoom == 2 ) { GUIzoom = 1; }
+			if( GUIzoom == 4 ) { GUIzoom = 2; }
+			if( GUIzoom == 8 ) { GUIzoom = 4; }
+			log("**STUB** for map zoom OUT call    value now "+Integer.toString(GUIzoom) ); 
+			}
 					// END Krybo Edits
 	}
 }

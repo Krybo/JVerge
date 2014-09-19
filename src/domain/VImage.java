@@ -379,11 +379,49 @@ public class VImage implements Transferable {
 			this.blit(x, y, src);
 			//RotScale(x, y,  angle*(float)3.14159/(float)180.0, scale/(float)1000.0, s, d);
 		}
-		public void scaleblit(int x, int y, int dw, int dh, VImage src) {
-			//ScaleBlit(x, y, dw, dh, s, d);
-			this.blit(x, y, src); // TODO [Rafael, the Esper] Implement scaling		
-		}
 		
+		//ScaleBlit(x, y, dw, dh, s, d);
+		public void scaleblit(int x, int y, int dw, int dh, VImage src) 
+			{
+			// Worthless scale -- ignore.
+			if( dw <= 1 && dh <= 1 )
+				{ this.blit(x, y, src); }
+		
+			int wOrig = src.width;
+			int hOrig = src.height;
+			int xBound = this.width;
+			int yBound = this.height;
+			int xDestStart = 0;
+			int yDestStart = 0;
+			int srcColor = 0;
+			
+			for( int ySrc=0; ySrc < hOrig; ySrc++ )
+				{
+				for( int xSrc=0; xSrc < wOrig; xSrc++ )
+					{
+					//  we have the source pixel, now replicate it
+					srcColor = src.image.getRGB(xSrc, ySrc);
+
+					xDestStart =  (xSrc*dw)+x;
+					yDestStart =  (ySrc*dh)+y;
+						// This is like an enlarged square "stamp" onto the destination
+					for( int yScaled = 0; yScaled < dh; yScaled++ )
+						{
+						for( int xScaled = 0; xScaled < dw; xScaled++ )
+							{
+							if( (xDestStart+xScaled) >= xBound ) { continue; }
+							if( (yDestStart+yScaled) >= yBound ) { continue; }
+							this.image.setRGB(xDestStart+xScaled, 
+								yDestStart+yScaled, srcColor);
+							}
+						}
+					}
+				}
+
+			// That is it for simple scaling 
+			return;		
+			}
+
 		/* Draws a scaled image. A bit more complex than the other blitters to use. 
 		 * The x,y values give the upper-left corner of where the blit will start. 
 		 * iw,ih are the width and height of the *source* image. 
