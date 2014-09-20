@@ -847,7 +847,10 @@ public class VergeEngine extends Thread {
 		// config.v3_xres = config.v3_xres * 2;
 		// config.v3_yres = config.v3_yres * 2;
 
-		screen = new VImage(config.getV3_xres(), config.getV3_yres());
+		screen = new VImage(config.getV3_xres(), config.getV3_yres() );
+		screenZOOM = new VImage(config.getV3_xres(), config.getV3_yres() );
+		screenHalfWidth = (Integer) (screen.width / 2);	// for optimizations
+		screenHalfHeight = (Integer) (screen.height / 2);
 
 		if (config.isWindowmode()) {
 			gui = new GUI(config.getV3_xres(), config.getV3_yres());

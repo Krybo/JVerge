@@ -24,12 +24,11 @@ import java.util.Calendar;
 import java.util.Random;
 
 import audio.VMusic;
-
 import domain.VSound;
 import domain.VImage;
 import domain.Entity;
 import domain.Map;
-
+import static core.Script.log;
 import static core.Script.screen;
 import static core.Script.setlucent;
 import static core.Script.showpage;
@@ -51,7 +50,9 @@ public class Script {
 	public static final int CF_RED = 4;
 	public static final int CF_GREEN = 5;
 	public static final int CF_BLUE = 6;
-	public static final int CF_CUSTOM = 7;	
+	public static final int CF_CUSTOM = 7;
+
+	public static boolean TEST_SIMULATION = false;
 	
 	// VERGE ENGINE VARIABLES: Moved to Script for easy of use
 	/**
@@ -61,8 +62,11 @@ public class Script {
 	 * verge window should be blitted here with one of the graphics functions.
 	 * When ShowPage() is called the screen bitmap is transfered to the display.
 	 */
-	public static VImage screen;
-	public static VImage ZoomBufferScreen;
+	public static VImage screen, screenZOOM;
+		// Krybo (2014-09-19) added these for map zoom.
+	public static VImage ZoomScreenSubset;		// needs reinit upon zoom change
+	public static int screenHalfWidth = -1;
+	public static int screenHalfHeight = -1;
 	
 	// For partial screen rendering
 	static VImage virtualScreen = null;
@@ -1512,6 +1516,9 @@ public class Script {
 			VImage source,VImage dest, int zoomLevel, 
 			int offsetX, int offsetY )
 		{
+		
+		try { 
+		
 		if( zoomLevel <= 1 ) { return; }
 		Integer xCenter = (Integer) (source.width / 2);		
 		Integer yCenter = (Integer) (source.height / 2);
@@ -1532,26 +1539,54 @@ public class Script {
 		xCenter += offsetX;
 		yCenter += offsetY;
 		
+		/*
 		log("Extracting zoom region [ "+
 				Integer.toString( xCenter - sectionDeltaX ) + " : " +
 				Integer.toString( yCenter - sectionDeltaY ) + " : " +
 				Integer.toString( xCenter + sectionDeltaX ) + " : " +
 				Integer.toString( yCenter + sectionDeltaY ) + " ] "
 				);
+		*/
 
-		ZoomBufferScreen = new VImage(sectionDeltaX*2, sectionDeltaY*2 );
-		ZoomBufferScreen.grabregion( 
+		
+//		ZoomBufferScreen = new VImage(sectionDeltaX*2, sectionDeltaY*2 );
+		ZoomScreenSubset.blackOut();
+		ZoomScreenSubset.grabregion( 
 				xCenter - sectionDeltaX, yCenter - sectionDeltaY,
 				xCenter + sectionDeltaX, yCenter + sectionDeltaY,
 				0, 0, source);
 
-		dest.scaleblit(0, 0, zoomLevel, zoomLevel, ZoomBufferScreen);
+		dest.scaleblit(0, 0, zoomLevel, zoomLevel, ZoomScreenSubset);
+			}
+		catch(Exception e) 
+			{
+			System.err.println("Error in zoom draw");
+			log( " WARNING Exception in zoom function : " + e.getMessage() );
+			e.printStackTrace();
+			}
+		
 		return;
 		}
 
 	public static void ImageZoom(
 		VImage source,VImage dest, int zoomLevel )
 			{  ImageZoom(source, dest, zoomLevel, 0, 0);  }
+	
+
+	
+	public static BufferedImage scaleImage(BufferedImage originalImage, int type, float sfactorX, float sfactorY )
+		{
+		int scaledX = (int) Math.floor(originalImage.getWidth() * sfactorX );
+		int scaledY = (int) Math.floor(originalImage.getHeight() * sfactorY );
+
+		BufferedImage resizedImage = new BufferedImage(
+				scaledX, scaledY, type);
+
+		Graphics2D g = resizedImage.createGraphics();
+		g.drawImage(originalImage, 0, 0, scaledX, scaledY, null);
+		g.dispose();
+		return resizedImage;
+	    }
 	
 	//  END Krybo edits
 	

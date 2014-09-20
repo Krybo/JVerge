@@ -29,9 +29,7 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 
 import core.VergeEngine;
-
 import persist.PCXReader;
-
 import static core.Script.*;
 
 public class VImage implements Transferable {
@@ -94,6 +92,27 @@ public class VImage implements Transferable {
 	public BufferedImage getImage() {
 		return this.image;
 	}
+	
+		// Krybo (2014-09-20) this very well could NOT work as expected
+		// Use at ones own peril
+	public boolean setImage( BufferedImage i )
+		{
+		boolean noError = true;
+		try {
+			image = i;
+			width = i.getWidth();
+			height = i.getHeight();
+			g = (Graphics2D)i.getGraphics();
+			}
+		catch(Exception e) 
+			{
+			noError = false;
+			System.err.println(" setImage : "+e.getMessage() );
+			e.printStackTrace();
+			}
+			
+		return(noError);
+		}
     
 	public int getWidth() {
 		return this.width;
@@ -685,5 +704,18 @@ public class VImage implements Transferable {
 			this.g.drawString(text, x, y);
 		}
 		
+		// Krybo (2014-09-19)  needed this for mapzooming to kill transparency
+		public void blackOut()
+			{			
+			for( int iy=0; iy < this.height; iy++ )
+				{
+				for( int ix=0; ix < this.width; ix++ )
+					{
+					this.image.setRGB(ix, iy, 1 );
+					}
+				}
+			this.image.flush();
+			return;
+			}
 		
 }

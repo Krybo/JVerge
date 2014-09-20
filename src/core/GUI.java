@@ -64,8 +64,6 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	private JMenuItem menuItemZoomIn;		// Krybo
 	private JMenuItem menuItemZoomOut;	// Krybo
 
-	
-	
 	public GUI(int w, int h) {
 		// build and display your GUI
 
@@ -198,6 +196,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		gameThread = new VergeEngine();
 		gameThread.setPriority(Thread.MIN_PRIORITY);
 		gameThread.start(); // start Game processing.
+
 	}
 	
 	void setDimensions(GUI gui, int w, int h) {
@@ -265,69 +264,130 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		strategy = getGUI().canvas.getBufferStrategy();
 	}
 
-	public static void paintFrame() {
-			//GUI.cycleTime = System.currentTimeMillis(); // Keep a steady FPS
-			updateGUI();
-			synchFramerate();
-			updateFPS();
-		}
-		
-	
-		// Krybo (2014-09-18) inserted code dealign with map zone to this routine.
-	public static void updateGUI() {
-	
+		// Krybo (2014-09-20)  Does the work for map zooming.
+	public static void processZoom()
+		{
 		try {
-			Graphics g = strategy.getDrawGraphics();
+			ZoomScreenSubset.blackOut();
 			
-			int pX = playerGetMapPixelX();
-			int pY = playerGetMapPixelY();
-			int offX = 0;
-			int offY = 0;
+			Integer xCenter = screenHalfWidth;		
+			Integer yCenter = screenHalfHeight;
+			Integer pX = playerGetMapPixelX();
+			Integer pY = playerGetMapPixelY();
+			Integer offX = 0;
+			Integer offY = 0;
+			Integer sectionDeltaX = Math.floorDiv(
+					screenHalfWidth, GUIzoom );
+			Integer sectionDeltaY = Math.floorDiv(
+					screenHalfHeight, GUIzoom );
 			
 				// If the player entity is near any edge of the map
 				//    we gotta use offsets
-			if( pX < (screen.width / 2) )
-				{  offX = (Integer) (screen.width / 2) - pX; }
-			if( pY < (screen.height / 2) )
-				{  offY = (Integer) (screen.height / 2) - pY; }
+	
+			if( pX < screenHalfWidth )
+				{  offX = (Integer) (screenHalfWidth - pX); }
+			if( pY < screenHalfHeight )
+				{  offY = (Integer) (screenHalfHeight - pY); }
 					// Right and Bottom edge -- lots of math, can likely be optimized
-			 if( pX > ((current_map.getWidth()*16) - (screen.width / 2)) )
-				 {  offX = (Integer) (screen.width / (-2)) - pX; }
-			 if( pY > ((current_map.getHeight()*16) - (screen.height / 2)) )
-				 {  offY = (Integer) (screen.height / (-2)) - pY; }				 
-
-				// If the zoom is off, this passes as if nothing happens
-			domain.VImage zoomScreen = screen;  // "clone"s screen
-			ImageZoom(screen,zoomScreen, GUIzoom, offX*(-1), offY*(-1) );
+			 if( pX > ((current_map.getWidth()*16) - screenHalfWidth) )
+				 {  offX = (Integer) (-1)*(screenHalfWidth - pX); }
+			 if( pY > ((current_map.getHeight()*16) - (screenHalfHeight)) )
+				 {  offY = (Integer) (-1)*(screenHalfHeight - pY); }	
 			
-			if(alpha != 1f) {
+			// Bound the Offsets ~ cannot push the region off the image
+			if( (Math.abs( offX ) > (xCenter - sectionDeltaX)) && offX < 0 )
+				{ offX = (xCenter - sectionDeltaX) * -1; }
+			if( (Math.abs( offX ) > (xCenter - sectionDeltaX)) && offX > 0 )
+				{ offX = (xCenter - sectionDeltaX); }		
+			if( (Math.abs( offY ) > (yCenter - sectionDeltaY)) && offY < 0 )
+				{ offY = (yCenter - sectionDeltaY) * -1; }
+			if( (Math.abs( offY ) > (yCenter - sectionDeltaY)) && (offY > 0) )
+				{ offY = (yCenter - sectionDeltaY); }
+			
+				// This sets a virtual screen (screenZOOM) which is a blank copy of screen,
+				//  To a cropped section of the real screen, that is thus immediately scaled to screen x/y
+				// Probably not the best way to do zooming, but it works.
+				// screenZOOM is then fed to the physical screen instead of screen, which continues
+				// to update as usual.
+			screenZOOM.setImage(
+					scaleImage(  screen.getImage().getSubimage(
+							xCenter - sectionDeltaX - offX, 
+							yCenter - sectionDeltaY - offY,
+							sectionDeltaX*2, sectionDeltaY*2 ),
+					java.awt.image.BufferedImage.TYPE_INT_RGB,
+					GUIzoom,GUIzoom)
+				);
+			}
+		catch(Exception e) 
+			{
+			System.err.println("Unable to zoom map");
+			log( " WARNING error in map zoom function : " + e.getMessage() );
+			e.printStackTrace();
+			}
+
+		}
+
+	public static void paintFrame() 
+		{
+		//GUI.cycleTime = System.currentTimeMillis(); // Keep a steady FPS
+		if( GUIzoom > 1 )	
+			{
+			processZoom();
+			updateGUI( screenZOOM );
+			}
+		else	{  updateGUI();  }
+		synchFramerate();
+		updateFPS();
+		}
+
+		// Krybo (2014-09-18) inserted code dealign with map zone to this routine.
+		// This can be used to "hijack" the original [screen] draw process
+		//  and draw a different image to the screen.
+	public static void updateGUI( domain.VImage theSource) 
+		{
+		if(Script.TEST_SIMULATION)
+			{ return;	}
+		if( theSource.width != screen.width  ||  theSource.height != screen.height )
+			{
+			log( " WARNING  UpdateGUI got VImage incompatible with screen size!");
+			log("DEBUG:  X: "+Integer.toString(theSource.width)+" vs "+Integer.toString(screen.width)+
+					"  :-:  Y: "+Integer.toString(theSource.height)+
+					" vs "+Integer.toString(screen.height) );
+			return; 
+			}
+
+		try {
+			Graphics g = strategy.getDrawGraphics();
+			if(alpha != 1f) 
+				{
 				Graphics2D g2d = (Graphics2D) g;
 				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_IN, alpha));
-				
-				g2d.drawImage( 	zoomScreen.getImage()
-					, 0, 0, curwidth, curheight, null);
+				g2d.drawImage( theSource.getImage(), 0, 0, 
+						curwidth, curheight, null);
 				}
 			else {
-				g.drawImage( zoomScreen.getImage(), 
-						0, 0, curwidth, curheight, null);			
+				g.drawImage( theSource.getImage(), 0, 0, 
+						curwidth, curheight, null);			
 				}
-
+	
 			/* Do this to rotate 180 
 			Graphics2D g2d = (Graphics2D) g;
 			g2d.rotate(Math.PI, curwidth/2, curheight/2);
 			g2d.drawImage(screen.getImage(), 0, 0, curwidth, curheight, null);*/
-
+	
 			
 			// Show FPS
-			if(showFPS) {
+			if(showFPS) 
+				{
 				g.setFont(fps_font);
 				g.setColor(Color.WHITE);
 				g.drawString("FPS: " + Float.toString(frameInLastSecond), 10, 20);
-			}
-
+				g.drawString(Integer.toString(GUIzoom)+"x", 15, 40);
+				}
+				
 			g.dispose();
 			strategy.show();
-		}
+			}
 		catch(Exception e) 
 			{
 			System.err.println("Unable to draw screen");
@@ -336,6 +396,11 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			}
 
 	}
+	
+		// Passthrough to keep any existing code happy.
+	public static void updateGUI( ) 
+		{ updateGUI(screen); }
+	
 			// END Krybo (2014-09-18) edits
 	
 	
@@ -458,14 +523,18 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			if( GUIzoom == 4 ) { GUIzoom = 8; }
 			if( GUIzoom == 2 ) { GUIzoom = 4; }
 			if( GUIzoom == 1 ) { GUIzoom = 2; }
-			log( "**STUB** for map zoom IN   call value now " + Integer.toString(GUIzoom) ); 
+			ZoomScreenSubset = new domain.VImage(
+					screen.width / GUIzoom, screen.height / GUIzoom );
+			log( " Map Zoom IN to level x" + Integer.toString(GUIzoom) ); 
 			}
 		else if( e.getActionCommand().equals("MapZoomOut") ) 
 			{
 			if( GUIzoom == 2 ) { GUIzoom = 1; }
 			if( GUIzoom == 4 ) { GUIzoom = 2; }
 			if( GUIzoom == 8 ) { GUIzoom = 4; }
-			log("**STUB** for map zoom OUT call    value now "+Integer.toString(GUIzoom) ); 
+			ZoomScreenSubset = new domain.VImage(
+					screen.width / GUIzoom, screen.height / GUIzoom );
+			log(" Map Zoom OUT to level x"+Integer.toString(GUIzoom) ); 
 			}
 					// END Krybo Edits
 	}
