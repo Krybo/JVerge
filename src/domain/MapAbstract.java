@@ -42,9 +42,6 @@ public abstract class MapAbstract implements Map {
 		return this.startY;
 	}
 
-	
-	
-	
 	public void render(int x, int y, VImage dest) {
 		boolean first = true;
 		int tx = (dest.width / 16) + 2;
@@ -180,4 +177,5 @@ public abstract class MapAbstract implements Map {
 		imgcache = new VImage[1];
 	}	
 
+	
 }

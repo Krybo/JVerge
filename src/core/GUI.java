@@ -272,8 +272,8 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			
 			Integer xCenter = screenHalfWidth;		
 			Integer yCenter = screenHalfHeight;
-			Integer pX = playerGetMapPixelX();
-			Integer pY = playerGetMapPixelY();
+			Integer pX = screenHalfWidth + 1;
+			Integer pY = screenHalfHeight + 1;
 			Integer offX = 0;
 			Integer offY = 0;
 			Integer sectionDeltaX = Math.floorDiv(
@@ -281,29 +281,34 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			Integer sectionDeltaY = Math.floorDiv(
 					screenHalfHeight, GUIzoom );
 			
-				// If the player entity is near any edge of the map
-				//    we gotta use offsets
+				//  The offset helps keep the view on the char as 
+				//             they approach the edge of the screen.
 	
-			if( pX < screenHalfWidth )
-				{  offX = (Integer) (screenHalfWidth - pX); }
-			if( pY < screenHalfHeight )
-				{  offY = (Integer) (screenHalfHeight - pY); }
-					// Right and Bottom edge -- lots of math, can likely be optimized
-			 if( pX > ((current_map.getWidth()*16) - screenHalfWidth) )
-				 {  offX = (Integer) (-1)*(screenHalfWidth - pX); }
-			 if( pY > ((current_map.getHeight()*16) - (screenHalfHeight)) )
-				 {  offY = (Integer) (-1)*(screenHalfHeight - pY); }	
-			
-			// Bound the Offsets ~ cannot push the region off the image
-			if( (Math.abs( offX ) > (xCenter - sectionDeltaX)) && offX < 0 )
-				{ offX = (xCenter - sectionDeltaX) * -1; }
-			if( (Math.abs( offX ) > (xCenter - sectionDeltaX)) && offX > 0 )
-				{ offX = (xCenter - sectionDeltaX); }		
-			if( (Math.abs( offY ) > (yCenter - sectionDeltaY)) && offY < 0 )
-				{ offY = (yCenter - sectionDeltaY) * -1; }
-			if( (Math.abs( offY ) > (yCenter - sectionDeltaY)) && (offY > 0) )
-				{ offY = (yCenter - sectionDeltaY); }
-			
+			if( playerIsSet() )
+				{
+				pX = playerGetMapPixelX();
+				pY = playerGetMapPixelY();
+				if( pX < screenHalfWidth )
+					{  offX = (Integer) (screenHalfWidth - pX); }
+				if( pY < screenHalfHeight )
+					{  offY = (Integer) (screenHalfHeight - pY); }
+						// Right and Bottom edge -- lots of math, can likely be optimized
+				 if( pX > ((current_map.getWidth()*16) - screenHalfWidth) )
+					 {  offX = (Integer) (-1)*(screenHalfWidth - pX); }
+				 if( pY > ((current_map.getHeight()*16) - (screenHalfHeight)) )
+					 {  offY = (Integer) (-1)*(screenHalfHeight - pY); }	
+				
+				// Bound the Offsets ~ cannot push the region off the image
+				if( (Math.abs( offX ) > (xCenter - sectionDeltaX)) && offX < 0 )
+					{ offX = (xCenter - sectionDeltaX) * -1; }
+				if( (Math.abs( offX ) > (xCenter - sectionDeltaX)) && offX > 0 )
+					{ offX = (xCenter - sectionDeltaX); }		
+				if( (Math.abs( offY ) > (yCenter - sectionDeltaY)) && offY < 0 )
+					{ offY = (yCenter - sectionDeltaY) * -1; }
+				if( (Math.abs( offY ) > (yCenter - sectionDeltaY)) && (offY > 0) )
+					{ offY = (yCenter - sectionDeltaY); }
+				}
+
 				// This sets a virtual screen (screenZOOM) which is a blank copy of screen,
 				//  To a cropped section of the real screen, that is thus immediately scaled to screen x/y
 				// Probably not the best way to do zooming, but it works.
@@ -383,6 +388,8 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 				g.setColor(Color.WHITE);
 				g.drawString("FPS: " + Float.toString(frameInLastSecond), 10, 20);
 				g.drawString(Integer.toString(GUIzoom)+"x", 15, 40);
+				if( ! playerIsSet()  )
+					{  g.drawString(" !!! UNSET PLAYER", 15, 60);  } 
 				}
 				
 			g.dispose();

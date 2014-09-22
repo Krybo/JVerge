@@ -475,6 +475,55 @@ public class Script {
 		myself.obstructable = true;
 	}
 	
+		// Krybo (2014-09-21)  I needed these V1-ish player accessors 
+		// Intentially disassociate the "player" entity. 
+	public static void unsetplayer() 
+		{
+		player = -1;
+		myself = null;
+		}
+
+	public static boolean playerIsSet()
+		{
+		if( (player < 0) || (player>=numentities) )	
+			{ return(false); }
+		if( myself == null )  { return(false); }
+		return(true);
+		}
+	
+	public static int playerGetFaceDirectionAsInt()
+		{
+		if( playerIsSet() == false) { return(0); }
+		return( myself.face );
+		}
+	
+	public static String playerGetFaceDirectionAsString()
+		{
+		if( playerIsSet() == false) { return("no"); }
+		int f =  myself.face;
+		if( f == 1 )  { return("north"); }
+		if( f == 2 )  { return("south"); }
+		if( f == 3 )  { return("west"); }
+		if( f == 4 )  { return("east"); }
+		return("error");
+		}
+	
+	public static boolean playerIsFacing( int fdir )
+		{
+		if( myself.face == fdir )  { return(true); }
+		return(false);
+		}
+
+	public static boolean playerIsFacing( String fdir )
+		{
+		fdir.toLowerCase();
+		if( fdir.compareTo( playerGetFaceDirectionAsString() ) == 0 ) 
+					{ return(true); }
+		return(false);
+		}
+
+		// END Krybo edits (2014-09-21)
+	
 	// Krybo (2014-09-15)
 	//  warp: Instantly moves the active entity to an x/y map position
 	//	Speed:  cause the default is too slow
@@ -494,14 +543,27 @@ public class Script {
 		return(myself.speed);
 		}
 	
+	//  Return -1 if there is no "player" entity active.
 	public static int playerGetMapPixelX()
-		{ return( myself.getx() ); }
+		{
+		if( myself == null )  { return(-1); }
+		return( myself.getx() ); 
+		}
 	public static int playerGetMapPixelY()
-		{ return( Math.abs( myself.gety()) ); }
+		{
+		if( myself == null )  { return(-1); }
+		return( Math.abs( myself.gety()) ); 
+		}
 	public static int playerGetMapTileX()
-		{ return( (Integer) ((myself.getx() / 16)+1) ); }
+		{
+		if( myself == null )  { return(-1); }
+		return( (Integer) ((myself.getx() / 16)+1) ); 
+		}
 	public static int playerGetMapTileY()
-		{ return( (Integer) ((Math.abs(myself.gety()) / 16)+1) ); }
+		{
+		if( myself == null )  { return(-1); }
+		return( (Integer) ((Math.abs(myself.gety()) / 16)+1) ); 
+		}
 	
 	public static int getplayer()
 		{	return player;  }

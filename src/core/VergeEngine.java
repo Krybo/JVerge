@@ -6,6 +6,7 @@ import static core.Sprite.RenderSpritesAboveEntity;
 import static core.Sprite.RenderSpritesBelowEntity;
 import static core.Sprite.sprites;
 import static domain.Entity.EAST;
+import core.JVCL;
 import static domain.Entity.NE;
 import static domain.Entity.NORTH;
 import static domain.Entity.NW;
@@ -42,6 +43,8 @@ public class VergeEngine extends Thread {
 	public static boolean die;
 	
 	static GUI gui;
+	
+	public static JVCL DrawingLayers;		// Krybo (2014-09-20) VC layer emulation
 	
 	public static GUI getGUI() {
 		return gui;
@@ -859,6 +862,8 @@ public class VergeEngine extends Thread {
 		}
 	
 		getGUI().updateCanvasSize();
+		
+		DrawingLayers = 	new JVCL(4,screen.width,screen.height);
 	}
 	
 }
