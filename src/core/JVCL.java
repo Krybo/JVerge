@@ -73,7 +73,7 @@ public class JVCL
 		this.vcl.remove( this.vcl.size() );
 		}
 
-	public int getNumLayers()
+	public int getLayerCount()
 		{ return(this.vcl.size()); }
 	
 	public boolean setWriteLayer( int layerNum )

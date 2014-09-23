@@ -29,8 +29,8 @@ public interface Map {
 	int getStartX();
 	int getStartY();
 
-	int gettile(int x, int y, int i);
-	void settile(int x, int y, int i, int z);
+	int gettile(int x, int y, int zLayer);
+	void settile(int x, int y, int z, int i);
 
 	boolean getobs(int x, int y);
 	void setobs(int x, int y, int t);

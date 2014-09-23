@@ -28,7 +28,7 @@ public class TileGroup
 			I = i;    J = j;
 			}
 		}
-
+	
 	// Most basic verge map tile unit
 	// We also use an internal grid that holds tiles locations 
 	// relative to each other (i,j) -- this is optional, but will override
@@ -92,7 +92,7 @@ public class TileGroup
 		if( tiles.isEmpty() )  { return; }
 		for (CmpTile t : tiles )
 			{
-			map.settile( t.tx, t.ty, t.tn, t.tz );
+			map.settile( t.tx, t.ty, t.tz, t.tn );
 			}
 		return;
 		}
@@ -117,7 +117,29 @@ public class TileGroup
 			int ry = mapTY + t.J;
 			if( rx < 0 || rx > map.getWidth() )  { continue; }
 			if( ry < 0 || ry > map.getHeight() )  { continue; }
-			map.settile( mapTX + t.I, mapTY+t.J , t.tn, t.tz );
+			map.settile( mapTX + t.I, mapTY+t.J , t.tz, t.tn );
+			}
+		return;
+		}
+	
+		// Similar to putTileSetRelative, except it overrides the layer number defined at each tile
+		// Effectively forcing the entire tile set to be drawn to the specified map layer.
+	public void putTileSetRelativeToLayer(Map map, int mapTX, int mapTY, int mapLayer )
+		{
+		if( tiles.isEmpty() )  { return; }
+		if( mapTX < 0 || mapTY < 0 )  { return; }
+		if( mapTX > map.getWidth() )   { return; }
+		if( mapTY > map.getHeight() )   { return; }
+		if( mapLayer < 0 || mapLayer >  map.getNumLayers() )
+			{ return; }
+		
+		for (CmpTile t : tiles )
+			{
+			int rx = mapTX + t.I;
+			int ry = mapTY + t.J;
+			if( rx < 0 || rx > map.getWidth() )  { continue; }
+			if( ry < 0 || ry > map.getHeight() )  { continue; }
+			map.settile( mapTX + t.I, mapTY+t.J , mapLayer, t.tn );
 			}
 		return;
 		}
