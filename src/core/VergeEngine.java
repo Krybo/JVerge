@@ -44,8 +44,6 @@ public class VergeEngine extends Thread {
 	
 	static GUI gui;
 	
-	public static JVCL DrawingLayers;		// Krybo (2014-09-20) VC layer emulation
-	
 	public static GUI getGUI() {
 		return gui;
 	}
@@ -860,10 +858,13 @@ public class VergeEngine extends Thread {
 		} else {
 			gui = new GUI(0, 0);
 		}
-	
+
 		getGUI().updateCanvasSize();
-		
-		DrawingLayers = 	new JVCL(4,screen.width,screen.height);
+
+			// Start with 4 user friendly graphics drawing layers.
+		core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
+
 	}
 	
 }
+

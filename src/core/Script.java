@@ -2,6 +2,7 @@ package core;
 
 import static core.VergeEngine.*;
 import static core.Controls.*;
+import core.JVCL;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -53,6 +54,8 @@ public class Script {
 	public static final int CF_CUSTOM = 7;
 
 	public static boolean TEST_SIMULATION = false;
+
+	public static JVCL jvcl;
 	
 	// VERGE ENGINE VARIABLES: Moved to Script for easy of use
 	/**

@@ -21,6 +21,7 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
 
 import static core.VergeEngine.*;
+import core.JVCL;
 import static core.Controls.KeyF6;
 import static core.Controls.clearKey;
 import static core.Script.*;
@@ -375,6 +376,11 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 						curwidth, curheight, null);			
 				}
 	
+					// This displays all the VC layers
+//			g.setComposite(AlphaComposite.SRC );
+			g.drawImage( jvcl.getBufferedImage(), 0, 0, 
+					curwidth, curheight, null);
+			
 			/* Do this to rotate 180 
 			Graphics2D g2d = (Graphics2D) g;
 			g2d.rotate(Math.PI, curwidth/2, curheight/2);
