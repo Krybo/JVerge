@@ -251,7 +251,7 @@ public class JVCL
 			return(false);
 			}
 
-		y += (1 + Math.floorDiv(checkY, 2)); 
+		y += Math.floorDiv(checkY, 2); 
 		
 		g2.setColor( c );
 		g2.setComposite(AlphaComposite.Src );
@@ -381,9 +381,121 @@ public class JVCL
 			}
 		
 		g2.dispose();
-		requiresUpdate = true;
+		this.requiresUpdate = true;
 		return(true);
 		}
+
+		// Just a simpler form of a menuPanel
+	public boolean JVCborderedBox( int leftX, int topY, int totalWidth, int totalHeight, Color backgroundColor,	int frameWidth )
+		{
+		return JVCmenuPanel( leftX,  topY,  totalWidth,  totalHeight, backgroundColor,				frameWidth, Color.WHITE, false );
+		}
+	
+		// Combines several functions to create a textbox
+		// Height and Width are calculated fronm text matrics
+	public boolean JVCtextOutline( int x, int y, String s, 
+			Font fnt, Color textColor, Color outlineColor, int paddingPx,
+			Color backgroundColor )
+		{
+		if( x < 0 || y < 0 ) { return(false); }
+		if( paddingPx < 1 )  { paddingPx = 1; }
+		if( paddingPx > 20 ) { paddingPx = 20; }
+
+		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		g2.setFont( fnt );
+
+		int singleLineHeight = g2.getFontMetrics().getHeight();
+		int checkY = singleLineHeight + (paddingPx*2);
+		int checkX = g2.getFontMetrics().stringWidth(s);
+
+		String[] sParts = new String[10];
+		int numLines = 1;
+
+		String tmp = new String(s);
+		int substrLen = checkX;
+			// Attempt to get x+checkX within the bounds.   if not ~ must bail
+		while( ((x+checkX+(paddingPx*2)+4) >= standardX) && numLines < 5 ) 
+			{
+			numLines++;
+			substrLen = Math.floorDiv( s.length() , numLines );
+			tmp = tmp.substring(0, substrLen );
+			checkX = g2.getFontMetrics().stringWidth(tmp);
+				//  Getting dis-perportionate, stop now.
+			if( numLines > substrLen ) { numLines=11; }
+			}
+		
+			// The string is just too long / font too big.
+		if( numLines == 5 )
+			{
+			g2.dispose();
+			return(false);
+			}
+		else
+			{
+			for( int ln = 0; ln < numLines; ln++ )
+				{
+				sParts[ln] = new String(s.substring( substrLen*ln, substrLen*(ln+1) ));
+				}
+			}
+		
+		// Normalize spaces
+	for( int ln = 1; ln < numLines; ln++ )
+		{
+		int lastSpace = sParts[ln-1].lastIndexOf(" ");
+		int thisLen = sParts[ln-1].length();
+		
+		if( thisLen < 15 )   			{ continue; }
+		if( lastSpace == thisLen ) 	{ continue; }
+		if( lastSpace < 6 )				{ continue; }
+
+		String snip = new String( 
+				sParts[ln-1].substring(lastSpace + 1, thisLen  ) );
+		sParts[ln-1] = sParts[ln-1].substring(0,lastSpace );
+		sParts[ln] = new String( snip + sParts[ln] );
+		}
+
+			// Now check for box running off the bottom of screen
+		checkY = (singleLineHeight * numLines ) + (paddingPx*2);
+		if( y+checkY > standardY )   
+			{
+			g2.dispose();
+			return(false);
+			}
+
+		int longestLine = 0;
+		for( int ln = 0; ln < numLines; ln++ )
+			{ 
+			int thislen = g2.getFontMetrics().stringWidth( sParts[ln] );
+			if( thislen > longestLine )  { longestLine = thislen; }
+			}
+		
+			// Now, we can finally calculate the outline bounds of the box.
+		int x0 = x;    int y0 = y;
+		int w0 = longestLine + (paddingPx*2) + 4;
+		int h0 = (numLines * singleLineHeight ) + (paddingPx * 2) + 4;
+
+		g2.setComposite(AlphaComposite.Src );
+		g2.setColor(backgroundColor);
+		g2.fillRect( x+1, y+1, w0-2, h0-2 );
+		g2.setColor( outlineColor );
+		g2.drawRect( x, y, w0, h0 );
+		g2.drawRect( x+1, y+1, w0-2, h0-2 ); 
+		g2.setColor( outlineColor.darker() );
+		g2.drawRect( x+1, y+1, w0-2, h0-2 );
+		g2.dispose();
+
+		x0 = x+2+paddingPx;
+		y0 = y+2+paddingPx;
+
+		for( int ln = 0; ln < numLines; ln++, y0 += (singleLineHeight+2) )
+			{
+			this.JVCstring( x0, y0, sParts[ln], fnt, textColor );
+			}
+
+		this.requiresUpdate = true;
+		return(true);
+		}
+	
 	
 	}
 	
