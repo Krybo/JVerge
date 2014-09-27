@@ -770,10 +770,10 @@ public class VergeEngine extends Thread {
 			
 			// Game Loop
 			while(!done) {
-				updatecontrols();
+				updateControls();
 				//TimedProcessEntities();
 				while (!die) {
-					updatecontrols();
+					updateControls();
 					
 					if(virtualScreen==null) {
 						screen.render();

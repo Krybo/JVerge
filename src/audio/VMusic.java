@@ -23,6 +23,11 @@ public class VMusic implements Runnable {
 	static gme vgmPlayer;
 	static WavPlayer wavplayer;
 	
+	public VMusic(int volume)
+		{
+		//  result of merge of script.java, bound ot be mroe here.
+		}
+
 	public synchronized void start(URL url)
 	{
 		this.play = url;
@@ -110,5 +115,17 @@ public class VMusic implements Runnable {
 		
 		
 	}
+
+	public static URL getPlay()
+		{
+		// TODO Auto-generated method stub
+		return null;
+		}
+
+	public void setVolume(int v)
+		{
+		// TODO Auto-generated method stub
+		
+		}
 	
 }

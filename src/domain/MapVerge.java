@@ -178,10 +178,10 @@ public class MapVerge extends MapAbstract implements Map {
 				e.movescript = f.readFixedString(256);
 
 				switch(e.movecode) {
-					case 0: e.SetMotionless(); break;
-					case 1: e.SetWanderZone(); break;
-					case 2: e.SetWanderBox(e.wx1, e.wy1, e.wx2, e.wy2); break;
-					case 3: e.SetMoveScript(e.movescript); break;				
+					case 0: e.setMotionless(); break;
+					case 1: e.setWanderZone(); break;
+					case 2: e.setWanderBox(e.wx1, e.wy1, e.wx2, e.wy2); break;
+					case 3: e.setMoveScript(e.movescript); break;				
 				}
 				
 				e.chrname = f.readFixedString(256);

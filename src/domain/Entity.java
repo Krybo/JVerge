@@ -740,14 +740,30 @@ public class Entity {
 			chr.render(zx, zy, frame, dest);
 	}
 
+	/**
+	 * @deprecated Use {@link #setWanderZone()} instead
+	 */
 	public void SetWanderZone()
+	{
+		setWanderZone();
+		}
+
+	public void setWanderZone()
 	{
 	    clear_stalk();
 		set_waypoint(getx(), gety());
 		movecode = 1;
 	}
 
+	/**
+	 * @deprecated Use {@link #setWanderBox(int,int,int,int)} instead
+	 */
 	public void SetWanderBox(int x1, int y1, int x2, int y2)
+	{
+		setWanderBox(x1, y1, x2, y2);
+		}
+
+	public void setWanderBox(int x1, int y1, int x2, int y2)
 	{
 	    clear_stalk();
 		set_waypoint(getx(), gety());
@@ -758,7 +774,15 @@ public class Entity {
 		movecode = 2;
 	}
 
+	/**
+	 * @deprecated Use {@link #setMoveScript(String)} instead
+	 */
 	public void SetMoveScript(String s)
+	{
+		setMoveScript(s);
+		}
+
+	public void setMoveScript(String s)
 	{
 	    clear_stalk();
 		set_waypoint(getx(), gety());
@@ -767,12 +791,28 @@ public class Entity {
 		movecode = 3;
 	}
 
+	/**
+	 * @deprecated Use {@link #setWanderDelay(int)} instead
+	 */
 	public void SetWanderDelay(int n)
+	{
+		setWanderDelay(n);
+		}
+
+	public void setWanderDelay(int n)
 	{
 		wdelay = n;
 	}
 
+	/**
+	 * @deprecated Use {@link #setMotionless()} instead
+	 */
 	public void SetMotionless()
+	{
+		setMotionless();
+		}
+
+	public void setMotionless()
 	{
 	    clear_stalk();
 		set_waypoint(getx(), gety());
@@ -795,5 +835,11 @@ public class Entity {
 	public int getHotH() {
 		return this.chr.hh;
 	}
+
+	public Entity getFollower()
+		{
+		// TODO Auto-generated method stub
+		return null;
+		}
 	
 }

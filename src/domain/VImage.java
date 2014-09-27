@@ -717,5 +717,10 @@ public class VImage implements Transferable {
 			this.image.flush();
 			return;
 			}
+
+		public void setPixel(int x, int y, Color c)
+			{
+			setpixel(x,y,c);				// Delegator.
+			}
 		
 }
