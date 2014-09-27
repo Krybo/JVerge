@@ -17,7 +17,9 @@ public class MapDynamic extends MapAbstract implements Map {
 	private String mapName;
 	private HashMap<Integer, Integer> mappings;
 	private int scaleFactor = 1;
-	
+	int NULL_TILE = 0;
+//	private HashMap<String, Integer[]> autoTileMappings;
+//	private boolean autoTiling;
 	
 	public MapDynamic(String strFilename) {
 		this(Script.load(strFilename));
@@ -136,12 +138,12 @@ public class MapDynamic extends MapAbstract implements Map {
 	public void setRenderstring(String string) {
 		this.renderstring = string;
 	}
-	
-	public int getzone(int x, int y) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-	
+
+	public int getzone(int x, int y) 
+		{
+		return layers[1].getImage().getRGB(x/scaleFactor, y/scaleFactor)==-3670016 ? 1 : 0;
+		}
+
 	public void setzone(int x, int y, int z) {
 		// TODO Auto-generated method stub
 	}
