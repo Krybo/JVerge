@@ -762,7 +762,15 @@ public class VImage implements Transferable {
 			error("Non implemented function: wrapblit");
 		}
 
+		/**
+		 * @deprecated Use {@link #printString(int,int,Font,String)} instead
+		 */
 		public void printstring(int x, int y, Font font, String text) {
+			printString(x, y, font, text);
+			}
+
+
+		public void printString(int x, int y, Font font, String text) {
 			this.g.setFont(font);
 			this.g.setColor(Color.WHITE);
 			this.g.drawString(text, x, y);
