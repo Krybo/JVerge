@@ -583,7 +583,14 @@ public class VImage implements Transferable {
 			this.image.setRGB(x, y, color.getRGB());
 		}	
 		
+		/**
+		 * @deprecated Use {@link #readPixel(int,int)} instead
+		 */
 		public  int readpixel(int x, int y) {
+			return readPixel(x, y);
+			}
+
+		public  int readPixel(int x, int y) {
 			//if(workingimage.image != null)
 			return this.image.getRGB(x, y);
 			//return 0;
