@@ -50,14 +50,15 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	boolean win_decoration = false;
 	private static float alpha = 1f;
 
-	static long cycleTime;
+	public static long cycleTime;
 	private static int frameDelay = 20; // 20ms. implies 50fps (1000/20) = 50
 	private static byte GUIzoom = 1;
 	private static boolean showFPS = true;
 
 	JMenuBar menuBar;
 	private JCheckBoxMenuItem cbMenuItemSound;
-	private JCheckBoxMenuItem cbMenuItemScreen;
+	private JCheckBoxMenuItem cbMenuItemFullScreen;
+	private JCheckBoxMenuItem cbMenuItemDoubleScreen;
 	private JCheckBoxMenuItem cbMenuItemshowFPS;
 	private JMenuItem menuItemIncreaseFPS;
 	private JMenuItem menuItemDecreaseFPS;
@@ -65,6 +66,8 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	private JMenuItem menuItemZoomIn;		// Krybo
 	private JMenuItem menuItemZoomOut;	// Krybo
 
+	
+	
 	public GUI(int w, int h) {
 		// build and display your GUI
 
@@ -128,17 +131,21 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		menuBar = new JMenuBar();
 		JMenu menu = new JMenu("Settings");
 		menuBar.add(menu);
-
 		
 		cbMenuItemSound = new JCheckBoxMenuItem("Enable Sound", true);
 		cbMenuItemSound.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, ActionEvent.CTRL_MASK));
 		cbMenuItemSound.addItemListener(this);
 		menu.add(cbMenuItemSound);
 		
-		cbMenuItemScreen = new JCheckBoxMenuItem("Full Screen mode", false);
-		cbMenuItemScreen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, ActionEvent.CTRL_MASK));
-		cbMenuItemScreen.addItemListener(this);
-		menu.add(cbMenuItemScreen);
+		cbMenuItemFullScreen = new JCheckBoxMenuItem("Full Screen mode", !config.isWindowmode());
+		cbMenuItemFullScreen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, ActionEvent.CTRL_MASK));
+		cbMenuItemFullScreen.addItemListener(this);
+		menu.add(cbMenuItemFullScreen);
+
+		cbMenuItemDoubleScreen = new JCheckBoxMenuItem("Double Screen mode", config.isDoubleWindowmode());
+		cbMenuItemDoubleScreen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F7, ActionEvent.CTRL_MASK));
+		cbMenuItemDoubleScreen.addItemListener(this);
+		menu.add(cbMenuItemDoubleScreen);
 
 		cbMenuItemshowFPS = new JCheckBoxMenuItem("Show FPS", true);
 		cbMenuItemshowFPS.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F7, ActionEvent.CTRL_MASK));
@@ -148,7 +155,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		menuItemDecreaseFPS = new JMenuItem("Decrease FPS");
 		menuItemDecreaseFPS.setActionCommand("decreaseFPS");
 		menuItemDecreaseFPS.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F9, ActionEvent.CTRL_MASK));
-		menuItemDecreaseFPS.addActionListener(this);			
+		menuItemDecreaseFPS.addActionListener(this);
 		menu.add(menuItemDecreaseFPS);
 
 		menuItemIncreaseFPS = new JMenuItem("Increase FPS");
@@ -188,7 +195,11 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		this.setJMenuBar(menuBar);
 
 		this.add(canvas);
-		setDimensions(this, w, h);
+		if(!config.isDoubleWindowmode()) {
+			setDimensions(this, w, h);
+		} else {
+			setDimensions(this, w*2, h*2);
+		}
 		this.addWindowListener(control);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		cycleTime = System.currentTimeMillis();
@@ -243,10 +254,9 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			this.setResizable(true);
 			this.setVisible(true);
 			System.out.println("Winwidth: " + winwidth + ", Winheight: " + winheight + " I: " + super.getInsets());
-			
+
 			this.setSize(winwidth+super.getInsets().left+super.getInsets().right,
-					winheight+super.getInsets().top+super.getInsets().bottom+menuBar.getHeight() 
-					+ menuBar.getHeight());
+					winheight+super.getInsets().top+super.getInsets().bottom+menuBar.getHeight());
 			System.out.println(super.getBounds());
 		}
 
@@ -262,7 +272,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			}*/		
 
 		canvas.createBufferStrategy(2);
-		strategy = getGUI().canvas.getBufferStrategy();
+		strategy = this.canvas.getBufferStrategy();
 	}
 
 		// Krybo (2014-09-20)  Does the work for map zooming.
@@ -385,7 +395,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			Graphics2D g2d = (Graphics2D) g;
 			g2d.rotate(Math.PI, curwidth/2, curheight/2);
 			g2d.drawImage(screen.getImage(), 0, 0, curwidth, curheight, null);*/
-	
+
 			
 			// Show FPS
 			if(showFPS) 
@@ -475,10 +485,14 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	}
 	
 	public static void incFrameDelay(int i) {
+		if(frameDelay <=1)
+			return;
+		if(frameDelay <= 5)
+			i = -1;
+		
 		frameDelay = frameDelay + i;
-		if(frameDelay < 5)
-			frameDelay = 5;
-		else if(frameDelay > 100)
+		
+		if(frameDelay > 100)
 			frameDelay = 100;
 	}
 
@@ -505,15 +519,25 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			config.setNosound(!config.isNosound());
 			stopmusic();
 		} else
-		if(source==cbMenuItemScreen) {
+		if(source==cbMenuItemFullScreen) {
 			config.setWindowmode(!config.isWindowmode());
 			if(	config.isWindowmode()) {
-				getGUI().setDimensions(getGUI(), config.getV3_xres(), config.getV3_yres());
+				this.setDimensions(this, config.getV3_xres(), config.getV3_yres());
 			}
 			else {
-				getGUI().setDimensions(getGUI(), 0, 0);
+				this.setDimensions(this, 0, 0);
 			}
 		} else
+		if(source==cbMenuItemDoubleScreen) {
+				config.setWindowmode(true);
+				config.setDoubleWindowmode(!config.isDoubleWindowmode());
+				if(	config.isDoubleWindowmode()) {
+					this.setDimensions(this, config.getV3_xres()*2, config.getV3_yres()*2);
+				}
+				else {
+					this.setDimensions(this, config.getV3_xres(), config.getV3_yres());
+				}
+			} else
 		if(source==cbMenuItemshowFPS) {
 			showFPS = cbMenuItemshowFPS.isSelected();
 		}
