@@ -9,12 +9,17 @@ package core;
  * On top of all the map layers
  */
 
+import static core.Script.currentLucent;
 import static java.awt.Font.*;
+
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+
 import domain.VImage;
 
 import java.util.ArrayList;
@@ -28,12 +33,20 @@ public class JVCL
 		{
 		private boolean visible;
 		private boolean active;
+		// Each layer carries a sets of flags that may be used
+		// by the programmer to track anything going on for that layer.
+		private final int flagArraySize = 100;
+		private boolean[] boolFlags = new boolean[flagArraySize]; 
+		private int[] intFlags = new int[flagArraySize];
+		private double[] decFlags = new double[flagArraySize];
 		
-		public VCLayer(int  sizeX, int sizeY )
+		private VCLayer(int  sizeX, int sizeY )
 			{
 			super(sizeX,sizeY);
-			visible = false;
-			active = false;
+			this.visible = false;
+			this.active = false;
+			this.clearAllFlags();
+			this.warningSuppressor();
 			}
 		
 		public boolean getActive()
@@ -44,6 +57,62 @@ public class JVCL
 			{  this.active = truefalse;   }
 		public void setVisible(boolean truefalse)
 			{  this.visible = truefalse;   }
+		
+		private int flagBound(int n)
+			{
+			if( n < 0 )  { return 0; }
+			if( n >= this.flagArraySize ) { return(flagArraySize - 1); }
+			return(0);
+			}
+
+		public boolean getBoolFlag(int flagNum)
+			{
+			flagNum = flagBound(flagNum);
+			return( this.boolFlags[flagNum] );
+			}
+		public void setBoolFlag(int flagNum, boolean val )
+			{
+			flagNum = flagBound(flagNum);
+			this.boolFlags[flagNum] = val;
+			}
+		public int getIntFlag(int flagNum)
+			{
+			flagNum = flagBound(flagNum);
+			return( this.intFlags[flagNum] );
+			}
+		public void setIntFlag(int flagNum, int val )
+			{
+			flagNum = flagBound(flagNum);
+			this.intFlags[flagNum] = val;
+			}
+		public double getDecFlag(int flagNum)
+			{
+			flagNum = flagBound(flagNum);
+			return( this.decFlags[flagNum] );
+			}
+		public void setDecFlag(int flagNum, double val )
+			{
+			flagNum = flagBound(flagNum);
+			this.decFlags[flagNum] = val;
+			}
+
+		public void clearAllFlags()
+			{
+			for( int n = 0; n < flagArraySize; n++ )
+				{
+				this.boolFlags[n] = false;
+				this.intFlags[n] = 0;
+				this.decFlags[n] = 0.0f;
+				}
+			return;
+			}
+		private void warningSuppressor()
+			{
+			setIntFlag( 0, getIntFlag(0) );
+			setDecFlag( 0, getDecFlag(0) );
+			setBoolFlag( 0, getBoolFlag(0) );
+			return;
+			}
 		}
 
 	// Adds a student to the student array list.
@@ -71,6 +140,7 @@ public class JVCL
 			}
 
 		JVCclearAllLayers();
+		refresh();
 		currentLayer = 1;
 		}
 	
@@ -136,6 +206,40 @@ public class JVCL
 	
 	public void setLayerVisibility( boolean truefalse )
 		{	this.vcl.get(currentLayer).setVisible(truefalse);	}
+
+	public boolean toggleLayerVisible(int layerNumber ) 
+		{
+		if( layerNumber <= 0 ) { return(false); }
+		if( layerNumber >= this.vcl.size()  )  { return(false); }
+		this.refresh();
+		if( this.vcl.get(layerNumber).getVisible() == true )
+			{
+			this.vcl.get(layerNumber).setVisible(false);
+			return(false);
+			}
+		else
+			{
+			this.vcl.get(layerNumber).setVisible(true);
+			return(true);
+			}
+		}
+	
+	public boolean toggleLayerActive( int layerNumber ) 
+		{
+		if( layerNumber <= 0 ) { return(false); }
+		if( layerNumber >= this.vcl.size()  )  { return(false); }
+		this.refresh();
+		if( this.vcl.get(layerNumber).getActive() == true )
+			{
+			this.vcl.get(layerNumber).setActive(false);
+			return(false);
+			}
+		else
+			{
+			this.vcl.get(layerNumber).setActive(true);
+			return(true);
+			}
+		}
 	
 	public boolean getLayerVisibility(int layerNumber)
 		{	return( this.vcl.get(layerNumber).getVisible() );	}
@@ -151,6 +255,9 @@ public class JVCL
 		for( int ln = 1; ln < this.vcl.size(); ln++ )
 			{	this.vcl.get(ln).setActive(truefalse);	}
 		}
+	
+	private void refresh()
+		{ this.requiresUpdate = true; }
 	
 	private void flattenLayers()
 		{
@@ -229,9 +336,12 @@ public class JVCL
 	    return(finalImage);
 		}
 
+	//  ===========   DRAWING FUNCTIONS ============
 	
 	public boolean JVCstring(int x, int y, String s, Font fnt, Color c )
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return(false); }
 		if( x < 0 || y < 0 ) { return(false); }
 		
 		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
@@ -270,6 +380,8 @@ public class JVCL
 	
 	public void JVCoval( int cx, int cy, int xRad, int yRad, Color c, boolean fillErIn )
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+				{ return; }
 		if( cx < 0 || cy < 0 ) { return; }
 		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
 		g2.setColor( c );
@@ -285,6 +397,8 @@ public class JVCL
 	
 	public void JVCcircle(int cx, int cy, int radius, Color c, boolean fillErIn )
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+				{ return; }
 		if( cx < 0 || cy < 0 ) { return; }
 		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
 		g2.setColor( c );
@@ -298,8 +412,82 @@ public class JVCL
 		return;
 		}
 
+			// Blit solid images
+	public void JVCblitImage(int x, int y, VImage img )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+				{ return; }
+		vcl.get(this.currentLayer).blit(x, y, img);
+		return;
+		}
+
+		// Blits an image onto current layer, giving control of the alpha blending
+	public void JVCblitImage(int x, int y, BufferedImage img, AlphaComposite mode )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
+		if( x < 0 || y < 0 )   { return; }
+		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		g2.setComposite(mode);
+		g2.drawImage( img, x, y, Color.BLACK, null);
+		return;
+		}
+
+	public void JVCblitImage(int x, int y, BufferedImage img )
+		{ JVCblitImage( x, y, img, AlphaComposite.Src );  }
+
+	public void JVCblitBlendImage(int x, int y, BufferedImage img, float blendValue )
+		{ 
+		JVCblitImage( x, y, img, AlphaComposite.getInstance(
+			AlphaComposite.SRC_OVER, blendValue )  );  
+		}
+	
+	public void JVCblitBlendImage(int x, int y, VImage img, float blendValue )
+		{ JVCblitBlendImage(  x,  y, img.getImage(),  blendValue ); }
+
+	public void JVCblitFullscreenImage( BufferedImage img, AlphaComposite mode )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
+		double srcW = img.getWidth();
+		double srcH = img.getHeight();
+		double factorX = (double) this.standardX / srcW;
+		double factorY = (double) this.standardY / srcH;
+
+		Graphics2D g2d = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		g2d.setComposite(mode);
+		g2d.drawImage( img, 0, 0, Color.BLACK, null);		
+		AffineTransform at = new AffineTransform();
+		at.scale( factorX,  factorY );
+		g2d.drawImage( img, at, null );
+		g2d.dispose();
+		
+		return;
+		}
+
+	public void JVCblitFullscreenImage( VImage img, AlphaComposite mode )
+		{ JVCblitFullscreenImage(  img.getImage(), mode ); return; }
+
+		// Scales and blits an image of arbituary size over the entire screen.   
+		//   While also applying a translucency factor (0-1.0f)
+	public void JVCblitBlendFullscreenImage( VImage img, float alphaValue )
+		{ 
+		JVCblitFullscreenImage( img, AlphaComposite.getInstance(
+				AlphaComposite.SRC_OVER, alphaValue )  );
+		return;
+		}
+	
+	public void JVCblitBlendFullscreenImage( BufferedImage img, float alphaValue )
+		{  
+		JVCblitFullscreenImage( img, AlphaComposite.getInstance(
+			AlphaComposite.SRC_OVER, alphaValue )  );
+		return; 
+		}
+
 	public void JVCclear()
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
 		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
 		g2.setComposite(AlphaComposite.Clear );
 		g2.fillRect(0, 0, this.standardX, this.standardY );
@@ -310,6 +498,8 @@ public class JVCL
 
 	public void JVCclearAllLayers()
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
 		for( int a = 0; a < this.vcl.size(); a++ )
 			{
 			Graphics2D g2 = (Graphics2D) vcl.get(a).getImage().getGraphics();
@@ -323,6 +513,8 @@ public class JVCL
 
 	public void JVCrect( int x, int y, int w, int h, Color c )
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
 		if( x < 0 || y < 0 ) { return; }
 		if( x+w > this.standardX )  { return; }
 		if( y+h > this.standardY )  { return; }
@@ -337,6 +529,8 @@ public class JVCL
 	
 	public void JVCrectfill( int x, int y, int w, int h, Color c )
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
 		if( x < 0 || y < 0 ) { return; }
 		if( x+w > this.standardX )  { return; }
 		if( y+h > this.standardY )  { return; }
@@ -348,10 +542,44 @@ public class JVCL
 		requiresUpdate = true;
 		return;
 		}
+	
+	public void JVCline(int x1, int y1, int x2, int y2, Color c )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
+		if( x1 < 0 || x2 < 0 || y1 < 0 || y2 < 0 ) { return; }
+
+		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		g2.setColor(c);
+		g2.setComposite(AlphaComposite.Src );
+		g2.drawLine(x1, y1, x2, y2 );
+		g2.dispose();
+		requiresUpdate = true;
+		return;
+		}
+	
+		// Pixel.. basically a degenerate line
+	public void JVCpixel(int x, int y, Color c )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
+		if( x < 0 || y < 0 ) { return; }
+
+		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		g2.setColor(c);
+		g2.setComposite(AlphaComposite.Src );
+		g2.drawLine( x, y, x, y );
+		g2.dispose();
+		requiresUpdate = true;
+		return;
+		}
 
 	public boolean JVCmenuPanel( int leftX, int topY, int totalWidth, int totalHeight, Color backgroundColor,
 			int frameWidth, Color frameColor, boolean sunkenFrame )
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return(false); }
+		
 			// minimum possible size for a sunken frame is 3
 		if( (frameWidth < 3) && (sunkenFrame == true) )
 			{ frameWidth = 3; }
@@ -384,19 +612,74 @@ public class JVCL
 		this.requiresUpdate = true;
 		return(true);
 		}
+	
+	public boolean JVCmenuImage( int leftX, int topY, int totalWidth, int totalHeight, 
+			BufferedImage imgBackground, float imgBkgBlend,
+			int frameWidth, Color frameColor, boolean sunkenFrame )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return(false); }
+		
+			// minimum possible size for a sunken frame is 3
+		if( (frameWidth < 3) && (sunkenFrame == true) )
+			{ frameWidth = 3; }
+	
+		if( leftX < 0 || topY < 0 ) 				{ return(false); }
+		if( frameWidth*3 > totalWidth ) 	{ return(false); }
+		if( frameWidth*3 > totalHeight ) 	{ return(false); }
+		if( leftX+totalWidth > this.standardX )  { return(false); }
+		if( topY+totalHeight > this.standardY )  { return(false); }
+
+		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+
+		JVCblitScaleBlendImage(leftX, topY, totalWidth, totalHeight, 
+				imgBackground, imgBkgBlend );
+		
+//		g2.fillRect( leftX, topY, totalWidth, totalHeight );
+		
+		g2.setColor( frameColor );
+		int fx,fw,fy,fh;
+		for( int a = 0; a < frameWidth; a++ )
+			{
+			if( sunkenFrame == true && (a > 0 && a < (frameWidth - 1) ) )
+				{ continue; }
+			fx = leftX + a;
+			fw = totalWidth - (a*2) - 1;
+			fy = topY + a;
+			fh = totalHeight - (a*2) - 1;
+			
+			g2.drawRect( fx, fy, fw, fh );
+			}
+		
+		g2.dispose();
+		this.requiresUpdate = true;
+		return(true);
+		}
+
+	public boolean JVCmenuImage( int leftX, int topY, int totalWidth, int totalHeight, 
+			VImage imgBackground, float imgBkgBlend,
+			int frameWidth, Color frameColor, boolean sunkenFrame )
+		{
+		return( JVCmenuImage( leftX, topY, totalWidth, totalHeight, 
+				imgBackground.getImage(), imgBkgBlend,
+				frameWidth, frameColor, sunkenFrame ) );
+		}
 
 		// Just a simpler form of a menuPanel
 	public boolean JVCborderedBox( int leftX, int topY, int totalWidth, int totalHeight, Color backgroundColor,	int frameWidth )
 		{
 		return JVCmenuPanel( leftX,  topY,  totalWidth,  totalHeight, backgroundColor,				frameWidth, Color.WHITE, false );
 		}
-	
+
+
 		// Combines several functions to create a textbox
 		// Height and Width are calculated fronm text matrics
 	public boolean JVCtextOutline( int x, int y, String s, 
 			Font fnt, Color textColor, Color outlineColor, int paddingPx,
 			Color backgroundColor )
 		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return(false); }
 		if( x < 0 || y < 0 ) { return(false); }
 		if( paddingPx < 1 )  { paddingPx = 1; }
 		if( paddingPx > 20 ) { paddingPx = 20; }
@@ -495,7 +778,155 @@ public class JVCL
 		this.requiresUpdate = true;
 		return(true);
 		}
+
+	public boolean JVCtextImageBox( int x, int y, String s, 
+			Font fnt, Color textColor, Color outlineColor, int paddingPx,
+			BufferedImage imgBackground, float alphaBackground )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return(false); }
+		if( x < 0 || y < 0 ) { return(false); }
+		if( paddingPx < 1 )  { paddingPx = 1; }
+		if( paddingPx > 20 ) { paddingPx = 20; }
+
+		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		g2.setFont( fnt );
+
+		int singleLineHeight = g2.getFontMetrics().getHeight();
+		int checkY = singleLineHeight + (paddingPx*2);
+		int checkX = g2.getFontMetrics().stringWidth(s);
+
+		String[] sParts = new String[10];
+		int numLines = 1;
+
+		String tmp = new String(s);
+		int substrLen = checkX;
+			// Attempt to get x+checkX within the bounds.   if not ~ must bail
+		while( ((x+checkX+(paddingPx*2)+4) >= standardX) && numLines < 5 ) 
+			{
+			numLines++;
+			substrLen = Math.floorDiv( s.length() , numLines );
+			tmp = tmp.substring(0, substrLen );
+			checkX = g2.getFontMetrics().stringWidth(tmp);
+				//  Getting dis-perportionate, stop now.
+			if( numLines > substrLen ) { numLines=11; }
+			}
+		
+			// The string is just too long / font too big.
+		if( numLines == 5 )
+			{
+			g2.dispose();
+			return(false);
+			}
+		else
+			{
+			for( int ln = 0; ln < numLines; ln++ )
+				{
+				sParts[ln] = new String(s.substring( substrLen*ln, substrLen*(ln+1) ));
+				}
+			}
+		
+		// Normalize spaces
+	for( int ln = 1; ln < numLines; ln++ )
+		{
+		int lastSpace = sParts[ln-1].lastIndexOf(" ");
+		int thisLen = sParts[ln-1].length();
+		
+		if( thisLen < 15 )   			{ continue; }
+		if( lastSpace == thisLen ) 	{ continue; }
+		if( lastSpace < 6 )				{ continue; }
+
+		String snip = new String( 
+				sParts[ln-1].substring(lastSpace + 1, thisLen  ) );
+		sParts[ln-1] = sParts[ln-1].substring(0,lastSpace );
+		sParts[ln] = new String( snip + sParts[ln] );
+		}
+
+			// Now check for box running off the bottom of screen
+		checkY = (singleLineHeight * numLines ) + (paddingPx*2);
+		if( y+checkY > standardY )   
+			{
+			g2.dispose();
+			return(false);
+			}
+
+		int longestLine = 0;
+		for( int ln = 0; ln < numLines; ln++ )
+			{ 
+			int thislen = g2.getFontMetrics().stringWidth( sParts[ln] );
+			if( thislen > longestLine )  { longestLine = thislen; }
+			}
+		
+			// Now, we can finally calculate the outline bounds of the box.
+		int x0 = x;    int y0 = y;
+		int w0 = longestLine + (paddingPx*2) + 4;
+		int h0 = (numLines * singleLineHeight ) + (paddingPx * 2) + 4;
+
+		JVCblitScaleBlendImage(x0,y0,w0,h0,
+				imgBackground, alphaBackground );
+		
+		g2.setColor( outlineColor );
+		g2.drawRect( x, y, w0, h0 );
+		g2.drawRect( x+1, y+1, w0-2, h0-2 ); 
+		g2.setColor( outlineColor.darker() );
+		g2.drawRect( x+1, y+1, w0-2, h0-2 );
+		g2.dispose();
+
+		x0 = x+2+paddingPx;
+		y0 = y+2+paddingPx;
+
+		for( int ln = 0; ln < numLines; ln++, y0 += (singleLineHeight+2) )
+			{
+			this.JVCstring( x0, y0, sParts[ln], fnt, textColor );
+			}
+
+		this.requiresUpdate = true;
+		return(true);
+		}
 	
+	public boolean JVCtextImageBox( int x, int y, String s, 
+			Font fnt, Color textColor, Color outlineColor, int paddingPx,
+			VImage imgBackground, float alphaBackground )
+		{
+		return( JVCtextImageBox( x, y, s, fnt, textColor, outlineColor,
+				paddingPx, imgBackground.getImage(), alphaBackground ) );
+		}
+
+
+		// Blits an image onto current layer, giving control of the alpha blending
+		// Constructs new intermediate image so this may be slow if abused.
+	public void JVCblitScaleBlendImage( int x, int y, int w, int h, BufferedImage img, float blendValue )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
+		if( x < 0 || y < 0 )   { return; }
+		if( x+w > standardX )  { w -= (x+w-standardX); }
+		if( y+h > standardY )  { h -= (y+h-standardY); }
+		if( w < 1 ) { return; }	// prevent degenerate image.
+		if( h < 1 ) { return; }
+		
+		double xFactor = (double) w / (double) img.getWidth();
+		double yFactor = (double) h / (double) img.getHeight();
+		AffineTransform at = new AffineTransform();
+		at.scale( xFactor,  yFactor );
+			// Scale the image to blit
+		VImage interImg = new VImage(w,h);
+		Graphics2D g2i = (Graphics2D) interImg.getImage().getGraphics();
+		g2i.setComposite( AlphaComposite.Src );
+		g2i.drawImage( img, at, null );
+		g2i.dispose();
+			// Blend and blit it over the current layer at given position.
+		Graphics2D g2d = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		g2d.setComposite( AlphaComposite.getInstance(
+				AlphaComposite.SRC_OVER, blendValue )  );
+		g2d.drawImage( interImg.getImage(), x, y, Color.BLACK, null);		
+		g2d.dispose();
+
+		return;
+		}
+
+	public void JVCblitScaleBlendImage( int x, int y, int w, int h, VImage img, float blendValue )
+		{ JVCblitScaleBlendImage( x, y, w, h,img.getImage(), blendValue ); }
 	
 	}
 	
