@@ -5,6 +5,7 @@ import static core.Script.*;
 import static core.Sprite.RenderSpritesAboveEntity;
 import static core.Sprite.RenderSpritesBelowEntity;
 import static core.Sprite.sprites;
+import static core.VergeEngine.getGUI;
 import static domain.Entity.EAST;
 import core.JVCL;
 import static domain.Entity.NE;
@@ -30,7 +31,6 @@ import domain.Map;
 import domain.MapDynamic;
 import domain.MapVerge;
 import domain.VImage;
-import domain.Vsp;
 
 public class VergeEngine extends Thread {
 
@@ -60,7 +60,7 @@ public class VergeEngine extends Thread {
 
 	// main engine code
 
-	public static int AllocateEntity(int x, int y, String chr) {
+	static int AllocateEntity(int x, int y, String chr) {
 		Entity e = new Entity(x, y, chr);
 		e.index = numentities;
 		entity.add(e);
@@ -251,7 +251,7 @@ public class VergeEngine extends Thread {
 		}
 	}
 
-	void afterPlayerMove() {
+	static void afterPlayerMove() {
 		if (!_trigger_afterPlayerMove.isEmpty()) {
 			Script.callfunction(_trigger_afterPlayerMove);
 		}
@@ -590,7 +590,6 @@ public class VergeEngine extends Thread {
 		if (current_map == null) {
 			return;
 		}
-		
 		if (!inscroller && getLastKeyChar() == 41)
 			MapScroller(dest);
 
@@ -686,7 +685,9 @@ public class VergeEngine extends Thread {
 			//framecount=0;
 		//}
 		//framecount++;
+		
 	}
+
 	//static int framecount = 0;
 
 	static void CheckZone() {
@@ -800,7 +801,7 @@ public class VergeEngine extends Thread {
 		xwin = ywin = 0;
 		done = false;
 		die = false;
-		if(mapname.endsWith(".map")) {
+		if(mapname.toLowerCase().endsWith(".map")) {
 			current_map = new MapVerge(mapname);
 		}
 		else {
@@ -828,6 +829,11 @@ public class VergeEngine extends Thread {
 		timeIncrement = i;
 	}
 	
+	// RBP Avoid FPS getting higher than needed, after spending lot of time loading 
+	public static void syncAfterLoading() {
+		GUI.cycleTime = System.currentTimeMillis();
+	}
+	
 	public static void initVergeEngine(String[] args) {
 
 		if (args !=null && args.length != 0) {
@@ -852,6 +858,9 @@ public class VergeEngine extends Thread {
 		screenZOOM = new VImage(config.getV3_xres(), config.getV3_yres() );
 		screenHalfWidth = (Integer) (screen.width / 2);	// for optimizations
 		screenHalfHeight = (Integer) (screen.height / 2);
+
+		// Unused: useful for frameskipping
+		//finalScreen = new VImage(config.getV3_xres(), config.getV3_yres());
 
 		if (config.isWindowmode()) {
 			gui = new GUI(config.getV3_xres(), config.getV3_yres());

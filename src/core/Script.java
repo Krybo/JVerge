@@ -1252,11 +1252,7 @@ public class Script {
 		syncAfterLoading(); // Rafael, the Esper
 		return resource;
 	}
-	private static void syncAfterLoading()
-		{
-		// TODO Auto-generated method stub
-		
-		}
+
 
 	public static void setSystemPath(Class c) {
 		systemclass = c;
