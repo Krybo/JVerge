@@ -1305,7 +1305,7 @@ public class Script {
 		
 //		ZoomBufferScreen = new VImage(sectionDeltaX*2, sectionDeltaY*2 );
 		ZoomScreenSubset.blackOut();
-		ZoomScreenSubset.grabregion( 
+		ZoomScreenSubset.grabRegion( 
 				xCenter - sectionDeltaX, yCenter - sectionDeltaY,
 				xCenter + sectionDeltaX, yCenter + sectionDeltaY,
 				0, 0, source);

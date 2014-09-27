@@ -313,7 +313,7 @@ public class Vsp {
 			for(int j=0; j<sizey/16;j++) {
 				for(int i=0; i<sizex/16;i++) {
 					VImage newTile = new VImage(16, 16);
-					newTile.grabregion(posx, posy, posx+16, posy+16, 0, 0, images[img].image);					
+					newTile.grabRegion(posx, posy, posx+16, posy+16, 0, 0, images[img].image);					
 					posx+=16;
 
 					// Checks for repeated tile 

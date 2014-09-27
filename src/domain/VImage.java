@@ -489,11 +489,25 @@ public class VImage implements Transferable {
 			TAdditiveBlit(x, y, s, d);
 		}*/
 		
+		/**
+		 * @deprecated Use {@link #grabRegion(int,int,int,int,int,int,VImage)} instead
+		 */
 		public void grabregion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, VImage src) {
-			this.grabregion(sx1, sy1, sx2, sy2, dx, dy, src.image);
+			grabRegion(sx1, sy1, sx2, sy2, dx, dy, src);
+			}
+
+		public void grabRegion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, VImage src) {
+			this.grabRegion(sx1, sy1, sx2, sy2, dx, dy, src.image);
 		}
 		
+		/**
+		 * @deprecated Use {@link #grabRegion(int,int,int,int,int,int,BufferedImage)} instead
+		 */
 		public void grabregion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, BufferedImage src) {
+			grabRegion(sx1, sy1, sx2, sy2, dx, dy, src);
+			}
+
+		public void grabRegion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, BufferedImage src) {
 			
 				// Getclip
 				//int dcx1 = dst.cx1;

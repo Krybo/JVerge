@@ -77,7 +77,7 @@ public class VFont {
 		for (int yl = 0; yl<5 * subsets; yl++)
 			for (int xl = 0; xl<20; xl++) {
 				rawdata[imageindex] = new VImage(xsize, ysize);
-				rawdata[imageindex++].grabregion(1+(xl*(xsize+1)), 1+(yl*(ysize+1)), width+1+(xl*(xsize+1)), height+1+(yl*(ysize+1)),
+				rawdata[imageindex++].grabRegion(1+(xl*(xsize+1)), 1+(yl*(ysize+1)), width+1+(xl*(xsize+1)), height+1+(yl*(ysize+1)),
 					0, 0, workingimage);
 			}
 

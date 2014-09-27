@@ -3,6 +3,7 @@ package domain;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +11,7 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
+import javax.imageio.ImageIO;
 
 import core.DefaultPalette;
 import static core.Script.*;
@@ -28,15 +29,15 @@ public class CHR {
 	
 	//private byte[] pixels = new byte[16*16*3]; // frames * width * height * 3 bytes!
 	
-	int fxsize, fysize;					// frame x/y dimensions
+	public int fxsize, fysize;					// frame x/y dimensions
 	public int hx, hy;						// x/y obstruction hotspot
 	public int hw;							// hotspot width/height
 	public int hh;
 	int totalframes;					// total # of frames.
-    int idle[] = new int[5];			// idle frames
+    public int idle[] = new int[5];			// idle frames
 
-	int animsize[] = new int[9];
-	int anims[][] = new int[9][];
+	private int animsize[] = new int[9];
+	private int anims[][] = new int[9][];
     //String movescript[] = new String[8];
 
 	String filename;                        // the filename this was loaded from
@@ -474,7 +475,12 @@ public class CHR {
 	}	
 	
 	/// Method to make easier to export CHRs from images
-	public void setAnimBufs(int[] lengths, String[] animbufs) {
+	public void setAnimBufs(String[] animbufs) {
+		int lengths[] = new int[animbufs.length];
+		for(int i=0; i<lengths.length; i++) {
+			lengths[i] = animbufs[i].length();
+		}
+		
 		this.animbuf = animbufs;
 		this.length = lengths;
 	}
@@ -490,9 +496,18 @@ public class CHR {
 		dest.tblit(x, y, this.frames[frame]);
 	}
 	
-	int GetFrame(int d, int framect)
+	
+	public int getAnimSize(int animIndex) { //[Rafael, the Esper]
+		if (animIndex<0 || animIndex >= anims.length) {
+			System.err.printf("CHR::getAnimSize() - invalid direction %d", animIndex);
+			return 0;
+		}
+		return animsize[animIndex];
+	}
+	
+	public int getFrame(int d, int framect)
 	{
-		if (d<1 || d>4) {
+		if (d<0 || d >= anims.length) {
 			System.err.printf("CHR::GetFrame() - invalid direction %d", d);
 			return 0;
 		}
@@ -502,8 +517,10 @@ public class CHR {
 	
 	int GetFrameConst(int d, int framect)
 	{
-		if (d<1 || d>4)
+		if (d<0 || d >= anims.length) {
 			System.err.printf("CHR::GetFrame() - invalid direction %d", d);
+			return 0;
+		}
 		return anims[d][framect % animsize[d]];
 	}
 	
@@ -591,8 +608,8 @@ public class CHR {
 	/**Rafael:
 	 * New method implemented to allow bypassing .chr files and use an image file instead
 	 */
-	public static CHR createCHRFromImage(int startx, int starty, int sizex, int sizey, int columns, int totalframes, boolean padding, VImage image) {
-		log("createCHRFromImage (" + sizex + "x" + sizey + ": " + totalframes + " frames.");
+	public static CHR createCHRFromImage(int startx, int starty, int sizex, int sizey, int skipx, int skipy, int columns, int totalframes, boolean padding, VImage image) {
+		log("createCHRFromImage (" + sizex + "x" + sizey + ": " + totalframes + " frames)");
 		VImage[] images = new VImage[totalframes];
 		
 		int frames = 0, posx = 0, posy = 0, column = 0;
@@ -609,13 +626,14 @@ public class CHR {
 				posx++;
 				 
 			images[frames] = new VImage(sizex, sizey);
-			images[frames].tgrabregion(startx+posx, starty+posy, startx+posx+sizex, starty+posy+sizey, 0, 0, transC, image); 
+			images[frames].grabRegion(startx+posx, starty+posy, startx+posx+sizex, starty+posy+sizey, 0, 0, image); 
+			//images[frames].tgrabregion(startx+posx, starty+posy, startx+posx+sizex, starty+posy+sizey, 0, 0, transC, image);
 			column++;
-			posx+=sizex;
+			posx+=sizex+skipx;
 			if(column >= columns) {
 				column = 0;
 				posx = 0;
-				posy+=sizey;
+				posy+=sizey+skipy;
 				if(padding)
 					posy++;
 			}
@@ -642,46 +660,9 @@ public class CHR {
 		return c;
 	}
 
-	
-	public static void main (String args[]) throws MalformedURLException {
-		//CHR c = new CHR(new URL("file:///C:\\JavaRef3\\EclipseWorkspace\\PS\\src\\ps\\alis.chr"));
-		//c.saveChrVersion5("c:\\temp.chr");
-		CHR c = new CHR(new URL("file:///C:\\JavaRef3\\EclipseWorkspace\\PS\\src\\ps\\chars\\vehicle.chr"));
-		c.hx = 0;
-		c.hy = 0;
-		c.hw = 64;
-		c.hh = 64;
-		c.saveChrVersion5("C:\\JavaRef3\\EclipseWorkspace\\PS\\src\\ps\\chars\\vehicle.chr");
-		
-	}
-
-	public static void processMultipleCharsFromImage() throws MalformedURLException {
-		//for(int count=190; count<211; count++) {
-			VImage image = new VImage(new URL("file:///C:\\Rbp\\Rpg\\PS\\Generation\\mapdat\\psg1_sprite_mapdat_006" + ".png"));
-			CHR c = createCHRFromImage(360, 216, 40, 72, 9, 9, false, image);
-			BufferedImage[] newBuffer = new BufferedImage[12];
-			for(int i=0;i<9;i++) {
-				newBuffer[i] = c.frames[i];
-			}
-			newBuffer[9] = VImage.flipimage(40, 72, c.frames[3]); 
-			newBuffer[10] = VImage.flipimage(40, 72, c.frames[4]);
-			newBuffer[11] =	VImage.flipimage(40, 72, c.frames[5]);	
-			c.frames = newBuffer;
-			c.totalframes = 12;
-			
-			c.setAnimBufs(new int[]{0,20,20,20,23,20,23,20,23},
-					new String[]{"", "F0W30F1W10F2W30F1W10", "F6W30F7W10F8W30F7W10", "F3W30F4W10F5W30F4W10", "F9W30F10W10F11W30F10W10",
-					"F3W30F4W10F5W30F4W10", "F9W30F10W10F11W30F10W10", "F3W30F4W10F5W30F4W10", "F9W30F10W10F11W30F10W10"});
-			c.idle = new int[]{0, 7, 1, 4, 10}; 
-	
-			c.hx = 8;
-			c.hy = 48;
-			c.hw = 24;
-			c.hh = 24;
-			
-			c.saveChrVersion5("C:\\JavaRef3\\EclipseWorkspace\\PS\\src\\ps\\chars\\esper.chr");
-		//}
-
-	}
-	
+	public int GetFrame(int face, int framect)
+		{
+		// temporary  delete me later
+		return 0;
+		}
 }
