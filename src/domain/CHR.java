@@ -619,6 +619,7 @@ public class CHR {
 
 		// First pixel is default transparent color
 		Color transC = new Color(image.image.getRGB(0+(padding?1:0), 0+(padding?1:0)));
+		Color unused = transC;   transC = unused;   // kill warning
 		
 		while(frames < totalframes) {
 			

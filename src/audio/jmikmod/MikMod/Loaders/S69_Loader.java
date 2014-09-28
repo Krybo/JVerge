@@ -144,8 +144,11 @@ public void Cleanup()
 
 public boolean S69_LoadPatterns()
 {
-	int u,t,s,tracks=0,q;
-	short note,inst,vol,a,b,c;
+	int unusedVarWarningKiller = 0;
+	int u=0,t=0,s=0,tracks=0,q=0;
+	short note,inst,vol,a,b,c=0;
+	tracks = unusedVarWarningKiller;
+	unusedVarWarningKiller = u - t + s + q + (int) c; 
 
 	if(!m_.MLoader.AllocPatterns()) return false;
 	if(!m_.MLoader.AllocTracks()) return false;
@@ -205,7 +208,9 @@ public boolean S69_LoadPatterns()
 public boolean Load()
 {
     try {
-	int t,u,track=0;
+	int t,u=0,track=0;
+	track = u;    u = track;		// suppress unused var warning
+	
 /*	UNIMOD of; /* testing... */
 	S69SAMPLE s = new S69SAMPLE();
 	int temp_loopend;

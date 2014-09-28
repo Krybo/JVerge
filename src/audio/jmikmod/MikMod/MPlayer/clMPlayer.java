@@ -895,8 +895,9 @@ public void DoS3MTempo(short tempo)
 
 public void DoToneSlide()
 {
-	int dist,t;
-
+	int dist,t=0,unused=0;
+	unused  = t;	t=unused;
+	
 	if(vbtick==0){
 		a.tmpperiod=a.period;
 		return;
@@ -1380,6 +1381,7 @@ public void MP_HandleTick()
 	int tmpvol;
 	// extern char current_file[1024];
 	int z,t,tr,ui_result;
+	z=0;  z=z<<2;
 	//extern int play_current;
 	// extern int current_pattern;
 	//extern int count_pattern, count_song;

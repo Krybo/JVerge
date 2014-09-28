@@ -30,6 +30,8 @@ public class MapVerge extends MapAbstract implements Map {
 	String vspname = "";
 	private String musicname= "";
 	private String startupscript = "startmap";
+	private int TRASH = 0;
+	private int DUMP = 0;
 
 	Layer[] layers;
 	byte[] obsLayer; 
@@ -97,10 +99,14 @@ public class MapVerge extends MapAbstract implements Map {
 
 			// Begin to read
 			String mapSignature = f.readFixedString(6);
-			if (!mapSignature.equals(MAP_SIGNATURE)) {
+			if (!mapSignature.equals(MAP_SIGNATURE)) 
+				{
+				f.close();
 				throw new IOException("Map doesn't contain V3MAP signature: " + mapSignature);
-			}
+				}
 
+			TRASH = DUMP;  DUMP = TRASH;
+			
 			int mapVersion = f.readSignedIntegerLittleEndian();
 			int vcOffset = f.readSignedIntegerLittleEndian();
 			//System.out.println("Map version:" + mapVersion + "; Vcoffset: "	+ vcOffset);
@@ -119,6 +125,8 @@ public class MapVerge extends MapAbstract implements Map {
 			int numLayers = f.readSignedIntegerLittleEndian(); // layers.length
 			this.layers = new Layer[numLayers];
 
+			DUMP = mapVersion + vcOffset; 
+			
 			for (int i = 0; i < numLayers; i++) {
 				Layer l = new Layer();
 				l.name = f.readFixedString(256);
@@ -267,6 +275,8 @@ public class MapVerge extends MapAbstract implements Map {
 				//l.tiledata[3] = 14000;
 				f.writeCompressedUnsignedShorts(l.tiledata);
 			}
+			
+			DUMP = vc; 		//  Krybo: silence unused var warning 
 
 			f.writeCompressedBytes(m.obsLayer);
 			f.writeCompressedUnsignedShorts(m.zoneLayer);

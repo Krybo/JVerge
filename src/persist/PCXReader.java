@@ -65,6 +65,15 @@ public class PCXReader {
         int palette_type;
         byte[] filler = new byte[58];
 
+        		// Krybo: Silence unused var warnings
+        hres = 0;  vres = 0;  reserved = 0;
+        bytes_per_line = 0;   palette_type = 0;
+        manufacturer = 0;    version = 0;   encoding = 0;
+        hres = vres;        vres = hres;
+        reserved = bytes_per_line;
+        vres = reserved + palette_type;
+        hres = manufacturer +version + encoding * 2;   
+        
         boolean wasOdd = false; // Rafael: PCSx with odd width (ex: 7, 135, etc)
         
         int imagebytes;
