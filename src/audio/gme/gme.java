@@ -18,12 +18,15 @@ class PlayerList extends VGMPlayer
 	public Label titleLabel;
 	public Label trackLabel;
 	int playlistIndex;
-	final ArrayList list = new ArrayList();
+//	final ArrayList<Entry> list = new ArrayList();
+	//-- Krybo removed to eliminate compiler warning, put in constructor instead
+	final ArrayList<Entry> list;
 	
 	PlayerList( int rate )
-	{
+		{
 		super( rate );
-	}
+		list = new ArrayList<Entry>();
+		}
 	
 	private void updateTrack()
 	{

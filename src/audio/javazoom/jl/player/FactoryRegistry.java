@@ -51,7 +51,7 @@ public class FactoryRegistry extends AudioDeviceFactory
 	}
 
 	
-	protected Hashtable factories = new Hashtable();
+	protected Hashtable<Class<? extends AudioDeviceFactory>, AudioDeviceFactory> factories = new Hashtable<Class<? extends AudioDeviceFactory>, AudioDeviceFactory>();
 	
 	/**
 	 * Registers an <code>AudioDeviceFactory</code> instance
@@ -62,7 +62,7 @@ public class FactoryRegistry extends AudioDeviceFactory
 		factories.put(factory.getClass(), factory);						  
 	}
 	
-	public void removeFactoryType(Class cls)
+	public void removeFactoryType(Class<?> cls)
 	{
 		factories.remove(cls);
 	}
@@ -112,10 +112,10 @@ public class FactoryRegistry extends AudioDeviceFactory
 			{
 				fa = new AudioDeviceFactory[size];
 				int idx = 0;
-				Enumeration e = factories.elements();
+				Enumeration<AudioDeviceFactory> e = factories.elements();
 				while (e.hasMoreElements())
 				{
-					AudioDeviceFactory factory = (AudioDeviceFactory)e.nextElement();
+					AudioDeviceFactory factory = e.nextElement();
 					fa[idx++] = factory;	
 				}
 			}
