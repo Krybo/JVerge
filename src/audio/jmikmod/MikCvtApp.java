@@ -30,10 +30,10 @@ import audio.jmikmod.MikMod.*;
 
 
 public class MikCvtApp extends Applet implements Runnable
-{
+	{
+	private static final long serialVersionUID = 679908889958416390L;
 
 	Thread	 m_MikCvtApp = null;
-
 
 	boolean m_fStandAlone = false;
 

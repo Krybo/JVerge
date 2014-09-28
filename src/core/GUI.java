@@ -37,8 +37,9 @@ import javax.swing.UIManager;
 
 import domain.Map;
 
-public class GUI extends JFrame implements ActionListener, ItemListener, ComponentListener {
-	
+public class GUI extends JFrame implements ActionListener, ItemListener, ComponentListener 
+	{
+	private static final long serialVersionUID = 5487850478802622502L;
 	Canvas canvas = new Canvas();
 	Controls control = new Controls();
 	static VergeEngine gameThread; 

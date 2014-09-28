@@ -33,6 +33,9 @@ import audio.jmikmod.MikMod.*;
 public class MikModApp extends Applet implements Runnable
 {
 
+	private static final long serialVersionUID = -423585523531163866L;
+
+
 	Thread	 m_MikModApp = null;
 
 

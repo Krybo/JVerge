@@ -27,5 +27,6 @@ package audio.javazoom.jl.decoder;
  * class, as per JMF 2.0. 
  */
 public class JavaLayerError extends Error
-{	
-}
+	{
+	private static final long serialVersionUID = 6084598702912681964L;	
+	}

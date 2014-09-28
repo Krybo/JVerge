@@ -28,7 +28,8 @@ package audio.javazoom.jl.decoder;
  */
 public class DecoderException extends JavaLayerException
 	implements DecoderErrors
-{	
+	{	
+	private static final long serialVersionUID = -9165061312832682483L;
 	private int		errorcode = UNKNOWN_ERROR;
 	
 	public DecoderException(String msg, Throwable t)

@@ -136,7 +136,9 @@ final class PlayerWithUpdate extends PlayerList
 };
 
 public final class gme extends Applet implements ActionListener
-{
+	{
+	private static final long serialVersionUID = 7955226172458027671L;
+
 	// Plays file at given URL (HTTP only). If it's an archive (.zip)
 	// then path specifies the file within the archive. Track ranges
 	// from 1 to number of tracks in file.

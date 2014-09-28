@@ -33,8 +33,8 @@ import java.io.PrintStream;
  * @author MDM
  */
 public class JavaLayerException extends Exception
-{
-	
+	{
+	private static final long serialVersionUID = -4267652064828143841L;
 	private Throwable		exception;
 	
 	
