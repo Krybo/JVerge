@@ -42,8 +42,10 @@ public class MapDynamic extends MapAbstract implements Map {
 				layers[i] = new VImage(Script.load(strLayers[i].trim()));
 			}
 			
-			this.mappings = new HashMap<Integer, Integer>() {
-			{ // Associates each pixel color to a tile from the given tileset
+			this.mappings = new HashMap<Integer, Integer>() 
+				{
+				private static final long serialVersionUID = -8076555731725126570L;
+					{ // Associates each pixel color to a tile from the given tileset
 				put(new Color(0, 150, 0).getRGB(), 106);
 				put(new Color(30, 100, 30).getRGB(), 37);
 				put(new Color(0, 200, 0).getRGB(), 51);
