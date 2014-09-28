@@ -97,7 +97,7 @@ public class GbCpu extends ClassicEmu
 		int cz = this.cz;
 		int ph = this.ph;
 		final int pages [] = this.pages;
-		final int instrTimes [] = this.instrTimes;
+		final int instrTimes [] = this.getInstrtimes();
 		
 	loop:
 		while ( time < 0 )
@@ -1084,7 +1084,10 @@ public class GbCpu extends ClassicEmu
 		this.time = time;
 	}
 	
-	static final int [] instrTimes = {
+	public int [] getInstrtimes()
+		{	return instrTimes;	}
+
+	private static final int [] instrTimes = {
 	//	 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 		 4,12, 8, 8, 4, 4, 8, 4,20, 8, 8, 8, 4, 4, 8, 4,// 0
 		 4,12, 8, 8, 4, 4, 8, 4,12, 8, 8, 8, 4, 4, 8, 4,// 1

@@ -30,8 +30,11 @@ public class Config {
 
 	/****************************** data ******************************/
 
-	private int v3_xres=320, v3_yres=240, v3_bpp;
-	private int v3_window_xres=0, v3_window_yres = 0;
+	private int v3_xres=320;
+	private int v3_yres=240; 
+	private int v3_bpp = 0;
+	private int v3_window_xres=0; 
+	private int v3_window_yres = 0;
 	// Overkill (2010-04-29): Aspect ratio enforcing.
 	//[Rafael, the Esper] ScaleFormat v3_scale_win = SCALE_FORMAT_ASPECT, v3_scale_full = SCALE_FORMAT_STRETCH;
 
@@ -49,10 +52,26 @@ public class Config {
 	private boolean use_lua = false;
 	private boolean vc_oldstring = false;
 
+		// this exists to do just that.  it functionally does not do anything
+	private void killUnusedVarWarnings()
+		{
+		boolean unusedB = cheats;
+		cheats = unusedB;
+		int unused = v3_xres;    v3_xres = unused;
+		unused = v3_window_xres + v3_window_yres;
+		unusedB =  releasemode;  	unusedB = automax;   
+		unusedB = decompile;   unusedB = editcode;
+		unused =  gamerate;  	unusedB = use_lua;
+		unusedB = vc_oldstring;
+		unused = soundengine - v3_bpp;
+		unusedB = cheats=false;
+		}
+	
 	/****************************** code ******************************/
 
 	public Config(URL configFilePath) {
 		
+		killUnusedVarWarnings();
 		// Tries to load the file externally to the jar, in the classpath (ex: .)
 		// http://stackoverflow.com/questions/3627426/loading-a-file-relative-to-the-executing-jar-file
 		InputStream resourceAsStream = Config.class.getResourceAsStream("/verge.cfg");

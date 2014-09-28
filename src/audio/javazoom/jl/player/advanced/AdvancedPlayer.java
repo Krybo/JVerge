@@ -57,6 +57,8 @@ public class AdvancedPlayer
 	public AdvancedPlayer(InputStream stream) throws JavaLayerException
 	{
 		this(stream, null);
+		int unused = lastPosition;   lastPosition = unused;
+		boolean unusedB = complete;   complete = unusedB;
 	}
 
 	public AdvancedPlayer(InputStream stream, AudioDevice device) throws JavaLayerException

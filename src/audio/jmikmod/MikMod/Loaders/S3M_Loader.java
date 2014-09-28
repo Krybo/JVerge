@@ -297,7 +297,7 @@ public short [] S3M_ConvertTrack(S3MNOTE [] tr, int offset)
 			switch(cmd){
 
 				case 1:                 /* Axx set speed to xx */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTA);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffecta());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
@@ -310,17 +310,17 @@ public short [] S3M_ConvertTrack(S3MNOTE [] tr, int offset)
 					break;
 
 				case 4:                 /* Dxy volumeslide */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTD);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectd());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
 				case 5:                 /* Exy toneslide down */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTE);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffecte());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
 				case 6:                 /* Fxy toneslide up */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTF);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectf());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
@@ -333,7 +333,7 @@ public short [] S3M_ConvertTrack(S3MNOTE [] tr, int offset)
 					break;
 
 				case 9:                 /* Ixy tremor, ontime x, offtime y */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTI);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffecti());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
@@ -343,13 +343,13 @@ public short [] S3M_ConvertTrack(S3MNOTE [] tr, int offset)
 
 				case 0xb:               /* Kxy Dual command H00 & Dxy */
 					m_.MUniTrk.UniPTEffect((short)0x4,(short)0);
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTD);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectd());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
 				case 0xc:               /* Lxy Dual command G00 & Dxy */
 					m_.MUniTrk.UniPTEffect((short)0x3,(short)0);
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTD);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectd());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
@@ -358,7 +358,7 @@ public short [] S3M_ConvertTrack(S3MNOTE [] tr, int offset)
 					break;
 
 				case 0x11:              /* Qxy Retrig (+volumeslide) */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTQ);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectq());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
@@ -413,7 +413,7 @@ public short [] S3M_ConvertTrack(S3MNOTE [] tr, int offset)
 
 				case 0x14:      /* Txx tempo */
 					if(inf>0x20){
-						m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTT);
+						m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectt());
 						m_.MUniTrk.UniWrite(inf);
 					}
 					break;

@@ -51,7 +51,7 @@ public class clMUniTrk extends Object
     public static final short UNI_XMEFFECTG=27;
     public static final short UNI_XMEFFECTH=28;
     public static final short UNI_XMEFFECTP=29;
-
+    
     /*
             Unimod flags
     */
@@ -422,5 +422,47 @@ public void UniCleanup()
 
         unibuf=null;
 }
+
+public short getUniXmeffectp()
+	{  return UNI_XMEFFECTP;	}
+
+public static short getStaticUniXmeffectp()
+	{  return UNI_XMEFFECTP;	}
+
+public short getUniXmeffecth()
+	{	return UNI_XMEFFECTH;  }
+
+public  short getUniXmeffectg()
+	{  return UNI_XMEFFECTG;	}
+
+public short getUniXmeffecta()
+	{	return UNI_XMEFFECTA;	}
+
+public short getUniS3meffectt()
+	{	return UNI_S3MEFFECTT;   }
+
+public short getUniS3meffectq()
+	{	return UNI_S3MEFFECTQ;	}
+
+public short getUniS3meffecti()
+	{	return UNI_S3MEFFECTI;   }
+
+public short getUniS3meffectf()
+	{	return UNI_S3MEFFECTF;	}
+
+public short getUniS3meffecte()
+	{	return UNI_S3MEFFECTE;	}
+
+public short getUniS3meffectd()
+	{	return UNI_S3MEFFECTD;	}
+
+public short getUniS3meffecta()
+	{	return UNI_S3MEFFECTA;	}
+
+public int getUfXmperiods()
+	{	return UF_XMPERIODS;	}
+
+public int getUfLinear()
+	{	return UF_LINEAR;  	}
 
 }

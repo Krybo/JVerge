@@ -252,14 +252,14 @@ public short [] XM_Convert(XMNOTE [] xmtrack,int offset, int rows)
 
 			case 0x6:					/* volslide down */
 				if((vol&0xf) != 0){
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTA);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffecta());
 					m_.MUniTrk.UniWrite((short)(vol&0xf));
 				}
 				break;
 
 			case 0x7:					/* volslide up */
 				if((vol&0xf) != 0){
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTA);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffecta());
 					m_.MUniTrk.UniWrite((short)(vol<<4));
 				}
 				break;
@@ -293,7 +293,7 @@ public short [] XM_Convert(XMNOTE [] xmtrack,int offset, int rows)
 				/* only slide when data nibble not zero: */
 
 				if((vol&0xf) != 0){
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTP);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffectp());
 					m_.MUniTrk.UniWrite((short)(vol&0xf));
 				}
 				break;
@@ -302,7 +302,7 @@ public short [] XM_Convert(XMNOTE [] xmtrack,int offset, int rows)
 				/* only slide when data nibble not zero: */
 
 				if((vol&0xf) != 0){
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTP);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffectp());
 					m_.MUniTrk.UniWrite((short)(vol<<4));
 				}
 				break;
@@ -323,12 +323,12 @@ public short [] XM_Convert(XMNOTE [] xmtrack,int offset, int rows)
 
 			case 'G'-55:                    /* G - set global volume */
 				if(dat>64) dat=64;
-				m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTG);
+				m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffectg());
 				m_.MUniTrk.UniWrite(dat);
 				break;
 
 			case 'H'-55:                    /* H - global volume slide */
-				m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTH);
+				m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffecth());
 				m_.MUniTrk.UniWrite(dat);
 				break;
 
@@ -340,17 +340,17 @@ public short [] XM_Convert(XMNOTE [] xmtrack,int offset, int rows)
 				break;
 
 			case 'P'-55:                    /* P - panning slide */
-				m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTP);
+				m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffectp());
 				m_.MUniTrk.UniWrite(dat);
 				break;
 
 			case 'R'-55:                    /* R - multi retrig note */
-				m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTQ);
+				m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectq());
 				m_.MUniTrk.UniWrite(dat);
 				break;
 
 			case 'T'-55:             		/* T - Tremor !! (== S3M effect I) */
-				m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTI);
+				m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffecti());
 				m_.MUniTrk.UniWrite(dat);
 				break;
 
@@ -366,7 +366,7 @@ public short [] XM_Convert(XMNOTE [] xmtrack,int offset, int rows)
 
 			default:
 				if(eff==0xa){
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_XMEFFECTA);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniXmeffecta());
 					m_.MUniTrk.UniWrite(dat);
 				}
 				else if(eff<=0xf) m_.MUniTrk.UniPTEffect(eff,dat);
@@ -426,8 +426,8 @@ public boolean Load()
 	m_.MLoader.of.numpos=mh.songlength;                       /* copy the songlength */
 	m_.MLoader.of.reppos=(short)mh.restart;
 	m_.MLoader.of.numins=mh.numins;
-	m_.MLoader.of.flags |= m_.MUniTrk.UF_XMPERIODS;
-	if((mh.flags&1) != 0) m_.MLoader.of.flags|=  m_.MUniTrk.UF_LINEAR;
+	m_.MLoader.of.flags |= m_.MUniTrk.getUfXmperiods();
+	if((mh.flags&1) != 0) m_.MLoader.of.flags|=  m_.MUniTrk.getUfLinear();
 
         //memcpy(m_.MLoader.of.positions,mh.orders,256);
         for(t=0;t<256;t++)

@@ -628,7 +628,7 @@ final public class GbApu
 		final int unit = (int) (1.0 / osc_count / 15 / 8 * 65536);
 		
 		// TODO: doesn't handle left != right volume (not worth the complexity)
-		int data = regs [vol_reg - startAddr];
+		int data = regs [vol_reg - getStartaddr()];
 		int left  = data >> 4 & 7;
 		int right = data & 7;
 		int vol_unit = (left > right ? left : right) * unit;
@@ -739,19 +739,19 @@ final public class GbApu
 	}
 	
 	// Reads and writes at addr must satisfy start_addr <= addr <= end_addr
-	public static final int startAddr = 0xFF10;
-	public static final int endAddr   = 0xFF3F;
+	private static final int startAddr = 0xFF10;
+	private static final int endAddr   = 0xFF3F;
 	
 	public void write( int time, int addr, int data )
 	{
-		assert startAddr <= addr && addr <= endAddr;
+		assert getStartaddr() <= addr && addr <= getEndaddr();
 		assert 0 <= data && data < 0x100;
 		
-		if ( addr < status_reg && (regs [status_reg - startAddr] & power_mask) == 0 )
+		if ( addr < status_reg && (regs [status_reg - getStartaddr()] & power_mask) == 0 )
 			return;
 		
 		run_until( time );
-		int reg = addr - startAddr;
+		int reg = addr - getStartaddr();
 		if ( addr < wave_ram )
 		{
 			int old_data = regs [reg];
@@ -802,7 +802,7 @@ final public class GbApu
 		else // wave data
 		{
 			addr = wave.access( addr );
-			regs [addr - startAddr] = data;
+			regs [addr - getStartaddr()] = data;
 			int index = (addr & 0x0F) * 2;
 			wave.wave [index    ] = data >> 4;
 			wave.wave [index + 1] = data & 0x0F;
@@ -821,14 +821,14 @@ final public class GbApu
 	// Reads from address at specified time
 	public int read( int time, int addr )
 	{
-		assert startAddr <= addr && addr <= endAddr;
+		assert getStartaddr() <= addr && addr <= getEndaddr();
 		
 		run_until( time );
 		
 		if ( addr >= wave_ram )
 			addr = wave.access( addr );
 		
-		int index = addr - startAddr;
+		int index = addr - getStartaddr();
 		int data = regs [index];
 		if ( index < masks.length )
 			data |= masks [index];
@@ -844,6 +844,12 @@ final public class GbApu
 		
 		return data;
 	}
+
+	public int getStartaddr()
+		{	return startAddr;	}
+
+	public int getEndaddr()
+		{	return endAddr;   }
 
 	static final int vol_reg    = 0xFF24;
 	static final int stereo_reg = 0xFF25;
@@ -864,5 +870,5 @@ final public class GbApu
 	final GbSquare       square2 = new GbSquare();
 	final GbWave         wave    = new GbWave();
 	final GbNoise        noise   = new GbNoise();
-	final int [] regs = new int [endAddr - startAddr + 1];
+	final int [] regs = new int [getEndaddr() - getStartaddr() + 1];
 }

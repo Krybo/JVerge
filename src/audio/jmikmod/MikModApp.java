@@ -42,7 +42,7 @@ public class MikModApp extends Applet implements Runnable
 	public URL url;
 
 
-        public static String [] my_argv = null;
+        private static String [] my_argv = null;
 
 
         // The main function of a standalone application.
@@ -124,6 +124,12 @@ public class MikModApp extends Applet implements Runnable
             stop();
 
 	}
+
+	public String [] getMy_argv()
+		{	return my_argv;  }
+
+	public void setMy_argv(String [] my_argv)
+		{	MikModApp.my_argv = my_argv;  }
 
 
 

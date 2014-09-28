@@ -25,7 +25,6 @@ import java.util.Calendar;
 import java.util.Random;
 
 import audio.VMusic;
-
 import domain.VSound;
 import domain.VImage;
 import domain.Entity;
@@ -627,13 +626,14 @@ public class Script {
 		sound.start(volume);
 	}
 
-	public static URL getmusic() {
-		if(VergeEngine.config==null || VergeEngine.config.isNosound() || musicplayer==null)
-			return null;
-		
-		return VMusic.getPlay();
-		
-	}
+// Krybo : this was causing cyclical scoping permission problems, so i got rid of it.
+//
+//	public URL getmusic() 
+//		{
+//		if(VergeEngine.config==null || VergeEngine.config.isNosound() || musicplayer==null)
+//			return null;
+//		return VMusic.getPlay();
+//		}
 	
 	public static void playmusic(URL fn) {
 		playmusic(fn, 100);
@@ -1111,13 +1111,13 @@ public class Script {
 		if(function==null || function.isEmpty()) 
 			return false;
 
-		Class path = null;
+		Class<?> path = null;
 		// This means that it is a direct class-method
 		if (function.lastIndexOf(".") != -1) {
 			String s = function.substring(function.lastIndexOf(".") + 1);
 			String t = function.substring(0, function.lastIndexOf("."));
 			try { 
-				path = systemclass.forName(t);
+				path = Class.forName(t);
 			}
 			catch(ClassNotFoundException cnfe) {
 				error("Class " + path + " not found for direct execution (" + function + ")");
@@ -1141,14 +1141,14 @@ public class Script {
 			 		cName.append(s);
 			 		
 			 		try {
-			 			path = systemclass.forName(cName.toString());
+			 			path = Class.forName(cName.toString());
 			 		}
 					catch(ClassNotFoundException cnfe) {
 						// FIXME Solve this mess, also use toUppercase and Capitalize first letter to avoid error on .MAP
 		 				b = new StringBuilder(systemclass.getPackage().getName() + "." + mapname);
 				 		s = b.toString().substring(0, b.lastIndexOf(".map")).replace('\\', '.').replace('/', '.');
 				 		try {
-							path = systemclass.forName(s);
+							path = Class.forName(s);
 						} catch (ClassNotFoundException e) {
 							error("Class " + path + " not found for map execution.");
 							notFoundInMap = true; //return;

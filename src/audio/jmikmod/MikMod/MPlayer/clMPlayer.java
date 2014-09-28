@@ -368,7 +368,7 @@ public static int getoldperiod(short note, int c2spd)
 public int GetPeriod(short note,int c2spd)
 {
 	if((pf.flags&audio.jmikmod.MikMod.MUniTrk.clMUniTrk.UF_XMPERIODS) != 0){
-		return ((pf.flags&audio.jmikmod.MikMod.MUniTrk.clMUniTrk.UF_LINEAR) != 0) ? getlinearperiod(note,c2spd) : getlogperiod(note,c2spd);
+		return ((pf.flags&audio.jmikmod.MikMod.MUniTrk.clMUniTrk.UF_LINEAR ) != 0) ? getlinearperiod(note,c2spd) : getlogperiod(note,c2spd);
 	}
 	return(getoldperiod(note,c2spd));
 }
@@ -1056,7 +1056,7 @@ public void PlayEffects()
 
 	a.ownper=0;
 	a.ownvol=0;
-
+	
 	while((c=m_.MUniTrk.UniGetByte()) != 0){
 
 		switch(c){
@@ -1233,7 +1233,7 @@ public void PlayEffects()
                                 DoXMGlobalSlide(m_.MUniTrk.UniGetByte());
                                 break;
 
-			case audio.jmikmod.MikMod.MUniTrk.clMUniTrk.UNI_XMEFFECTP:
+              case audio.jmikmod.MikMod.MUniTrk.clMUniTrk.UNI_XMEFFECTP:			
 				DoXMPanSlide(m_.MUniTrk.UniGetByte());
 				break;
 
@@ -1695,7 +1695,7 @@ public void MP_HandleTick()
                     // m_.MDriver.MD_VoiceSetPanning(t,(a.panning) & 0xFF);
 		}
 
-		if((pf.flags & audio.jmikmod.MikMod.MUniTrk.clMUniTrk.UF_LINEAR) != 0)
+		if((pf.flags & audio.jmikmod.MikMod.MUniTrk.clMUniTrk.UF_LINEAR ) != 0)
 			m_.MDriver.MD_VoiceSetFrequency((short)t,GetFreq2(a.period));
 		else
 			m_.MDriver.MD_VoiceSetFrequency((short)t,(3579546<<2)/a.period);

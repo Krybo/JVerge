@@ -210,17 +210,17 @@ public void STM_ConvertNote(STMNOTE n)
 					break;
 
 				case 4:                 /* Dxy volumeslide */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTD);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectd());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
 				case 5:                 /* Exy toneslide down */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTE);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffecte());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
 				case 6:                 /* Fxy toneslide up */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTF);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectf());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
@@ -233,7 +233,7 @@ public void STM_ConvertNote(STMNOTE n)
 					break;
 
 				case 9:                 /* Ixy tremor, ontime x, offtime y */
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTI);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffecti());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
@@ -243,13 +243,13 @@ public void STM_ConvertNote(STMNOTE n)
 
 				case 0xb:               /* Kxy Dual command H00 & Dxy */
 					m_.MUniTrk.UniPTEffect((short)0x4,(short)0);
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTD);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectd());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 
 				case 0xc:               /* Lxy Dual command G00 & Dxy */
 					m_.MUniTrk.UniPTEffect((short)0x3,(short)0);
-					m_.MUniTrk.UniWrite(m_.MUniTrk.UNI_S3MEFFECTD);
+					m_.MUniTrk.UniWrite(m_.MUniTrk.getUniS3meffectd());
 					m_.MUniTrk.UniWrite(inf);
 					break;
 

@@ -103,7 +103,7 @@ final class GbsEmu extends GbCpu
 		apu.reset();
 		apu.write( 0, 0xFF26, 0x80 ); // power on
 		for ( int i = 0; i < sound_data.length; i++ )
-			apu.write( 0, i + apu.startAddr, sound_data [i] );
+			apu.write( 0, i + apu.getStartaddr(), sound_data [i] );
 		
 		reset( ram, rom.unmapped() );
 		mapMemory( ramAddr, 0x10000 - ramAddr, 0 );
@@ -175,7 +175,7 @@ final class GbsEmu extends GbCpu
 	{
 		if ( debug ) assert 0 <= addr && addr < 0x10000;
 		
-		if ( apu.startAddr <= addr && addr <= apu.endAddr )
+		if ( apu.getStartaddr() <= addr && addr <= apu.getEndaddr() )
 			return apu.read( time + endTime, addr );
 		
 		return ram [mapAddr( addr )] & 0xFF;
@@ -192,7 +192,7 @@ final class GbsEmu extends GbCpu
 			ram [offset] = (byte) data;
 			if ( addr < 0xFF80 && addr >= 0xFF00 )
 			{
-				if ( apu.startAddr <= addr && addr <= apu.endAddr )
+				if ( apu.getStartaddr() <= addr && addr <= apu.getEndaddr() )
 				{
 					apu.write( time + endTime, addr, data );
 				}

@@ -187,14 +187,15 @@ final class SpcEmu extends SpcCpu
 		timers [0].prescaler = 4 + 3;
 		
 		// Clear echo
-		if ( (dsp.regs [dsp.r_flg] & 0x20) == 0 )
-		{
-			int addr = (dsp.regs [dsp.r_esa] & 0xFF) << 8;
-			int end  = addr + ((dsp.regs [dsp.r_edl] & 0x0F) << 11);
+//		if ( (dsp.regs [dsp.getrFlg()] & 0x20) == 0 )
+		if ( (dsp.regs [dsp.getrFlg()] & 0x20) == 0 )
+			{
+			int addr = (dsp.regs [dsp.getrEsa()] & 0xFF) << 8;
+			int end  = addr + ((dsp.regs [dsp.getrEdl()] & 0x0F) << 11);
 			if ( end > ramSize )
 				end = ramSize;
 			java.util.Arrays.fill( ram, addr, end, (byte) 0xFF );
-		}
+			}
 	}
 	
 	protected int play_( byte out [], int count )

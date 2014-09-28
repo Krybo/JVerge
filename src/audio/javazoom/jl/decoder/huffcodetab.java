@@ -435,6 +435,7 @@ final class huffcodetab
   public static huffcodetab[]  ht = null;     /* Simulate extern struct                 */
 
   private static int[] bitbuf = new int[32];
+  private static int unused = bitbuf[0];
   
   /**
    * Big Constructor : Computes all Huffman Tables.
@@ -465,6 +466,8 @@ final class huffcodetab
    */
   public static int huffman_decoder(huffcodetab h, int[] x, int[] y, int[] v, int[] w, BitReserve br)
   {
+  	int unused2 = unused;   unused = unused2;
+  	
 	// array of all huffcodtable headers
 	// 0..31 Huffman code table 0..31
 	// 32,33 count1-tables

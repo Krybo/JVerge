@@ -112,7 +112,7 @@ public class VMusic implements Runnable {
 					modPlayer.my_argv = new String[]{" -r ", absolutePath};
 				}
 				else {*/
-					modPlayer.my_argv = new String[]{" -r ", " auto"};//, play.getFile()};
+					modPlayer.setMy_argv(new String[]{" -r ", " auto"});//, play.getFile()};
 					modPlayer.url = getPlay();
 					// TODO Volume?
 				//}
@@ -126,13 +126,12 @@ public class VMusic implements Runnable {
 		
 	}
 
-	public static URL getPlay() {
+	public URL getPlay() {
 		return play;
 	}
 
-	public static void setPlay(URL play) {
-		VMusic.play = play;
-	}
+	public void setPlay(URL play) 
+		{	VMusic.play = play;  }
 
 	public void setVolume(int v) {
 		if(vgmPlayer != null) {

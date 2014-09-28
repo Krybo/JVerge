@@ -82,15 +82,15 @@ public final class SpcDsp
 	static final int r_evolr = 0x3C;
 	static final int r_kon   = 0x4C;
 	static final int r_koff  = 0x5C;
-	static final int r_flg   = 0x6C;
+	private static final int r_flg   = 0x6C;
 	static final int r_endx  = 0x7C;
 	static final int r_efb   = 0x0D;
 	static final int r_pmon  = 0x2D;
 	static final int r_non   = 0x3D;
 	static final int r_eon   = 0x4D;
 	static final int r_dir   = 0x5D;
-	static final int r_esa   = 0x6D;
-	static final int r_edl   = 0x7D;
+	private static final int r_esa   = 0x6D;
+	private static final int r_edl   = 0x7D;
 	static final int r_fir   = 0x0F;
 	
 	// Voice registers
@@ -118,7 +118,7 @@ public final class SpcDsp
 		final byte [] ram  = this.ram;
 		final Rate [] rates = this.rates;
 		final Voice [] voices = this.voices;
-		final int flg = regs [r_flg];
+		final int flg = regs [getrFlg()];
 		
 		final int dir = (regs [r_dir] & 0xFF) << 8;
 		final int slow_gaussian = ((regs [r_pmon] & 0xFF) >> 1) | regs [r_non];
@@ -442,9 +442,9 @@ public final class SpcDsp
 			
 			// Echo position
 			int echo_offset;
-			int echo_ptr = ((regs [r_esa] << 8) + (echo_offset = this.echo_offset)) & 0xFFFF;
+			int echo_ptr = ((regs [getrEsa()] << 8) + (echo_offset = this.echo_offset)) & 0xFFFF;
 			if ( echo_offset == 0 )
-				echo_length = (regs [r_edl] & 0x0F) << 11;
+				echo_length = (regs [getrEdl()] & 0x0F) << 11;
 			if ( (echo_offset += 4) >= echo_length )
 				echo_offset = 0;
 			this.echo_offset = echo_offset;
@@ -525,6 +525,18 @@ public final class SpcDsp
 		setVolume( 2.0 ); // TODO: let line increase volume, not DSP
 	}
 	
+
+	// r_flg only being staticly accessible was causing issues.
+	//     This is a work-around.   Same for rEsa & rEdl below.
+	public int getrFlg()
+		{	return r_flg;  }
+
+	public int getrEsa()
+		{	return r_esa;   }
+
+	public int getrEdl()
+		{  return r_edl;  }
+
 	static final int env_release = 0;
 	static final int env_attack  = 1;
 	static final int env_decay   = 2;

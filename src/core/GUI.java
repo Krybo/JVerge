@@ -462,13 +462,15 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		//VergeEngine.g = VergeEngine.scaledBI.createGraphics();
 	}
 	
-	public void updateCanvasSize() {
-		this.curwidth = this.getWidth()-super.getInsets().left-super.getInsets().right;
-		this.curheight = this.getHeight()-super.getInsets().top-super.getInsets().bottom-menuBar.getHeight();
+	public void updateCanvasSize() 
+		{
+		this.setCurwidth(this.getWidth()-super.getInsets().left - 
+				super.getInsets().right );
+		this.setCurheight(this.getHeight()-super.getInsets().top-super.getInsets().bottom-menuBar.getHeight());
 		//canvas.updateSize(
 			//	this.getWidth()-super.getInsets().left-super.getInsets().right,
 				//this.getHeight()-super.getInsets().top-super.getInsets().bottom);
-	}
+		}
 
 	
 	@Override
@@ -480,9 +482,14 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	@Override
 	public void componentShown(ComponentEvent arg0) {	}
 
-	public void setAlpha(float f) {
-		this.alpha = f;		
-	}
+		// Krybo : compiler disapproved of static access
+	public void setAlpha(float f) 
+		{
+		setAlphaStatic(f);
+//		this.alpha = f;		
+		}	
+	public static void setAlphaStatic( float f )
+		{	alpha = f;	}
 	
 	public static void incFrameDelay(int i) {
 		if(frameDelay <=1)
@@ -575,4 +582,17 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			}
 					// END Krybo Edits
 	}
+
+	public int getCurwidth()
+		{  return curwidth;   }
+
+	public void setCurwidth(int curwidth)
+		{	GUI.curwidth = curwidth;   }
+
+	public int getCurheight()
+		{	return curheight;	}
+
+	public void setCurheight( int curheight )
+		{	GUI.curheight = curheight;   }
+	
 }

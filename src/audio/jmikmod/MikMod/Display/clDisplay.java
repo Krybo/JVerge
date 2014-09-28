@@ -214,8 +214,8 @@ public void update_name_display()
             ((m_.cur_mod.songname.length()==0) ? "(null)" : (m_.cur_mod.songname)) +
             "\n" +
             "Type: " + m_.cur_mod.modtype + ", " +
-            "Periods: " + (((m_.cur_mod.flags & m_.MUniTrk.UF_XMPERIODS) != 0) ? "XM type" : "mod type") +
-            "," + (((m_.cur_mod.flags & m_.MUniTrk.UF_LINEAR) != 0) ? "Linear" : "Log") + "\n";
+            "Periods: " + (((m_.cur_mod.flags & m_.MUniTrk.getUfXmperiods()) != 0) ? "XM type" : "mod type") +
+            "," + (((m_.cur_mod.flags & m_.MUniTrk.getUfLinear()) != 0) ? "Linear" : "Log") + "\n";
 }
 
 public void update_status_display()

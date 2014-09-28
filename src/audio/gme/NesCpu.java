@@ -74,7 +74,7 @@ public class NesCpu extends ClassicEmu
 		pages [page] = offset - page * pageSize;
 	}
 	
-	static final int [] instrTimes =
+	private static final int [] instrTimes =
 	{// 0 1 2 3 4 5 6 7 8 9 A B C D E F
 		7,6,2,8,3,3,5,5,3,2,2,2,4,4,6,6,// 0
 		2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7,// 1
@@ -123,7 +123,7 @@ public class NesCpu extends ClassicEmu
 		int p  = this.p;
 		int c  = this.c;
 		final int pages [] = this.pages;
-		final int instrTimes [] = this.instrTimes;
+		final int instrTimes [] = this.getInstrtimes();
 		
 		int addr = 0;
 		
@@ -930,4 +930,8 @@ public class NesCpu extends ClassicEmu
 		this.nz = nz;
 		this.time = time;
 	}
+
+	public int [] getInstrtimes()
+		{	return instrTimes;	}
+
 }

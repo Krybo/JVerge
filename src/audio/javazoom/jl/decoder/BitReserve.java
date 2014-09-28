@@ -61,7 +61,7 @@ final class BitReserve
 	
    BitReserve()
    {
-	  
+	  int unused = buf_bit_idx;      buf_bit_idx = unused;
 	  offset = 0;
       totbit = 0;
       buf_byte_idx = 0;	  
