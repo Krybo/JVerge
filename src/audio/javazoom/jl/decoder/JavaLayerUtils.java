@@ -198,7 +198,7 @@ public class JavaLayerUtils
 		}
 		else
 		{
-			Class cls = JavaLayerUtils.class;
+			Class<?> cls = JavaLayerUtils.class;
 			is = cls.getResourceAsStream(name);
 		}
 		

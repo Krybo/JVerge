@@ -8,7 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
-import java.awt.SystemColor;			// Krybo (2014-09-17)
+//import java.awt.SystemColor;			// Krybo (2014-09-17)
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,13 +17,12 @@ import java.awt.event.ComponentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+//import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
-
 import static core.VergeEngine.*;
-import core.JVCL;
-import static core.Controls.KeyF6;
-import static core.Controls.clearKey;
+//import core.JVCL;
+//import static core.Controls.KeyF6;
+//import static core.Controls.clearKey;
 import static core.Script.*;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -32,10 +31,10 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 
-import domain.Map;
+//import javax.swing.UIDefaults;
+//import domain.Map;
 
 public class GUI extends JFrame implements ActionListener, ItemListener, ComponentListener 
 	{

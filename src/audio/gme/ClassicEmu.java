@@ -74,7 +74,8 @@ class ClassicEmu extends MusicEmu
 	// Subclass can also get number of msec to run, and return number of clocks emulated
 	protected int runMsec( int msec )
 	{
-		assert bufLength == 32;
+//	bufLength is static final -->.<
+//		assert bufLength == 32;
 		return runClocks( buf.clockRate() >> 5 );
 	}
 }

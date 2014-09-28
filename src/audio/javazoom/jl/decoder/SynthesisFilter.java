@@ -569,6 +569,18 @@ final class SynthesisFilter
 */	
   }
 	
+  
+  // Unused X Warning killers
+  private void  DoNotUse01()
+	   {
+	   compute_new_v_old();
+	   DoNotUse02();
+	   }
+  private void DoNotUse02()
+	   { 
+	   DoNotUse01();
+	   }
+  
   /**
    * Compute new values via a fast cosine transform.
    */
@@ -1619,7 +1631,7 @@ private void compute_pcm_samples(Obuffer buffer)
 	{
 		try
 		{
-			Class elemType = Float.TYPE;
+			Class<?> elemType = Float.TYPE;
 			Object o = JavaLayerUtils.deserializeArrayResource("sfd.ser", elemType, 512);
 			return (float[])o;
 		}

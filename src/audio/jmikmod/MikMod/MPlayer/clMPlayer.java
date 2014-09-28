@@ -12,8 +12,6 @@ All systems - all compilers
 
 package audio.jmikmod.MikMod.MPlayer;
 
-import java.io.*;
-
 import audio.jmikmod.MikMod.*;
 
 

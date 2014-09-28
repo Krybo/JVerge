@@ -19,11 +19,11 @@ v1.00 (06/12/96) - first "versioned" version
 
 package audio.jmikmod.MikMod;
 
-import java.io.*;
-import java.lang.*;
-import java.net.URL;
 
-import audio.jmikmod.MikMod.*;
+import java.net.URL;
+//import java.lang.*;
+//import java.io.*;
+//import audio.jmikmod.MikMod.*;
 import audio.jmikmod.MikMod.Display.*;
 import audio.jmikmod.MikMod.Drivers.*;
 import audio.jmikmod.MikMod.Loaders.*;

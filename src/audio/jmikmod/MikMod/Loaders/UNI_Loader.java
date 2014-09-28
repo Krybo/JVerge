@@ -71,7 +71,8 @@ public String StrRead()
         
 	s[len]=0;
 
-        ret = new String(s, 0, 0, len);
+//        ret = new String(s, 0, 0, len);
+        ret = new String(s, 0, len);
         s = null;
         return ret;
 }

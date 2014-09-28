@@ -17,7 +17,7 @@ import java.io.IOException;
 
 import audio.jmikmod.MikMod.clLOADER;
 import audio.jmikmod.MikMod.clMainBase;
-import persist.SimulatedRandomAccessFile;
+//import persist.SimulatedRandomAccessFile;
 
 
 
@@ -663,7 +663,7 @@ public boolean Load()
 
               /*printf("wav %d:%22.22s\n",u,wh.samplename);*/
 
-				m_.MLoader.of.instruments[t].samples[u].samplename   = new String(wh.samplename,0,0,22);
+				m_.MLoader.of.instruments[t].samples[u].samplename   = new String(wh.samplename,0,22);
 				m_.MLoader.of.instruments[t].samples[u].length       =wh.length;
 				m_.MLoader.of.instruments[t].samples[u].loopstart    =wh.loopstart;
 				m_.MLoader.of.instruments[t].samples[u].loopend      =wh.loopstart+wh.looplength;

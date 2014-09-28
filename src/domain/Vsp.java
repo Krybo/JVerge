@@ -1,23 +1,21 @@
 package domain;
 
 import static core.Script.*;
-
-import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.TexturePaint;
 import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
+//import java.awt.Color;
+//import java.awt.Graphics2D;
+//import java.awt.Rectangle;
+//import java.awt.TexturePaint;
+//import java.io.FileInputStream;
+//import java.net.MalformedURLException;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-
 import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
 import core.Script;

@@ -61,8 +61,9 @@ class GbOsc
 	{
 		int data = regs [4];
 		
-		if ( gbc_02 && (frame_phase & 1) != 0 && (old_data & length_enabled) == 0 && length != 0 )
-			length--;
+//		Krybo: Commented Dead code : gbc_02 is static final = false always  
+//		if ( gbc_02 && (frame_phase & 1) != 0 && (old_data & length_enabled) == 0 && length != 0 )
+//			length--;
 		
 		if ( (data & trigger_mask) != 0 )
 		{
@@ -70,13 +71,16 @@ class GbOsc
 			if ( length == 0 )
 			{
 				length = max_len;
-				if ( gbc_02 && (frame_phase & 1) != 0 && (data & length_enabled) != 0 )
-					length--;
+				
+//				Same dead code problem like further up.
+//				if ( gbc_02 && (frame_phase & 1) != 0 && (data & length_enabled) != 0 )
+//					length--;
 			}
 		}
 		
-		if ( gbc_02 && length == 0 )
-			enabled = 0;
+//		Yet more dead code due to gbc_02
+//		if ( gbc_02 && length == 0 )
+//			enabled = 0;
 		
 		return data & trigger_mask;
 	}

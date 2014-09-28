@@ -78,9 +78,14 @@ public boolean ReadComment(short len)
 {
 	int t;
 
-        if(len != 0){
-                byte [] buf;
-		if((buf=new byte[len+1]) == null) return false;
+        if(len != 0)
+     	   {
+     	   byte [] buf;
+     	   
+     	   //  Ack.. um.. why?
+//		if((buf=new byte[len+1]) == null) return false;
+     	   	buf=new byte[len+1];
+     	   	if( buf.length <= 0 )  { return false; }
                 //fread(buf,len,1,modfp);
                 modfp.read(buf,0,len);
 		buf[len]=0;
@@ -90,7 +95,8 @@ public boolean ReadComment(short len)
 		for(t=0;t<len;t++){
 			if(buf[t]<32) buf[t]=' ';
                 }
-                of.comment = new String(buf,0,0,len);
+                of.comment = new String(buf,0,len);
+//                of.comment = new String(buf,0,0,len);
                 buf = null;
 	}
 	return true;
@@ -235,7 +241,8 @@ public String DupStr(byte s[],short len)
                     }
                     d[t]=0;
                 }
-                String sPtr = new String(d, 0, 0, len);
+//                String sPtr = new String(d, 0, 0, len);
+                String sPtr = new String(d, 0, len);
                 d = null;
                 return sPtr;
         }
@@ -499,17 +506,15 @@ public UNIMOD ML_LoadFN(URL filename)
         //if((fp=fopen((const char*)*filename,"rb"))==NULL){
         try
         {
-        
-        try {
-			if ( (fp = new SimulatedRandomAccessFile(filename)) == null) {
+        		// Original code was dead code and got refactored.
+        try {	  fp = new SimulatedRandomAccessFile(filename) ;
+		} catch (URISyntaxException e) 
+     	   {  
+     	   e.printStackTrace();
 			m_.mmIO.myerr="Error opening file";
 			m_.mmIO.myerr_file=filename.getFile();
 			return null;
-}
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+     	   }
 
 	/* display "loading" message */
 	m_.Display.display_version();

@@ -3,12 +3,11 @@ package core;
 import static core.VergeEngine.*;
 import static core.Controls.*;
 import core.JVCL;
-
-import java.awt.AlphaComposite;
+//import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Font;
+//import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Image;
+//import java.awt.Image;
 import java.util.List;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -17,23 +16,22 @@ import java.awt.image.ColorConvertOp;
 import java.awt.image.RescaleOp;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.ServerSocket;
-import java.net.Socket;
+//import java.net.ServerSocket;
+//import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
-
 import audio.VMusic;
 import domain.VSound;
 import domain.VImage;
 import domain.Entity;
 import domain.Map;
-import static core.Script.log;
-import static core.Script.screen;
-import static core.Script.setlucent;
-import static core.Script.showpage;
-import static core.Script.timer;
+//import static core.Script.log;
+//import static core.Script.screen;
+//import static core.Script.setlucent;
+//import static core.Script.showpage;
+//import static core.Script.timer;
 import static core.SinCos.*;
 
 public class Script {
@@ -1177,7 +1175,7 @@ public class Script {
 		return false;
 	}
 	
-	private static boolean invokeMethod(Class c, String function, boolean justCheck) { 
+	private static boolean invokeMethod(Class<?> c, String function, boolean justCheck) { 
 
 		Method[] allMethods = c.getDeclaredMethods();
 		for (Method m : allMethods) {
@@ -1254,7 +1252,7 @@ public class Script {
 	}
 
 
-	public static void setSystemPath(Class c) {
+	public static void setSystemPath(Class<?> c) {
 		systemclass = c;
 	}
 	

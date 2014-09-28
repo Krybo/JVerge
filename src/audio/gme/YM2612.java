@@ -96,7 +96,9 @@ public final class YM2612
 	private static final int	RELEASE					= 3;
 
 	private static final int	SIN_HBITS				= 12;
-	private static final int	SIN_LBITS				= ((26-SIN_HBITS)<=16)?(26-SIN_HBITS):16;
+//	private static final int	SIN_LBITS				= ((26-SIN_HBITS)<=16)?(26-SIN_HBITS):16;
+	// Not clue what the above is for -- does it not always evaluate to 16 ???
+	private static final int	SIN_LBITS				= 16;
 
 	private static final int	ENV_HBITS				= 12;
 	private static final int	ENV_LBITS				= (28 - ENV_HBITS);
@@ -348,11 +350,14 @@ public final class YM2612
 		for(i = 0; i < 2048; i++){
 			x = (double) i * YM2612_Frequency;
 
-			if((SIN_LBITS + SIN_HBITS - (21 - 7)) < 0){
-				x /= (double) (1 << ((21 - 7) - SIN_LBITS - SIN_HBITS));
-			} else {
-				x *= (double) (1 << (SIN_LBITS + SIN_HBITS - (21 - 7)));
-			}
+//			if((SIN_LBITS + SIN_HBITS - (21 - 7)) < 0)
+//		Krybo :	??????????????    its always false!
+//				{ x /= (double) (1 << ((21 - 7) - SIN_LBITS - SIN_HBITS)); }
+//			else {
+//				x *= (double) (1 << (SIN_LBITS + SIN_HBITS - (21 - 7)));
+//				}
+			
+			x *= (double) (1 << (SIN_LBITS + SIN_HBITS - (21 - 7)));
 			x /= 2.0;  // because MUL = value * 2
 			FINC_TAB[i] = (int) x;	// (unsigned int) x;
 		}
@@ -384,11 +389,16 @@ public final class YM2612
 		// Detune Table
 		for(i = 0; i < 4; i++){
 			for (j = 0; j < 32; j++){
-				if((SIN_LBITS + SIN_HBITS - 21) < 0){
-					x = (double) DT_DEF_TAB[(i << 5) + j] * YM2612_Frequency / (double) (1 << (21 - SIN_LBITS - SIN_HBITS));
-				} else {
-					x = (double) DT_DEF_TAB[(i << 5) + j] * YM2612_Frequency * (double) (1 << (SIN_LBITS + SIN_HBITS - 21));
-				}
+			
+			//  Krybo : ??? this always evals as false
+//				if((SIN_LBITS + SIN_HBITS - 21) < 0){
+//					x = (double) DT_DEF_TAB[(i << 5) + j] * YM2612_Frequency / (double) (1 << (21 - SIN_LBITS - SIN_HBITS));
+//				} else {
+//					x = (double) DT_DEF_TAB[(i << 5) + j] * YM2612_Frequency * (double) (1 << (SIN_LBITS + SIN_HBITS - 21));
+//				}
+			
+		x = (double) DT_DEF_TAB[(i << 5) + j] * YM2612_Frequency * (double) (1 << (SIN_LBITS + SIN_HBITS - 21));
+				
 				DT_TAB[i + 0][j] = (int) x;
 				DT_TAB[i + 4][j] = (int) -x;
 			}
@@ -683,8 +693,11 @@ public final class YM2612
 			case 0x40:
 				SL.TL = data & 0x7F;
 				// SOR2 do a lot of TL adjustement and this fix R.Shinobi jump sound...
-				if((ENV_HBITS - 7) < 0)		SL.TLL = SL.TL >> (7 - ENV_HBITS);
-				else						SL.TLL = SL.TL << (ENV_HBITS - 7);
+
+	//  Dead code : always false
+//				if((ENV_HBITS - 7) < 0)		SL.TLL = SL.TL >> (7 - ENV_HBITS);
+//				else						SL.TLL = SL.TL << (ENV_HBITS - 7);
+				SL.TLL = SL.TL << (ENV_HBITS - 7);
 				break;
 			case 0x50:
 				SL.KSR_S = 3 - (data >> 6);
@@ -877,8 +890,9 @@ public final class YM2612
 	*
 	***********************************************/
 
-	private final void Env_NULL_Next(cSlot SL){
-	}
+// Krybo:  This doesn't do anything and was also never used.
+//	private final void Env_NULL_Next(cSlot SL)
+//		{	}
 
 	private final void Env_Attack_Next(cSlot SL){
 		SL.Ecnt = ENV_DECAY;

@@ -3,7 +3,7 @@ package domain;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+//import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -15,22 +15,21 @@ import java.awt.Transparency;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.geom.AffineTransform;
-import java.awt.image.AffineTransformOp;
+//import java.awt.geom.AffineTransform;
+//import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
-import java.awt.image.WritableRaster;
+//import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URL;
-
 import javax.imageio.ImageIO;
-
 import core.VergeEngine;
 import persist.PCXReader;
 import static core.Script.*;
+
 
 public class VImage implements Transferable {
 

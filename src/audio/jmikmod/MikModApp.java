@@ -26,8 +26,7 @@ of an array length.
 import java.applet.*;
 import java.awt.*;
 import java.net.URL;
-
-import audio.jmikmod.MikMod.*;
+//import audio.jmikmod.MikMod.*;
 
 
 public class MikModApp extends Applet implements Runnable

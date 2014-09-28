@@ -2,7 +2,7 @@ package persist;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
+//import java.awt.image.WritableRaster;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;

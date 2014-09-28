@@ -3,16 +3,14 @@ package domain;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
-import java.io.File;
+//import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
+//import java.net.MalformedURLException;
 import java.net.URL;
-
-import javax.imageio.ImageIO;
-
+//import javax.imageio.ImageIO;
 import core.DefaultPalette;
 import static core.Script.*;
 

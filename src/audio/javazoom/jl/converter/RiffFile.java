@@ -463,9 +463,21 @@ public class RiffFile
    	  return rc;
    }
 
-   /**
-    * Error Messages.
-	*/
+   
+   // Unused X Warning killers
+   private void  DoNotUse01()
+	   {
+	   String notused = new String( DDCRET_String(0) );
+	   String errstr = notused; 
+	   notused = errstr;
+	   DoNotUse02();
+	   }
+   private void DoNotUse02()
+	   { 
+	   DoNotUse01();
+	   }
+   
+   // Error messages
    private String DDCRET_String(int retcode)
    {
    	 switch ( retcode )

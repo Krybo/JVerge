@@ -23,7 +23,7 @@ v1.02 (16/12/96) - minor cosmetic change to display_error()
 package audio.jmikmod.MikMod.Display;
 
 import audio.jmikmod.MikMod.*;
-import audio.jmikmod.MikMod.MUniTrk.*;
+//import audio.jmikmod.MikMod.MUniTrk.*;
 
 public class clDisplay extends clDisplayBase
 {

@@ -259,7 +259,7 @@ public void UniWrite(short data)
 
 		/* Check if realloc succeeded */
 
-                if(newbuf!=null){
+                if(newbuf != null ){
                         int i;
                         for (i=0; i<unimax; i++)
                             newbuf[i] = unibuf[i];
@@ -268,15 +268,16 @@ public void UniWrite(short data)
 
                         unibuf=newbuf;
 			unimax+=BUFPAGE;
-		}
-		else{
+                }
+                
+//		else {   	unipc--; }
+//   Krybo : Dead code: commented since it will never get there anyway.
+                
 			/* realloc failed, so decrease unipc so we won't write beyond
 			   the end of the buffer.. I don't report the out-of-memory
 			   here; the UniDup() will fail anyway so that's where the
 			   loader sees that something went wrong */
 
-			unipc--;
-		}
 	}
 }
 

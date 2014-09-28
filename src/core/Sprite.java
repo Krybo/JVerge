@@ -1,10 +1,7 @@
 package core;
 
 import java.util.List;
-
-import static core.VergeEngine.*;
 import static core.Script.*;
-
 import domain.VImage;
 
 public class Sprite {

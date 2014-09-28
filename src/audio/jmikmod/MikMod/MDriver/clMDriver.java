@@ -13,10 +13,7 @@ All systems - all compilers
 
 package audio.jmikmod.MikMod.MDriver;
 
-import java.io.*;
-
 import persist.SimulatedRandomAccessFile;
-
 import audio.jmikmod.MikMod.*;
 
 

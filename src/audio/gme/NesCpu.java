@@ -916,10 +916,13 @@ public class NesCpu extends ClassicEmu
 				}
 				cpuWrite( addr, nz );
 				continue;
+				
 			}
+			
 		}
-		
-	stop:
+	
+	
+//	stop:
 		this.a  = a;
 		this.x  = x;
 		this.y  = y;
@@ -929,6 +932,7 @@ public class NesCpu extends ClassicEmu
 		this.c  = c;
 		this.nz = nz;
 		this.time = time;
+		
 	}
 
 	public int [] getInstrtimes()

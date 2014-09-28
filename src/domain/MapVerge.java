@@ -8,15 +8,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.net.MalformedURLException;
+//import java.net.MalformedURLException;
 import java.net.URL;
-
 import core.Script;
-
 import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
-
 import domain.Entity;
+
 
 public class MapVerge extends MapAbstract implements Map {
 

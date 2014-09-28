@@ -148,9 +148,17 @@ void Optimize(UNIMOD mf)
 
         //if (!(newtrk = (short**)malloc(mf.numtrk * sizeof(short *))))
         //    return;
-        newtrk = new short [mf.numtrk][];
-        if (newtrk == null)
-            return;
+	
+          try { newtrk = new short [mf.numtrk][];  }
+          catch ( Exception e ) 
+	          {
+	          e.printStackTrace();
+	          return;
+	          }
+        
+//         commented --Dead code --
+//        if (newtrk == null)
+//            return;
 
 	for (t = 0; t < mf.numtrk; t++) {
 
