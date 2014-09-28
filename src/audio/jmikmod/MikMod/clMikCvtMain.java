@@ -209,7 +209,12 @@ void StrWrite(String s)
          if (len != 0)
          {
              byte buf[] = new byte[len];
-             s.getBytes(0, len, buf, 0);
+             
+             for( int idx=0; idx<len; idx++ )
+          	   { buf[idx] = (byte) s.charAt(idx); }
+             
+//             s.getBytes(0, len, buf, 0);
+             
              //fwrite(buf, len, 1, fpo);
              fpo.write(buf,0,len);
              buf = null;
@@ -404,7 +409,12 @@ public int main(String argv[])
 		{
 			byte uno5_buf[] = new byte[4];
 			String uno5_str = "UN05";
-			uno5_str.getBytes(0,4,uno5_buf, 0);
+			
+	             for( int idx=0; idx<4; idx++ )
+	          	   { uno5_buf[idx] = (byte) uno5_str.charAt(idx); }
+			
+//			uno5_str.getBytes(0,4,uno5_buf, 0);		DEPRECATED
+			
                         fpo.write(uno5_buf,0,4);
                 }
                 mypos = fpo.getFilePointer();

@@ -96,7 +96,9 @@ public boolean Test()
         String szShould_be = "MAS_UTrack_V00";
         int a;
 
-        szShould_be.getBytes(0, 14, should_be, 0);
+        for( int idx=0; idx<14; idx++ )
+     	   { should_be[idx] = (byte) szShould_be.charAt(idx); }
+//        szShould_be.getBytes(0, 14, should_be, 0);  DEPRECATED
         
         //if(!fread(id,15,1,m_.MLoader.modfp)) return 0;
         if (m_.MLoader.modfp.read(id,0,15) != 15) return false;

@@ -487,7 +487,13 @@ public class RiffFile
    public static int FourCC(String ChunkName)
    {
       byte[] p = {0x20,0x20,0x20,0x20};
-	  ChunkName.getBytes(0,4,p,0);
+//	  ChunkName.getBytes(0,4,p,0);
+	  	// Krybo: Old School yes - but works w/o warnings yes
+	  p[0] = (byte) ChunkName.charAt(0);
+	  p[1] = (byte) ChunkName.charAt(1);
+	  p[2] = (byte) ChunkName.charAt(2);
+	  p[3] = (byte) ChunkName.charAt(3);
+
 	  int ret = (((p[0] << 24)& 0xFF000000) | ((p[1] << 16)&0x00FF0000) | ((p[2] << 8)&0x0000FF00) | (p[3]&0x000000FF));
       return ret;
    }

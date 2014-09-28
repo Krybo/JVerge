@@ -414,6 +414,21 @@ public class CHR {
 		frames = f.getBufferedImageArrayFromPixels(pixels, totalframes, fxsize, fysize); 
 		
 	}
+	
+		// Krybo (2014-09-28) the sole purpose of this is to silence 
+		// compiler unused-X warnings.  Under no circumstances 
+		// should anyone actually invoke them
+	private void DoNotUse01()
+		{
+		saveChrVersion5("DoNotEnterHere.chr");
+		DoNotUse02();
+		return;
+		}
+	private void DoNotUse02()
+		{
+		DoNotUse01();
+		return;
+		}
 
 	private void saveChrVersion5(String filename) {
 

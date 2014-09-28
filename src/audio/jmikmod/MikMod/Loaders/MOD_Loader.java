@@ -70,9 +70,18 @@ class MODTYPE
 		id = new byte[5];
 	}
 	public MODTYPE(String init_id, int init_chn, String init_name)
-	{
-		id = new byte[5]; 
-		init_id.getBytes(0,4,id,0);
+		{
+		if(  init_id.length() < 4 )   { return; }
+		id = new byte[5];
+		
+//		init_id.getBytes(0,4,id,0);		DEPRECASTED and warning
+		//   The below is no better in practice, but it still works 
+		//    and will not cause an warning message.
+		
+		id[0] = (byte) init_id.charAt(0);
+		id[1] = (byte) init_id.charAt(1);
+		id[2] = (byte) init_id.charAt(2);
+		id[3] = (byte) init_id.charAt(3);
 		id[4] = '\0';
 
 		channels = (short)init_chn;

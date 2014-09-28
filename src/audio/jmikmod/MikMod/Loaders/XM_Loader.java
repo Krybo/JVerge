@@ -144,7 +144,12 @@ public boolean Test()
     byte id[] = new byte[17], should_be[] = new byte[20];
 
 	String szShould="Extended Module: ";
-	szShould.getBytes(0,17,should_be,0);
+	
+     for( int idx=0; idx<17; idx++ )
+  	   { should_be[idx] = (byte) szShould.charAt(idx); }
+	
+//	szShould.getBytes(0,17,should_be,0);		DEPRECATED
+     
 	int a;
 	//if(!fread(id,17,1,m_.MLoader.modfp)) return 0;
 	//if (!m_.MLoader.modfp.read(id,0,17)) return 0;

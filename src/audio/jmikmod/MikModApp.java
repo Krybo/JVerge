@@ -110,8 +110,12 @@ public class MikModApp extends Applet implements Runnable
 	{
 		if (m_MikModApp != null)
 		{
-			m_MikModApp.stop();
-			m_MikModApp = null;
+//			m_MikModApp.stop();
+			m_MikModApp.interrupt();
+			try 	{  m_MikModApp.join();  }
+			catch (InterruptedException e)
+				{	e.printStackTrace();   }
+			finally { m_MikModApp = null; }
 		}
 
 	}

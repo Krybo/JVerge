@@ -97,9 +97,18 @@ public STM_Loader(clMainBase theMain)
 }
 
 public boolean Test()
-{
-    byte str[] = new byte[9], filetype[] = new byte[1], should_be[] = new byte[10];
-	(new String("!SCREAM!")).getBytes(0,8, should_be, 0);
+	{
+    byte str[] = new byte[9], filetype[] = new byte[1];
+//	(new String("!SCREAM!")).getBytes(0,8, should_be, 0);
+	byte should_be[] = new byte[10];
+	should_be[0] = (byte)83;
+	should_be[1] = (byte)67;
+	should_be[2] = (byte)82;
+	should_be[3] = (byte)69;
+	should_be[4] = (byte)65;
+	should_be[5] = (byte)77;
+	should_be[6] = (byte)33;
+	should_be[7] = (byte)0;
 	should_be[8] = (byte)0;
 	int a;
 	
