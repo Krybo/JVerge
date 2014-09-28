@@ -80,7 +80,7 @@ public myUI(clMain theMain)
 
 public int may_getchar()
 {
-    int buffer;
+//    int buffer;
 /*#ifdef WIN32
 	if (kbhit())
 	{

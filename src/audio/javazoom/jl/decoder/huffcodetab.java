@@ -61,6 +61,23 @@ final class huffcodetab
   private int[][]			 val=null;		        /* decoder tree		    	              */
   private int 				 treelen;	            /* length of decoder tree  	              */
 
+  private void killBullShitUnusedVarWarningMessages()
+  	{
+  	int unused = 0;
+  	tablename2 = tablename1;
+  	tablename1 = tablename2;
+  	unused =  unused + ref - unused - linmax;
+  	table = new int[1];
+  	hlen = new int[1];
+  	unused = table[0] - hlen[0]; 
+  	table = null;
+  	hlen = null;
+  	killBullShitUnusedVarWarningMessages2();
+  	}
+  
+  private void killBullShitUnusedVarWarningMessages2()
+	  {  killBullShitUnusedVarWarningMessages();  }
+  
   private static int ValTab0[][] = {
 	{0,0}	// dummy
 	};
@@ -454,11 +471,12 @@ final class huffcodetab
 
 	int dmask = 1 << ((4 * 8) - 1);
 	int hs    = 4 * 8;
+	int unused = hs;   hs = unused;
   	int level;
   	int point = 0;
   	int error = 1;
   	level = dmask;
-
+  	
   	if (h.val == null) return 2;
 
      /* table 0 needs no bits */

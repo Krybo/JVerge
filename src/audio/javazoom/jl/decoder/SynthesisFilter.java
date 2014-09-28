@@ -971,6 +971,8 @@ final class SynthesisFilter
 	final float[] vp = actual_v;
 	
 	int idx = 0;
+	int unused = idx;   idx=unused;
+	
 	//int inc = v_inc;
 	final float[] tmpOut = _tmpOut;
 	 int dvp =0;

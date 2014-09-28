@@ -272,6 +272,7 @@ public class Decoder implements DecoderErrors
 		
 		int mode = header.mode();
 		int layer = header.layer();
+		int unused = layer;   layer=unused;
 		int channels = mode==Header.SINGLE_CHANNEL ? 1 : 2;
 
 					

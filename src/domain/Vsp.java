@@ -269,7 +269,7 @@ public class Vsp {
 		
 		int row_size = tiles_per_row*16;
 		VImage clipboard = new VImage(row_size, (this.getNumtiles()/tiles_per_row+1) * 16);
-		Font font = new Font("Serif", Font.PLAIN, 7);
+//		Font font = new Font("Serif", Font.PLAIN, 7);
 		
 		for(int i=0; i<this.getNumtiles(); i++) {
 			clipboard.blit((i*16)%row_size, i/tiles_per_row*16, getTiles()[i]);

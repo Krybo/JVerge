@@ -242,7 +242,9 @@ String stripname(String path, String ext)
 */
 {
         //char *n, *m;
-        int n, m;
+        int n, m=0, unused=0;
+        unused=m;  m=unused;
+        
         //static char newname[256];
         String newname;
 
@@ -397,6 +399,8 @@ public int main(String argv[])
 
                 //fwrite("UN05", 4, 1, fpo);
                 long mypos=0;
+                long whatpos = mypos;  mypos = whatpos;	// stop stupid warnings
+                
 		{
 			byte uno5_buf[] = new byte[4];
 			String uno5_str = "UN05";

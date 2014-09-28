@@ -220,6 +220,8 @@ public final class Bitstream implements BitstreamErrors
 			in.read(id3header,0,3);
 			int majorVersion = id3header[0];
 			int revision = id3header[1];
+			int unused = revision; unused = majorVersion;	revision = unused;
+			
 			in.read(id3header,0,4);
 			size = (int) (id3header[0] << 21) + (id3header[1] << 14) + (id3header[2] << 7) + (id3header[3]);
 		}
@@ -514,7 +516,7 @@ public final class Bitstream implements BitstreamErrors
 	
 	for (int k=0;k<bytesize;k=k+4)
 	{
-		int convert = 0;
+//		int convert = 0;
 		byte b0 = 0;
 		byte b1 = 0;
 		byte b2 = 0;

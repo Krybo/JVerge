@@ -34,16 +34,16 @@ public final class YM2612
 		int EincD;
 		int EincS;
 		int EincR;
-		int INd;
+//		int INd; 
 		int ChgEnM;
 		int AMS;
-		int AMSon;
+		int AMSon; 
 	};
 
 	private final class cChannel {
 		final int[] S0_OUT = new int[4];
 		int Old_OUTd;
-		int OUTd;
+		int OUTd = Old_OUTd;
 		int LEFT;
 		int RIGHT;
 		int ALGO;
@@ -54,37 +54,37 @@ public final class YM2612
 		final int[] FOCT = new int[4];
 		final int[] KC = new int[4];
 		final cSlot[] SLOT = new cSlot[4];
-		int FFlag;
+//		int FFlag;
 		public cChannel(){
 			for(int i=0; i<4; i++) SLOT[i] = new cSlot();
 		}
 	};
 
-	private final class cYM2612 {
-		int Clock;
-		int Rate;
-		int TimerBase;
-		int Status;
-		int LFOcnt;
-		int LFOinc;
-		int TimerA;
-		int TimerAL;
-		int TimerAcnt;
-		int TimerB;
-		int TimerBL;
-		int TimerBcnt;
-		int Mode;
-		int DAC;
-		double Frequency;
-		long Inter_Cnt;	// UINT
-		long Inter_Step;	// UINT
-		final cChannel[] CHANNEL = new cChannel[6];
-		final int[][] REG = new int[2][0x100];
-		public cYM2612(){
-			for(int i=0; i<6; i++) CHANNEL[i] = new cChannel();
-		}
-	};	  
-		
+//	private final class cYM2612 {
+//		int Clock;
+//		int Rate;
+//		int TimerBase;
+//		int Status;
+//		int LFOcnt;
+//		int LFOinc;
+//		int TimerA;
+//		int TimerAL;
+//		int TimerAcnt;
+//		int TimerB;
+//		int TimerBL;
+//		int TimerBcnt;
+//		int Mode;
+//		int DAC;
+//		double Frequency;
+//		long Inter_Cnt;	// UINT
+//		long Inter_Step;	// UINT
+//		final cChannel[] CHANNEL = new cChannel[6];
+//		final int[][] REG = new int[2][0x100];
+//		public cYM2612(){
+//			for(int i=0; i<6; i++) CHANNEL[i] = new cChannel();
+//		}
+//	};	  
+
 	// Constants ( taken from MAME YM2612 core )
 	private static final int	UPD_SIZE				= 4000;
 	private static final int	OUTP_BITS				= 16;

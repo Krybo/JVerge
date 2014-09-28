@@ -501,10 +501,16 @@ public class MapVerge extends MapAbstract implements Map {
 			int height = DEFAULT_Y;
 			private int lucent = 0; // Unsigned Byte
 
-			private int x_offset, y_offset; // used to account for changing parallax
+			private int x_offset=0, y_offset=0; // used to account for changing parallax
 			
 			int[] tiledata = new int[DEFAULT_X*DEFAULT_Y]; // width * height Unsigned shorts!
 
+			public Layer()
+				{
+					// this does nothing but suppress silly warnings.
+				x_offset = y_offset;
+				y_offset = x_offset;
+				}
 
 			public int getTile(int x, int y) {
 				if (x<0 || y<0 || x>=width || y>=height) return 0;

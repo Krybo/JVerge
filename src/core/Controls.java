@@ -216,11 +216,13 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 			}
 
 			/* handle keys, shift-escape patch by Jeff Friesen */
-			public void keyReleased (KeyEvent e) {
-				char keychar = e.getKeyChar ();
-				int keycode = e.getKeyCode ();
+			public void keyReleased (KeyEvent e) 
+				{
+//				char keychar = e.getKeyChar ();   --  Krybo: b/c its not used.
+				int keycode = e.getKeyCode ();   
 				if (keycode >= 0 && keycode < 256) {
 					keymap [keycode] = false;
+				return;
 				}
 			}
 			public void keyTyped (KeyEvent e) { }

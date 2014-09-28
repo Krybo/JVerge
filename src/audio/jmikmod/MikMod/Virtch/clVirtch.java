@@ -182,7 +182,6 @@ protected int bytes2samples(int bytes)
 
 public int LargeRead(byte buffer[],int size)
 {
-	int t;
         int todo;
         int buf_offset=0;
 
@@ -368,8 +367,8 @@ protected void VC_AddChannel(int ptr[],int todo)
 {
 	int end;
         int done;
-        int needs;
-        byte s[];
+//        int needs;
+//        byte s[];
         int ptr_idx=0;
 
 	while(todo>0){

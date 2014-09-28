@@ -46,6 +46,7 @@ public class Player
 	 * The current frame number. 
 	 */
 	private int frame = 0;
+	private int dummy = 0;
 	
 	/**
 	 * The MPEG audio bitstream. 
@@ -80,7 +81,8 @@ public class Player
 	 */
 	public Player(InputStream stream, float volume) throws JavaLayerException
 	{
-		this(stream, null, volume);	
+		this(stream, null, volume);
+		frame = dummy;  dummy = frame;
 	}
 	
 	public Player(InputStream stream, AudioDevice device, float volume) throws JavaLayerException

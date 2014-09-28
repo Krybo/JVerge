@@ -47,7 +47,9 @@ public class jlc
 	static public void main(String args[])
 	{
 		String[] argv;
+		long unused = 0;
 		long start = System.currentTimeMillis();
+		 unused = start;  start = unused;
 		int argc = args.length + 1;
 		argv = new String[argc];
 		argv[0] = "jlc";
@@ -119,8 +121,10 @@ public class jlc
 	  public boolean processArgs(String[] argv)
 	  {
 		 filename = null;
-		 Crc16[] crc;
+		 Crc16[] crc;		// supposedly unused
 		 crc = new Crc16[1];
+		 Crc16[] unusedcopy = crc;   crc=unusedcopy;
+		 
 	     int i;
 		 int argc = argv.length;
 
