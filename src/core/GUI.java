@@ -279,8 +279,6 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	public static void processZoom()
 		{
 		try {
-			ZoomScreenSubset.blackOut();
-			
 			Integer xCenter = screenHalfWidth;		
 			Integer yCenter = screenHalfHeight;
 			Integer pX = screenHalfWidth + 1;
@@ -298,7 +296,8 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			if( playerIsSet() )
 				{
 				pX = playerGetMapPixelX();
-				pY = playerGetMapPixelY();
+				pY = playerGetMapPixelY() - 16;
+					// The -16 eliminates the "panning near edge effect" when zoomed.
 				if( pX < screenHalfWidth )
 					{  offX = (Integer) (screenHalfWidth - pX); }
 				if( pY < screenHalfHeight )
@@ -320,19 +319,31 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 					{ offY = (yCenter - sectionDeltaY); }
 				}
 
-				// This sets a virtual screen (screenZOOM) which is a blank copy of screen,
-				//  To a cropped section of the real screen, that is thus immediately scaled to screen x/y
-				// Probably not the best way to do zooming, but it works.
-				// screenZOOM is then fed to the physical screen instead of screen, which continues
-				// to update as usual.
+			/*	Krybo (2014-09-30
+			 * 		My 2nd attempt at map zoom.   Worked but dropped 25% frames during 2x mode.
+			 * 
+				 This sets a virtual screen (screenZOOM) which is a blank copy of screen,
+				  To a cropped section of the real screen, that is thus immediately scaled to screen x/y
+				 Probably not the best way to do zooming, but it works.
+				 screenZOOM is then fed to the physical screen instead of screen, which continues
+				 to update as usual.
 			screenZOOM.setImage(
 					scaleImage(  screen.getImage().getSubimage(
 							xCenter - sectionDeltaX - offX, 
-							yCenter - sectionDeltaY - offY,
+							yCenter - sectionDeltaY - offY + 16,  //  +16 adjusts for the height of the character-center
 							sectionDeltaX*2, sectionDeltaY*2 ),
 					java.awt.image.BufferedImage.TYPE_INT_RGB,
 					GUIzoom,GUIzoom)
 				);
+				*/
+			
+			// Krybo:  Muuuch better zoom function, hardly drops a frame!
+			//   Can even do alpha blending.   But why.
+			screenZOOM.scaleBlendWithImageSubsection(screen,
+					xCenter - sectionDeltaX - offX,
+					yCenter - sectionDeltaY - offY + 16, 
+					sectionDeltaX*2 , 	sectionDeltaY*2, 
+					1.0f );
 			}
 		catch(Exception e) 
 			{

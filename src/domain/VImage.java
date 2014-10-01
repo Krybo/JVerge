@@ -15,6 +15,7 @@ import java.awt.Transparency;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.geom.AffineTransform;
 //import java.awt.geom.AffineTransform;
 //import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -25,14 +26,16 @@ import java.awt.image.RGBImageFilter;
 //import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URL;
+
 import javax.imageio.ImageIO;
+
 import core.VergeEngine;
 import persist.PCXReader;
 import static core.Script.*;
 
 
-public class VImage implements Transferable {
-
+public class VImage implements Transferable 
+	{
 	public BufferedImage image;
 	public Graphics2D g;
 	
@@ -775,22 +778,6 @@ public class VImage implements Transferable {
 			this.g.drawString(text, x, y);
 		}
 		
-		// Krybo (2014-09-19)  needed this for mapzooming to kill transparency
-		public void blackOut()
-			{			
-			for( int iy=0; iy < this.height; iy++ )
-				{
-				for( int ix=0; ix < this.width; ix++ )
-					{
-					this.image.setRGB(ix, iy, 1 );
-					}
-				}
-			this.image.flush();
-			return;
-			}
-
-
-
 
 		// Fade functions
 		public void fadeOut(int delay, boolean rendermap) {
@@ -833,11 +820,33 @@ public class VImage implements Transferable {
 			
 		}
 
-// Probably redundant with blackout()
 		public void paintBlack() {
 			this.rectfill(0, 0, this.width, this.height, Color.BLACK);
 		}
 		
 		
+			// Krybo (2014-09-30)  zoom-like function.  now used for map zoom.
+		public void scaleBlendWithImageSubsection( VImage src, 
+				int ssX1, int ssY1,
+				int ssW, int ssH, float blendValue )
+			{
+			double xFactor = (double) this.getWidth() / (double) ssW;
+			double yFactor = (double) this.getHeight() / (double) ssH;
+			
+			AffineTransform at = new AffineTransform();
+			at.scale( xFactor,  yFactor );
+
+			this.paintBlack();
+			Graphics2D g2d = (Graphics2D) this.getImage().getGraphics();
+			g2d.setComposite( AlphaComposite.getInstance(
+					AlphaComposite.SRC_OVER, blendValue )  );
+			// Grab a subsection and use it immediately in an affine transform
+			g2d.drawImage( src.getImage().getSubimage(
+					ssX1, ssY1, ssW, ssH ), 
+					at, null );
+			g2d.dispose();
+			return;
+			}
 		
-}
+	}
+

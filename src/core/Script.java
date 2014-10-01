@@ -3,6 +3,7 @@ package core;
 import static core.VergeEngine.*;
 import static core.Controls.*;
 import core.JVCL;
+
 //import java.awt.AlphaComposite;
 import java.awt.Color;
 //import java.awt.Font;
@@ -22,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
+
 import audio.VMusic;
 import domain.VSound;
 import domain.VImage;
@@ -1259,68 +1261,8 @@ public class Script {
 
 	// Krybo (2014-09-18)   map zooming functions
 	
-		// Same as above, except the zoom is blit on a new image
-		//    There are overloads for purely centered zooming & offset centered zooming
-	public static void ImageZoom(
-			VImage source,VImage dest, int zoomLevel, 
-			int offsetX, int offsetY )
-		{
-		
-		try { 
-		
-		if( zoomLevel <= 1 ) { return; }
-		Integer xCenter = (Integer) (source.width / 2);		
-		Integer yCenter = (Integer) (source.height / 2);
-		Integer sectionDeltaX = (Integer) (source.width / (zoomLevel*2) );
-		Integer sectionDeltaY = (Integer) (source.height / (zoomLevel*2));
-		
-			// Bound the Offsets ~ cannot push the region off the image
-		if( (Math.abs( offsetX ) > (xCenter - sectionDeltaX)) && offsetX < 0 )
-			{ offsetX = (xCenter - sectionDeltaX) * -1; }
-		if( (Math.abs( offsetX ) > (xCenter - sectionDeltaX)) && offsetX > 0 )
-			{ offsetX = (xCenter - sectionDeltaX); }		
-		if( (Math.abs( offsetY ) > (yCenter - sectionDeltaY)) && offsetY < 0 )
-			{ offsetY = (yCenter - sectionDeltaY) * -1; }
-		if( (Math.abs( offsetY ) > (yCenter - sectionDeltaY)) && (offsetY > 0) )
-			{ offsetY = (yCenter - sectionDeltaY); }
-		
-			// Adjust offsets
-		xCenter += offsetX;
-		yCenter += offsetY;
-		
-		/*
-		log("Extracting zoom region [ "+
-				Integer.toString( xCenter - sectionDeltaX ) + " : " +
-				Integer.toString( yCenter - sectionDeltaY ) + " : " +
-				Integer.toString( xCenter + sectionDeltaX ) + " : " +
-				Integer.toString( yCenter + sectionDeltaY ) + " ] "
-				);
-		*/
-		
-//		ZoomBufferScreen = new VImage(sectionDeltaX*2, sectionDeltaY*2 );
-		ZoomScreenSubset.blackOut();
-		ZoomScreenSubset.grabRegion( 
-				xCenter - sectionDeltaX, yCenter - sectionDeltaY,
-				xCenter + sectionDeltaX, yCenter + sectionDeltaY,
-				0, 0, source);
-
-		dest.scaleblit(0, 0, zoomLevel, zoomLevel, ZoomScreenSubset);
-			}
-		catch(Exception e) 
-			{
-			System.err.println("Error in zoom draw");
-			log( " WARNING Exception in zoom function : " + e.getMessage() );
-			e.printStackTrace();
-			}
-		
-		return;
-		}
-
-	public static void ImageZoom(
-		VImage source,VImage dest, int zoomLevel )
-			{  ImageZoom(source, dest, zoomLevel, 0, 0);  }
-	
-	public static BufferedImage scaleImage(BufferedImage originalImage, int type, float sfactorX, float sfactorY )
+	public static BufferedImage scaleImage(
+			BufferedImage originalImage, int type, float sfactorX, float sfactorY )
 		{
 		int scaledX = (int) Math.floor(originalImage.getWidth() * sfactorX );
 		int scaledY = (int) Math.floor(originalImage.getHeight() * sfactorY );
@@ -1334,6 +1276,151 @@ public class Script {
 		return resizedImage;
 	    }
 
+		// Freezes the engine until a key is released.
+	public static void waitKeyUp( int keycode )
+		{
+		while( getKey(keycode) )
+			{  UpdateControls(); }
+		}
+	
 	//  END Krybo edits
 
+	/* V1 VC stub list  :: Implement all these
+	 *	- Movement -
+	 * Warp(x coordinate, y coordinate, no fade);
+	 * MapSwitch("map file name",x coordinate, y coordinate, no fade);
+	 *StatusScreen(roster order index);
+	 * AddCharacter(party.dat index);
+	 * RemoveCharacter(party.dat index);
+	 * GiveXP(character, amount);
+	 * ChangeCHR(character, "chr file name");
+	 * HealAll();
+	 * GiveGP(amount);
+	 * TakeGP(amount);
+	 * GiveItem(items.dat index);
+	 * DestroyItem(items.dat index, character);
+	 * GetItem(items.dat index, character);
+	 * GetMagic(character, magic.dat index);
+	 * ForceEquip(items.dat index, character);
+	 * Shop(item1, item2, item3, ... item12);
+	 * MagicShop(spell1, spell2, spell3, ... spell12);
+	 * Exit();
+	 * Quit(message);
+	 * 
+	 *    -Sound-
+	 *  SoundEffect(main.sfx index);
+	 *  PlayMusic("file name");
+	 *  StopMusic();
+	 *  
+	 *    - communication -
+	 *  TextMenu(x coordinate, y coordinate, flag, default, "choice1","choice2",..);
+	 *  ItemMenu(roster order index);
+	 *  EquipMenu(roster order index);
+	 *  MagicMenu(roster order index);
+	 *  Text(speech portrait, "line1", "line2", "line3");
+	 *  SText(speech portrait, "line1", "line2", "line3");
+	 *  Prompt(speech portrait, "line1", "line2", "line3", flag, "choice1", "choice2");
+	 *  Banner("message", duration);
+	 *  
+	 *     - ENV -
+	 *  AlterBTile(x coordinate, y coordinate, new tile, obstruction value);
+	 *  AlterFTile(x coordinate, y coordinate, new tile, obstruction value);
+	 *  ChangeZone(x coordinate, y coordinate, new zone);
+	 *  AlterParallax(parallax control mode, multiplier, divisor);
+	 *  EnforceAnimation();
+	 *  DisableMenu();
+	 *  EnableMenu();
+	 *  DisableSave();
+	 *  EnableSave();
+	 *  SaveMenu();
+	 *  
+	 *  		-- VC Event --
+	 *  Return;
+	 *  WaitKeyUp();
+	 *  ReadControls();
+	 *  ChainEvent(event number, optional variable 1, optional variable 2, etc.);
+	 *  CallEvent(event number, optional variable 1, optional variable 2, etc.);
+	 *  CallEffect(effect number, optional variable 1, optional variable 
+	 *  CallScript(script number, optional variable 1, optional variable 
+	 *  HookTimer(event number);
+	 *  HookRetrace(event number);
+	 *  
+	 *  	-- Visual --
+	 *  PlayVAS ("VAS filename", delay, width, height, x coordinate, y coordinate);
+	 *  FadeIn(duration);
+	 *  FadeOut(duration);
+	 *	BoxFadeIn(duration);
+	 *	BoxFadeOut(duration);
+	 *Earthquake(x intensity, y intensity, duration);
+	 *Redraw();
+	 *Wait(duration);
+	 *SetFace(character, direction);
+	 *PaletteMorph(red, green, blue, intensity, lighting);
+	 *MapPaletteGradient(start color, end color, invert, mode);
+	 *
+	 *		-- VC Graphics --
+	 *	VCBox(x coordinate1, y coordinate1, x coordinate2, y coordinate2);
+	 *	VCCharName(x coordinate, y coordinate, party.dat index, align);
+	 * VCItemName(x coordinate, y coordinate, items.dat index, align);    
+	 * VCItemDesc(x coordinate, y coordinate, items.dat index, align);    
+	 * VCSpellName(x coordinate, y coordinate, magic.dat index, align);
+	 * 	VCSpellDesc(x coordinate, y coordinate, magic.dat index, align);   
+	 * VCItemImage(x coordinate, y coordinate, items.dat index, greyflag);
+	 * 	VCSpellImage(x coordinate, y coordinate, items.dat index, greyflag);
+	 * 	VCTextBox(x coordinate, y coordinate, pointer, "choice1","choice2",..);
+	 * 	VCCr2(x coordinate, y coordinate, roster order index, greyflag);
+	 * 	VCSpc(x coordinate, y coordinate, speech portrait, greyflag);
+	 * 	VCPutPCX("pcx file name", x coordinate, y coordinate);
+	 * 	VCLoadPCX("pcx file name", memory offset);
+	 * 	VCBlitImage(x coordinate, y coordinate, width, height, memory offset);
+	 * VCTBlitImage(x coordinate, y coordinate, width, height, memory offset);
+	 * 	VCText(x coordinate, y coordinate, "message");
+	 * 	VCCenterText(y coordinate, "message");
+	 * 	VCTextNum(x coordinate, y coordinate, number);
+	 * 	VCATextNum(x coordinate, y coordinate, number, align);
+	 * 	VCClear();
+	 * 	VCLine(x coordinate1, y coordinate1, x coordinate2, y coordinate2, color); 
+	 * 	  VCClearRegion(x coordinate1, y coordinate1, x coordinate2, y coordinate2);
+	 * VCLoadRaw(filename, vc data buf offset, file start offset, length);
+	 * 	Screen[x,y]
+	 * 	
+	 * 	-- Entity --
+	 * PartyMove(movement script);
+	 * EntityMove(entity number, movement script);
+	 * EntityMoveScript(entity number, map movement script index number);
+	 * AutoOn()/AutoOff();
+	 * SpecialFrame(entity)
+	 * Face(entity)
+	 * Speed(entity)
+	 * MoveCode(entity)
+	 * ActiveMode(entity)
+	 * ObsMode(entity)
+	 * Entity.Moving(entity)
+	 * Entity.CHRindex(entity)
+	 * Entity.Step(entity)
+	 * Entity.Delay(entity)
+	 * Entity.LocX(entity)
+	 * Entity.LocY(entity)
+	 * Entity.Face(entity)
+	 * Entity.Chasing(entity)
+	 * Entity.ChaseDist(entity)
+	 * Entity.ChaseSpeed(entity)
+	 * 
+	 * 	-- Startup --
+	 * Sys_ClearScreen();
+	 * Sys_DisplayPCX("filename.pcx");
+	 * OldStartupMenu();
+	 * VGAdump();
+	 * NewGame("mapfile.map");
+	 * LoadMenu();
+	 * BindKey(key code, script number);
+	 * 
+	 *	
+	 *
+	 *
+	 *
+	 */
+	 
+	
+	
 }
