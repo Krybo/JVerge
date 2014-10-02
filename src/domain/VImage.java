@@ -847,6 +847,60 @@ public class VImage implements Transferable
 			g2d.dispose();
 			return;
 			}
+
 		
+		// Krybo (2014-09-30)  zoom-like function.  now used for map zoom.
+	public void rotateScaleBlendWithImageSubsection( VImage src, 
+			int ssX1, int ssY1,
+			int ssW, int ssH, float blendValue, float rotationRadians  )
+		{
+		double xFactor = (double) this.getWidth() / (double) ssW;
+		double yFactor = (double) this.getHeight() / (double) ssH;
+		
+		AffineTransform at = new AffineTransform();
+		at.scale( xFactor,  yFactor );
+		if( rotationRadians != 0.0f )		// Save a few calcs when no rotation.
+			{
+			at.rotate(rotationRadians, Math.floorDiv(ssW , 2) , Math.floorDiv(ssH , 2) );
+			}
+
+		this.paintBlack();
+		Graphics2D g2d = (Graphics2D) this.getImage().getGraphics();
+		g2d.setComposite( AlphaComposite.getInstance(
+				AlphaComposite.SRC_OVER, blendValue )  );
+		// Grab a subsection and use it immediately in an affine transform
+		g2d.drawImage( src.getImage().getSubimage(
+				ssX1, ssY1, ssW, ssH ), 
+				at, null );
+		g2d.dispose();
+		return;
+		}
+
+
+			// The above, but simpler
+	public void rotateBlend( float rotationRadians,  float blendValue )
+		{
+		AffineTransform at = new AffineTransform();
+		
+		if( rotationRadians != 0.0f )		// Save a few calcs when no rotation.
+			{
+			at.rotate(rotationRadians, Math.floorDiv( this.getWidth() , 2) , 
+				Math.floorDiv(this.getHeight() , 2) );
+			}
+
+		Graphics2D g2d = (Graphics2D) this.getImage().getGraphics();
+		if( blendValue >= 0 && blendValue < 1.0f )
+			{
+			g2d.setComposite( AlphaComposite.getInstance(
+					AlphaComposite.SRC_OVER, blendValue )  );
+			}
+		else
+			{	g2d.setComposite( AlphaComposite.Src);  	}
+		
+		g2d.drawImage( this.getImage(), at, null );		
+		g2d.dispose();
+		return;
+		}
+	
 	}
 

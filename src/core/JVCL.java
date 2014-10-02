@@ -110,6 +110,16 @@ public class JVCL
 			setBoolFlag( 0, getBoolFlag(0) );
 			return;
 			}
+
+			// Applies rotation to the entire layer
+		public void rotate(float radians)
+			{	super.rotateBlend( radians, 1.0f); }
+					// apply an alpha blend
+		public void alphaBlend( float blendFactor )
+			{	super.rotateBlend( 0.0f, blendFactor );	}
+			// Does both
+		public void rotateBlend( float radians, float blendFactor )
+			{	super.rotateBlend( radians, blendFactor );	}
 		}
 
 	// Adds a student to the student array list.
@@ -118,6 +128,7 @@ public class JVCL
 	private int standardX, standardY;
 	private Font nativefont = new Font("Tahoma",PLAIN, 18);
 	private boolean requiresUpdate = false;
+	private float masterRotation = 0.0f;
 
 	public JVCL(int numLayers, int xRes, int yRes )
 		{
@@ -253,6 +264,24 @@ public class JVCL
 			{	this.vcl.get(ln).setActive(truefalse);	}
 		}
 	
+		// This sets the rotation (if any) that is applied after flatten() is done.
+	public float getMasterRotation()
+		{	return masterRotation;	}
+	public void setMasterRotation(float masterRotationValue )
+		{  
+		this.masterRotation = masterRotationValue;
+		this.requiresUpdate = true;
+		return;
+		}
+	public void adjustMasterRotation(float masterRotationAdjustment )
+		{ 
+		this.masterRotation += masterRotationAdjustment;
+		while( this.masterRotation > 1.0f ) { this.masterRotation -= 1.0f; }
+		while( this.masterRotation < -1.0f ) { this.masterRotation += 1.0f; }
+		this.requiresUpdate = true;
+		return;
+		}
+
 	private void refresh()
 		{ this.requiresUpdate = true; }
 	
@@ -266,7 +295,7 @@ public class JVCL
 			{ return; }
 
 		Graphics2D g2 = (Graphics2D) vcl.get(0).getImage().getGraphics();
-
+		
 		try 
 			{
 				// Start with a clean slate ( all work done on protected layer # 0)
@@ -286,6 +315,12 @@ public class JVCL
 			} 
 		catch(Exception e) { e.printStackTrace(); }
 		finally  { g2.dispose(); }
+		
+		if( masterRotation != 0.0f )
+			{
+			vcl.get(0).rotate(masterRotation);
+			}
+
 		requiresUpdate = false;
 		return;
 		}
@@ -501,6 +536,7 @@ public class JVCL
 			{
 			Graphics2D g2 = (Graphics2D) vcl.get(a).getImage().getGraphics();
 			g2.setComposite(AlphaComposite.Clear );
+			g2.setColor( new Color(0.0f, 0.0f, 0.0f, 0.0f ) );
 			g2.fillRect(0, 0, this.standardX, this.standardY );
 			g2.dispose();
 			}
@@ -918,12 +954,23 @@ public class JVCL
 				AlphaComposite.SRC_OVER, blendValue )  );
 		g2d.drawImage( interImg.getImage(), x, y, Color.BLACK, null);		
 		g2d.dispose();
-
+		this.requiresUpdate = true;
 		return;
 		}
 
 	public void JVCblitScaleBlendImage( int x, int y, int w, int h, VImage img, float blendValue )
 		{ JVCblitScaleBlendImage( x, y, w, h,img.getImage(), blendValue ); }
+	
+	public void JVCrotateLayer(float rotationRadians)
+		{
+		this.vcl.get(this.currentLayer).rotate(rotationRadians);
+		this.requiresUpdate = true;
+		}
+	public void JVCblendLayer(float blendFactor )
+		{
+		this.vcl.get(this.currentLayer).alphaBlend(blendFactor);
+		this.requiresUpdate = true;
+		}
 	
 	}
 	

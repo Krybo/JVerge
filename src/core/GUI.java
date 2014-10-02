@@ -53,6 +53,9 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	public static long cycleTime;
 	private static int frameDelay = 20; // 20ms. implies 50fps (1000/20) = 50
 	private static byte GUIzoom = 1;
+		// Krybo (2014-10-01) can blend and rotate when in map-zoom mode.
+	private static float screenRotation = 0.0f;	 // Generally shouldn't be changed.. but could create some crazy effects
+	private static float zoomAlphaBlend = 1.0f;
 	private static boolean showFPS = true;
 
 	JMenuBar menuBar;
@@ -337,13 +340,15 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 				);
 				*/
 			
-			// Krybo:  Muuuch better zoom function, hardly drops a frame!
-			//   Can even do alpha blending.   But why.
-			screenZOOM.scaleBlendWithImageSubsection(screen,
+			// Krybo:  Muu~uch better zoom function, hardly drops a frame!
+			//   Can even do alpha blending & rotation.   But why.
+			
+			screenZOOM.rotateScaleBlendWithImageSubsection(screen,
 					xCenter - sectionDeltaX - offX,
 					yCenter - sectionDeltaY - offY + 16, 
 					sectionDeltaX*2 , 	sectionDeltaY*2, 
-					1.0f );
+					zoomAlphaBlend , screenRotation );
+			
 			}
 		catch(Exception e) 
 			{
