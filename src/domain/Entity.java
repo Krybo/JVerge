@@ -191,11 +191,12 @@ public class Entity {
 
 	}	
 	
-	void setxy(int x1, int y1) {
-		setoriginalx(x1 * 16);
-		setoriginaly(y1 * 16);
-		if (follower != null) follower.setxy(x1, y1);
-		set_waypoint(x1, y1);
+	public void setxy(int mapX, int mapY) 
+		{
+		setoriginalx(mapX * 16);
+		setoriginaly(mapY * 16);
+		if (follower != null) follower.setxy(mapX, mapY);
+		set_waypoint(mapX, mapY);
 		for (int i=0; i<FOLLOWDISTANCE; i++) {
 			pathx[i] = getOriginalX();
 			pathy[i] = getOriginalY();
