@@ -276,8 +276,10 @@ public class JVCL
 	public void adjustMasterRotation(float masterRotationAdjustment )
 		{ 
 		this.masterRotation += masterRotationAdjustment;
-		while( this.masterRotation > 1.0f ) { this.masterRotation -= 1.0f; }
-		while( this.masterRotation < -1.0f ) { this.masterRotation += 1.0f; }
+		while( this.masterRotation >= Math.PI*2 ) 
+			{ this.masterRotation -= Math.PI*2; }
+		while( this.masterRotation < Math.PI * -2 ) 
+			{ this.masterRotation += Math.PI*2; }
 		this.requiresUpdate = true;
 		return;
 		}
@@ -319,6 +321,7 @@ public class JVCL
 		if( masterRotation != 0.0f )
 			{
 			vcl.get(0).rotate(masterRotation);
+			
 			}
 
 		requiresUpdate = false;
@@ -971,7 +974,15 @@ public class JVCL
 		this.vcl.get(this.currentLayer).alphaBlend(blendFactor);
 		this.requiresUpdate = true;
 		}
+
+		// Takes a VImage and rotates adn scales it onto the current layer
+	public void JVCrotscaleBlendBlit( VImage img, int x, int y, 
+			float rotationRadians, float sX, float sY, float alphaValue )
+		{
+		this.vcl.get(this.currentLayer).rotScaleBlendBlit(img, x, y, 
+				rotationRadians, sX, sY, alphaValue );
+		this.requiresUpdate = true;
+		}
 	
 	}
-	
 	

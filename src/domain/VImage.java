@@ -16,6 +16,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 //import java.awt.geom.AffineTransform;
 //import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -50,8 +51,22 @@ public class VImage implements Transferable
 		image = gc.createCompatibleImage(x, y, Transparency.TRANSLUCENT);
 		//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
 		g = (Graphics2D)image.getGraphics();
-	}
-	
+		}
+			// Krybo (2014-10-03) Essentially a copy method.
+	public VImage( VImage existingVImage ) 
+		{
+		this.width = existingVImage.getWidth();
+		this.height = existingVImage.getHeight();
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsDevice gs = ge.getDefaultScreenDevice();
+		GraphicsConfiguration gc = gs.getDefaultConfiguration();
+		image = gc.createCompatibleImage( existingVImage.getWidth(), 
+				existingVImage.getHeight(), Transparency.TRANSLUCENT);
+		//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
+		g = (Graphics2D)image.getGraphics();
+		g.drawImage(existingVImage.getImage(), 0, 0, null );
+		}	
+
 
 	 public VImage(URL url, boolean transparent) {
 		  try {
@@ -79,6 +94,31 @@ public class VImage implements Transferable
 		  
 		  g = (Graphics2D)image.getGraphics();
 	 }
+	 	// A constructor with configurable transparent color
+	 public VImage(URL url, int transR, int transG, int transB ) 
+		 {
+		  try {
+			  if(url==null) {
+				  System.err.println("Unable to find image from URL " + url);
+				  return;
+			  }
+			  if(url.getFile().toUpperCase().endsWith("PCX")) {
+				  image = PCXReader.loadImage(url.openStream());
+			  } else
+			  {			  
+				  image = ImageIO.read(url);
+			  }
+		  } catch (IOException e) {
+			  System.err.println("Unable to read image from URL " + url);
+		  }
+		  this.width = image.getWidth();
+		  this.height = image.getHeight();
+	
+		  Image img = makeColorTransparent( image, 
+				  new Color(transR, transG, transB ) );
+		  this.image = imageToBufferedImage(img);
+		  g = (Graphics2D)image.getGraphics();
+		 }
 	 
 	 public VImage(URL url) { // Rafael: per default, all images are loaded as transparent
 		 this(url, true);
@@ -146,7 +186,8 @@ public class VImage implements Transferable
 	                }
 	        };
 
-	        ImageProducer ip = new FilteredImageSource(im.getSource(), filter);
+	        ImageProducer ip = new FilteredImageSource(
+	     		   im.getSource(), filter);
 	        return Toolkit.getDefaultToolkit().createImage(ip);
 	    }
 
@@ -266,6 +307,27 @@ public class VImage implements Transferable
 				this.g.drawImage(src,x,y,null);
 			}
 		}
+
+			// Krybo (2014-10-04)  Some independance from 
+			// the currentLucent Script variable was needed, so overloaded
+		public void tblit(int x, int y, Image src, float alphaBlend ) 
+			{
+			if( alphaBlend < 0.0f ) { alphaBlend = 0.0f; }
+			if( alphaBlend > 1.0f ) { alphaBlend = 1.0f; }
+			if( alphaBlend < 1.0f ) 
+				{
+				Graphics2D g2d = (Graphics2D) getImage().getGraphics();
+				g2d.setComposite(AlphaComposite.getInstance(
+						AlphaComposite.SRC_OVER, alphaBlend ) );
+				g2d.drawImage(src, x, y, null);
+				g2d.dispose();
+				}
+			else 
+				{
+				this.g.drawImage(src,x,y,null);
+				}
+			return;
+			}
 		
 		/*static void BlitWrap(int x, int y, int src, int dst) {
 			image *s = ImageForHandle(src);
@@ -823,6 +885,12 @@ public class VImage implements Transferable
 		public void paintBlack() {
 			this.rectfill(0, 0, this.width, this.height, Color.BLACK);
 		}
+
+			// same thing but with a translucency
+		public void paintBlack( float alphaValue ) 
+			{
+			this.rectfill(0, 0, this.width, this.height, new Color(0.0f,0.0f,0.0f,alphaValue ) );
+			}
 		
 		
 			// Krybo (2014-09-30)  zoom-like function.  now used for map zoom.
@@ -897,8 +965,87 @@ public class VImage implements Transferable
 		else
 			{	g2d.setComposite( AlphaComposite.Src);  	}
 		
-		g2d.drawImage( this.getImage(), at, null );		
+		
+		AffineTransformOp op = new AffineTransformOp(
+				at, AffineTransformOp.TYPE_BILINEAR );
+
+//	g2d.drawImage( this.getImage(), at, null );
+//		It was leaving edge related artifacts -- this solved it:with an Op
+//		http://stackoverflow.com/questions/8639567/java-rotating-images
+		g2d.drawImage(op.filter(this.getImage(), null), 0, 0, null );
+		
 		g2d.dispose();
+		return;
+		}
+			// Delegator to above that returns a new VImage
+	public VImage getVImageRotateBlend( float rotationRadians,  float blendValue )
+		{
+		VImage newImage = new VImage(this.width,this.height);
+		newImage.paintBlack(0.0f);
+
+		AffineTransform at = new AffineTransform();
+		
+		if( rotationRadians != 0.0f )		// Save a few calcs when no rotation.
+			{
+			at.rotate(rotationRadians, Math.floorDiv( this.getWidth() , 2) , 
+				Math.floorDiv(this.getHeight() , 2) );
+			}
+
+		Graphics2D g2d = (Graphics2D) newImage.getImage().getGraphics();
+		if( blendValue >= 0 && blendValue < 1.0f )
+			{
+			g2d.setComposite( AlphaComposite.getInstance(
+					AlphaComposite.SRC_OVER, blendValue )  );
+			}
+		else
+			{	g2d.setComposite( AlphaComposite.Src);  	}
+		
+		AffineTransformOp op = new AffineTransformOp(
+				at, AffineTransformOp.TYPE_BILINEAR );
+		g2d.drawImage(op.filter(this.getImage(), null), 0, 0, null );		
+		g2d.dispose();
+		
+		return(newImage);
+		}
+
+		// Krybo: (2014-10-03)
+		// Composites another VImage with rotation & scaling
+		//  Thank you:  Eric Petroelje et.al @  
+		// http://stackoverflow.com/questions/682770/rotation-and-scaling-how-to-do-both-and-get-the-right-result
+	public void rotScaleBlendBlit( VImage src, int x, int y, 
+			float rotationRadians, float scaleX, float scaleY, float blendValue )
+		{
+		if( x >= this.width || x < 0  )  { return; }
+		if( y >= this.height || y < 0  )  { return; }
+		if( scaleX < 0 )  { scaleX = 0.0001f; }
+		if( scaleY < 0 )  { scaleY = 0.0001f; }
+		if( scaleX == 1.0f && scaleY == 1.0f && rotationRadians == 0.0f )
+			{ 
+			// Thsi reduces to a simple tblit
+			this.tblit(x, y, src.getImage(), blendValue );
+			return;
+			}
+
+		// Scaling is the less intense process, so lets optimize for that
+		AffineTransform at = new AffineTransform();
+		AffineTransform at2 = new AffineTransform();
+		at2.scale( scaleX, scaleY );
+		if( rotationRadians != 0.0f )		// Save a few calcs when no rotation.
+			{
+			at.rotate(rotationRadians, Math.floorDiv( src.getWidth() , 2) , 
+				Math.floorDiv( src.getHeight() , 2) );
+			at2.concatenate(at);
+			}
+
+		AffineTransformOp op = new AffineTransformOp(
+			at2, AffineTransformOp.TYPE_BILINEAR );
+
+		Graphics2D g2d = (Graphics2D) this.getImage().getGraphics();
+		g2d.setComposite( AlphaComposite.getInstance(
+			AlphaComposite.SRC_OVER, blendValue )  );
+		g2d.drawImage(op.filter(src.getImage(), null), x, y, null );		
+		g2d.dispose();
+		
 		return;
 		}
 	
