@@ -1,6 +1,7 @@
 package domain;
 
 import java.util.ArrayList;
+
 import domain.Map;
 
 
@@ -11,8 +12,10 @@ public class TileGroup
 		{
 		public int tx,ty,tz,tn;
 		public int I,J;
+		private String name; 
 		public CmpTile(int xMapPos, int yMapPos, int mapLayerNum, int tileVspNumber )
 			{
+			setName(new String(""));
 			tx = xMapPos;
 			ty = yMapPos;
 			tz = mapLayerNum;
@@ -27,6 +30,28 @@ public class TileGroup
 			tn = tileVspNumber;
 			I = i;    J = j;
 			}
+		public CmpTile(String tileName, int xMapPos, int yMapPos, int mapLayerNum, int tileVspNumber )
+			{
+			setName(new String(tileName));
+			tx = xMapPos;
+			ty = yMapPos;
+			tz = mapLayerNum;
+			tn = tileVspNumber;
+			I = 0;  J=0;		
+			}
+		public String getName()
+			{  return name;	}
+		public void setName(String name)
+			{	this.name = name;	}
+		public void WarningKiller()
+			{
+			// Warning killer - do not use
+			String tmp1 = getName();
+			String tmp2 = new String("bleh");
+			tmp2 = tmp1;
+			tmp1 = tmp2;
+			return;
+			}
 		}
 	
 	// Most basic verge map tile unit
@@ -36,10 +61,28 @@ public class TileGroup
 	
 //	private ArrayList<CmpTile> tiles = new ArrayList<CmpTile>();
 	private ArrayList<CmpTile> tiles;
-
+	private String groupName;
+	
+	public TileGroup primeTerrain;
+	public boolean autotiling;
+	
 	public TileGroup()
 		{  
 		tiles = new ArrayList<CmpTile>();
+		setGroupName(new String("Undesignated Tile Group"));
+		}
+	
+	// creates a functionally "dumb" tile group that is basically just "tn"s  with a name
+	public TileGroup( Integer[] tileIdx, String GroupName )
+		{
+		tiles = new ArrayList<CmpTile>();
+		for ( Integer t : tileIdx )
+			{
+			tiles.add( new CmpTile( GroupName+"Component" , 
+					0, 0, 0, t ) );
+			}
+		setGroupName(new String( GroupName ));
+		tiles.get(0).WarningKiller();
 		}
 
 	public void pushTile( int mx, int my, int layer, int tileNumber )
@@ -142,6 +185,51 @@ public class TileGroup
 			map.settile( mapTX + t.I, mapTY+t.J , mapLayer, t.tn );
 			}
 		return;
+		}
+
+	
+	public String getGroupName()
+		{	return groupName; }
+
+	public void setGroupName(String groupName)
+		{	this.groupName = groupName;	}
+	
+	public int getComponentTileVspIndex(int n)
+		{
+		if( n > tiles.size() ) { return -1; }
+		if( n < 0 ) { return -1; }
+		return( tiles.get(n).tn );
+		}
+	
+		// "diffs" a tile group vs. another, keeping the higher vsp index of both
+	public TileGroup max(TileGroup other)
+		{
+		if( other == null ) { return(null); }
+		for( int n = 0; n < this.tiles.size(); n++ )
+			{
+			if( n > (other.size()-1) ) { continue; }
+			int a = this.getComponentTileVspIndex(n);
+			int b = other.getComponentTileVspIndex(n);
+			if( b > a ) 
+				{ this.tiles.get(n).tn = b; }
+			}
+		return this;
+		}
+
+	
+		// "diffs" a tile group vs. another, keeping the lower vsp index of both
+	public TileGroup min(TileGroup other)
+		{
+		if( other == null ) { return(null); }
+		for( int n = 0; n < this.tiles.size(); n++ )
+			{
+			if( n > (other.size()-1) ) { continue; }
+			int a = this.getComponentTileVspIndex(n);
+			int b = other.getComponentTileVspIndex(n);
+			if( b < a ) 
+				{ this.tiles.get(n).tn = b; }
+			}
+		return this;
 		}
 	
 	}
