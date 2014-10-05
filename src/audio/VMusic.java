@@ -17,6 +17,9 @@ public class VMusic implements Runnable {
 	private static URL play;
 	private int volume;
 	Thread mTest = null;
+		// Krybo (2014-10-05)
+	public static final String regexSupportedMusicFormatExtensions =
+			new String("mod$|s3m$|xm$|mp3$|wav$|vgm$");
 	
 	static MikModApp modPlayer;
 	static Mp3Player mp3player;
@@ -140,5 +143,17 @@ public class VMusic implements Runnable {
 		}
 		
 	}
+	
+		// Krybo (2014-10-05) does a string match against supported types
+	public static boolean isMusicExtSupported(String extension)
+		{
+		if( extension == null )  { return false; }
+		if( extension.equals("") ) { return false; }
+		extension.toLowerCase();
+		extension.replaceAll(".", "");		// Zap any periods users put in
+		if( extension.matches(regexSupportedMusicFormatExtensions) )
+			{ return true; }
+		return false;
+		}
 	
 }
