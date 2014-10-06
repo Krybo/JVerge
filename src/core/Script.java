@@ -3,6 +3,9 @@ package core;
 import static core.VergeEngine.*;
 import static core.Controls.*;
 import core.JVCL;
+
+
+
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
@@ -31,7 +34,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
 import audio.VMusic;
 import domain.VSound;
 import domain.VImage;
@@ -1309,41 +1311,78 @@ public class Script {
 	   */
 	  public static String[] getResourceListing(Class<?> clazz, String path) throws URISyntaxException, IOException 
 		{
-	      URL dirURL = clazz.getClassLoader().getResource(path);
+		log(" getResourceListing : Scanning for files: "+path );
+		URL dirURL = new URL("file:///null.null");
+		try {
+			dirURL = clazz.getClassLoader().getResource(path);
+		} catch( Exception e ) { e.printStackTrace(); }
+		finally  
+			{
+			if( dirURL != null )
+				{ log(" getResourceListing : looking in "+dirURL.toString() ); }
+			else  {  log(" Trying .jar mode.");  }
+			}
+
+		// Original un-error-handled code.
+		//	      URL dirURL = clazz.getClassLoader().getResource(path);
+		
 	      if (dirURL != null && dirURL.getProtocol().equals("file")) 
 	     	 {
 	     	 /* A file path: easy enough */
 	     	 return new File(dirURL.toURI()).list();
 	     	 } 
 
-	      if (dirURL == null) {
 	        /* 
 	         * In case of a jar file, we can't actually find a directory.
 	         * Have to assume the same jar as clazz.
 	         */
+	      if (dirURL == null) 
+	        {
 	        String me = clazz.getName().replace(".", "/")+".class";
 	        dirURL = clazz.getClassLoader().getResource(me);
-	      	}
+	        if( dirURL == null )
+	     	   {	
+	     	   log("JAR mode FAILED  Resources not read! ");   	
+	     	   return(null); 
+	     	   }
+	        else
+	     	   {   log(" JAR URL: "+dirURL.toString() );	   }
+	        }
 
-	      if (dirURL.getProtocol().equals("jar")) {
+	      if (dirURL.getProtocol().equals("jar")) 
+	     	 {
 	        /* A JAR path */
 	        String jarPath = dirURL.getPath().substring(5, dirURL.getPath().indexOf("!")); //strip out only the JAR file
 	        JarFile jar = new JarFile(URLDecoder.decode(jarPath, "UTF-8"));
+	        
 	        Enumeration<JarEntry> entries = jar.entries(); //gives ALL entries in jar
 	        Set<String> result = new HashSet<String>(); //avoid duplicates in case it is a subdirectory
-	        jar.close();
-	        while(entries.hasMoreElements()) {
+//	        jar.close();
+	        while(entries.hasMoreElements()) 
+	     	   {
 	          String name = entries.nextElement().getName();
-	          if (name.startsWith(path)) { //filter according to the path
-	            String entry = name.substring(path.length());
+	          if (name.startsWith(path)) 
+	          	{ //filter according to the path
+	            String entry = name.substring(path.length() , name.length() );
+	            if( entry.equals("/") || entry.equals("") )
+	          	  { continue; }
+	            if( entry.endsWith("/") || entry.endsWith("\\") )
+	          	  { continue; }		// We don't do subdirectories here
+	            	// Lop leading slashes if they remain
+	            if( entry.startsWith("/") || entry.startsWith("\\") )
+	          	  { entry = entry.substring(1, entry.length() ); }
 	            int checkSubdir = entry.indexOf("/");
-	            if (checkSubdir >= 0) {
+	            if (checkSubdir >= 0)  { continue; } 
+//	          	  {
 	              // if it is a subdirectory, we just return the directory name
-	              entry = entry.substring(0, checkSubdir);
-	            }
+//	          	  entry = entry.substring(0, checkSubdir);
+//	          	  log("JAR  subDIR : "+entry );
+//	          	  }
 	            result.add(entry);
-	          }
+	          }	        
 	        }
+	        
+	        jar.close();
 	        return result.toArray(new String[result.size()]);
 	      } 
 
