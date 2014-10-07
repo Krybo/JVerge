@@ -1223,6 +1223,11 @@ public class Script {
 		log("(" + systemclass + ")" + ", reading: " + url);
 		URL resource = systemclass.getResource(url);
 		
+		if( (resource == null)  && (url.startsWith("/") == false) )
+			{
+			String slashedUrl = new String("/"+url);
+			resource = systemclass.getResource(slashedUrl);
+			}
 		
 		// Optional code, a little robustness to avoid case-sensitive issues
 		if(resource == null) { // try to capitalize
