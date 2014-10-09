@@ -87,12 +87,15 @@ public class MikCvtApp extends Applet implements Runnable
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	public void stop()
 		{
 		if (m_MikCvtApp != null)
 			{
-//			m_MikCvtApp.stop();
-			m_MikCvtApp.interrupt();
+			m_MikCvtApp.stop();
+//			Krybo:  This should be properly shutdown with interrupt
+//  but could not figure how to do it.
+//			m_MikCvtApp.interrupt();
 			try  {  m_MikCvtApp.join();   }
 			catch (InterruptedException e)
 				{		e.printStackTrace(); 		}

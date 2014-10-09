@@ -105,12 +105,15 @@ public class MikModApp extends Applet implements Runnable
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	public void stop()
 	{
 		if (m_MikModApp != null)
 		{
-//			m_MikModApp.stop();
-			m_MikModApp.interrupt();
+			m_MikModApp.stop();
+//	Krybo:  This should be interrupted and shutdown properly
+//			But could not figure how to do it.
+//			m_MikModApp.interrupt();
 			try 	{  m_MikModApp.join();  }
 			catch (InterruptedException e)
 				{	e.printStackTrace();   }
