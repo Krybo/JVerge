@@ -69,9 +69,10 @@ public class Script {
 	public static final int CF_BLUE = 6;
 	public static final int CF_CUSTOM = 7;
 
-
+		// The java vergeC graphics layers are to be controlled in core.Script
 	public static JVCL jvcl;
-	
+	public static JVCL jvclText;
+
 	// VERGE ENGINE VARIABLES: Moved to Script for easy of use
 	/**
 	 * This is a hardcoded image handle for the screen. It is a pointer to a
@@ -1394,11 +1395,40 @@ public class Script {
 	      throw new UnsupportedOperationException("Cannot list files for URL "+dirURL);
 	  }
 
-//	You can then modify the URL given by getResource(..) and append the file on the end, 
-//		and pass these URLs into getResourceAsStream(..), ready for loadin
-	
-	//  END Krybo edits
+	  
+	  // Krybo (2014-10-09)  Verge1 style VC graphics emulation 
 
+	  public int VCaddLayer()
+		  {
+		  jvcl.addLayer();
+		  return jvcl.getLayerCount();
+		  }
+	  
+	  public void VClayerWrite(int layer)
+		{	jvcl.setWriteLayer(layer);  	}
+	  
+	  public void VCbox(int xCoord1, int yCoord1, int xCoord2, int yCoord2 )
+		  {
+		  if( xCoord2 > xCoord1 )
+			  {
+			  int tmp = xCoord1;
+			  xCoord1 = xCoord2;
+			  xCoord2 = tmp;
+			  }
+		  if( yCoord2 > yCoord1 )
+			  {
+			  int tmp = yCoord1;
+			  yCoord1 = yCoord2;
+			  yCoord2 = tmp;
+			  }
+		  
+		  jvcl.JVCrect(xCoord1, yCoord1, xCoord2-xCoord1, yCoord2 - yCoord1, Color.white );
+		  return;
+		  }
+	  
+	  // -END- Krybo (2014-10-09)  Verge1 VC graphics emulation 
+
+	  
 	/* V1 VC stub list  :: Implement all these
 	 *	- Movement -
 	 * Warp(x coordinate, y coordinate, no fade);
@@ -1473,7 +1503,7 @@ public class Script {
 	 *MapPaletteGradient(start color, end color, invert, mode);
 	 *
 	 *		-- VC Graphics --
-	 *	VCBox(x coordinate1, y coordinate1, x coordinate2, y coordinate2);
+	 *	o VCBox(x coordinate1, y coordinate1, x coordinate2, y coordinate2);
 	 *	VCCharName(x coordinate, y coordinate, party.dat index, align);
 	 * VCItemName(x coordinate, y coordinate, items.dat index, align);    
 	 * VCItemDesc(x coordinate, y coordinate, items.dat index, align);    
