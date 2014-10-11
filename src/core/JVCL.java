@@ -152,15 +152,16 @@ public class JVCL
 		currentLayer = 1;
 		}
 	
-	public void addLayer()
+	public int addLayer()
 		{
 		VCLayer L = new VCLayer(this.standardX,this.standardY); 
 		this.vcl.add(L);
-		}
-	
-	public void dropLayer()
+		return( this.vcl.size() );
+		}	
+	public int dropLayer()
 		{
 		this.vcl.remove( this.vcl.size() - 1 );
+		return(this.vcl.size() - 1);
 		}
 
 	public int getLayerCount()

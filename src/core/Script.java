@@ -1399,10 +1399,9 @@ public class Script {
 	  // Krybo (2014-10-09)  Verge1 style VC graphics emulation 
 
 	  public int VCaddLayer()
-		  {
-		  jvcl.addLayer();
-		  return jvcl.getLayerCount();
-		  }
+		  {  return jvcl.addLayer();  }
+	  public int VCremoveLayer()
+		  {  return jvcl.dropLayer();   }
 	  
 	  public void VClayerWrite(int layer)
 		{	jvcl.setWriteLayer(layer);  	}
@@ -1421,8 +1420,91 @@ public class Script {
 			  yCoord1 = yCoord2;
 			  yCoord2 = tmp;
 			  }
-		  
+
 		  jvcl.JVCrect(xCoord1, yCoord1, xCoord2-xCoord1, yCoord2 - yCoord1, Color.white );
+		  return;
+		  }
+	  public void VCboxfill(int xCoord1, int yCoord1, int xCoord2, int yCoord2 )
+		  {
+		  if( xCoord2 > xCoord1 )
+			  {
+			  int tmp = xCoord1;
+			  xCoord1 = xCoord2;
+			  xCoord2 = tmp;
+			  }
+		  if( yCoord2 > yCoord1 )
+			  {
+			  int tmp = yCoord1;
+			  yCoord1 = yCoord2;
+			  yCoord2 = tmp;
+			  }
+
+		  jvcl.JVCrectfill(xCoord1, yCoord1, xCoord2-xCoord1, yCoord2 - yCoord1, Color.white );
+		  return;
+		  }
+	  
+	  public void VCline(int xCoordinate1, int yCoordinate1, int xCoordinate2, int yCoordinate2, Color c )
+		  {
+		  jvcl.JVCline(xCoordinate1, yCoordinate1, xCoordinate2, yCoordinate2, c);
+		  return;
+		  }
+	  
+	  public void VCputPCX( VImage img, int xCoordinate, int yCoordinate )
+	  	{
+	  	jvcl.JVCblitImage(xCoordinate, yCoordinate, img );
+	  	return;
+	  	}
+	  
+	  public void VCtext(int xCoordinate, int yCoordinate, String message )
+	  	{
+	  	jvcl.JVCstring(xCoordinate, yCoordinate, message );
+	  	return;
+	  	}
+	  
+	  public void VCTextNum(int xCoordinate, int yCoordinate, int number )
+		  {
+		  jvcl.JVCstring(xCoordinate, yCoordinate, Integer.toString(number) );
+		  return;
+		  }	  
+	  public void VCTextNum(int xCoordinate, int yCoordinate, long number )
+		  {
+		  jvcl.JVCstring(xCoordinate, yCoordinate, Long.toString(number) );
+		  return;
+		  }
+	  public void VCTextNum(int xCoordinate, int yCoordinate, float number )		  
+		  {
+		  jvcl.JVCstring(xCoordinate, yCoordinate, Float.toString(number) );
+		  return;
+		  }
+	  public void VCTextNum(int xCoordinate, int yCoordinate, double number )		  
+		  {
+		  jvcl.JVCstring(xCoordinate, yCoordinate, Double.toString(number) );
+		  return;
+		  }
+	  
+	  public void VCclearAll()
+		  {   jvcl.JVCclearAllLayers();   }
+	  public void VCclear()
+		  {   jvcl.JVCclear();   }
+	  
+	  public void VCclearRegion(int xCoordinate1, int yCoordinate1, int xCoordinate2, int yCoordinate2 )
+		  {
+		  if( xCoordinate2 > xCoordinate1 )
+			  {
+			  int tmp = xCoordinate1;
+			  xCoordinate1 = xCoordinate2;
+			  xCoordinate2 = tmp;
+			  }
+		  if( yCoordinate2 > yCoordinate1 )
+			  {
+			  int tmp = yCoordinate1;
+			  yCoordinate1 = yCoordinate2;
+			  yCoordinate2 = tmp;
+			  }
+
+		  jvcl.JVCrectfill(xCoordinate1, yCoordinate1, 
+				  xCoordinate2 - xCoordinate1, yCoordinate2 - yCoordinate1, 
+				  new Color(0.0f,0.0f,0.0f,0.0f ) );
 		  return;
 		  }
 	  
