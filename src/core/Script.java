@@ -1270,6 +1270,62 @@ public class Script {
 		return resource;
 	}
 
+	/**
+	 * Krybo (2014-10-22) Added this so that loading URL's can be tested for existance 
+	 * Similar to load() but returns true or false instead of the actual URL
+	 * And will not leave log messages 
+	 */
+	public static boolean loadTEST(String url) 
+		{
+		if(TEST_SIMULATION) // [Rafael, the Esper]
+			return false;
+		
+		URL resource = systemclass.getResource(url);
+		
+		if( (resource == null)  && (url.startsWith("/") == false) )
+			{
+			String slashedUrl = new String("/"+url);
+			resource = systemclass.getResource(slashedUrl);
+			}
+		
+		// Optional code, a little robustness to avoid case-sensitive issues
+		if(resource == null) { // try to capitalize
+			String newUrl;
+			if(url.lastIndexOf('/') != -1) 
+				newUrl = url.substring(0, url.lastIndexOf('/')+1) +
+					capitalize(url.substring( url.lastIndexOf('/')+1));
+			else
+				newUrl = capitalize(url);
+
+			resource = systemclass.getResource(newUrl);
+			
+			if(resource==null) { // try uppercase 
+				if(url.lastIndexOf('/') != -1) 
+					newUrl = url.substring(0,  url.lastIndexOf('/')+1) +
+						url.substring( url.lastIndexOf('/')+1).toUpperCase();
+				else
+					newUrl = url.toUpperCase();
+
+				resource = systemclass.getResource(newUrl);				
+			}
+			
+			if(resource==null) { // try lowercase 
+				if(url.lastIndexOf('/') != -1) 
+					newUrl = url.substring(0,  url.lastIndexOf('/')+1) +
+						url.substring( url.lastIndexOf('/')+1).toLowerCase();
+				else
+					newUrl = url.toLowerCase();
+
+				resource = systemclass.getResource(newUrl);				
+			}			
+			
+			if(resource==null) 
+				{	return(false);  	}	
+			}
+		return true;
+		}
+
+	
 
 	public static void setSystemPath(Class<?> c) {
 		systemclass = c;

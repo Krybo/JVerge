@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 //import java.net.MalformedURLException;
 import java.net.URL;
+
 import core.Script;
 import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
@@ -339,6 +340,16 @@ public class MapVerge extends MapAbstract implements Map {
 		
 		for(int i=0; i<current_map.getEntities().length; i++) {
 			Entity e = current_map.getEntities()[i];
+			
+		// Krybo (2014-10-22)  This was causing a NPE later on when
+		//  a bad maped based entity filename was passed and load fails, so stop it here.
+			if( loadTEST( e.chrname.replace('\\', '/') ) == false )
+				{
+				log("CHR LOAD ERROR : CHR with filename ["+e.chrname+
+					"] not found and has failed !  Map-based Entity numbers may be shifted.");
+				continue;
+				}
+			
 			e.chr = new CHR(e.chrname); //RequestCHR(e.chrname);
 			
 			e.index = Script.numentities++;
