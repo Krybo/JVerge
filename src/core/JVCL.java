@@ -30,6 +30,8 @@ public class JVCL
 		{
 		private boolean visible;
 		private boolean active;
+		private int layerWidth;
+		private int layerHeigth;
 		// Each layer carries a sets of flags that may be used
 		// by the programmer to track anything going on for that layer.
 		private final int flagArraySize = 100;
@@ -40,6 +42,8 @@ public class JVCL
 		private VCLayer(int  sizeX, int sizeY )
 			{
 			super(sizeX,sizeY);
+			this.layerWidth = sizeX;
+			this. layerHeigth = sizeY;
 			this.visible = false;
 			this.active = false;
 			this.clearAllFlags();
@@ -120,10 +124,148 @@ public class JVCL
 			// Does both
 		public void rotateBlend( float radians, float blendFactor )
 			{	super.rotateBlend( radians, blendFactor );	}
+		
+		public void clear()
+			{
+			Graphics2D g2 = (Graphics2D) this.getImage().getGraphics();
+			g2.setComposite(AlphaComposite.Clear );
+			g2.fillRect(0, 0, this.layerWidth, this.layerHeigth );
+			g2.dispose();
+			return;
+			}
+
 		}
 
+	// Holds information for tracking floating entity-following dialogs
+	// Designed to only set the message, position and box characteristics.
+	//     and be independant of what is going on with the Verge Map
+	// Moving entities and players are handled externally, and this
+	//     will draw the boxes using functions in JVCL.
+	// Original plan was to use the flags in the VCLayers... --
+	//      but a subclass is probably the better route.
+	private class DialogTracker
+		{
+		private int mapEntityNumber;
+		private boolean isOnScreen;
+		private long fadeTimePercent;
+		private long fadeTimeDuration;
+		private long selfDestructTime;
+		private int screenX;
+		private int screenY;
+		private String theText;
+		private Font fnt;
+		private Color textColor;
+		private Color outlineColor;
+		private int paddingPx;
+		private VImage imgBackground;
+		private float alphaBackground;
+		private float fadeAlphaBackground;
+
+		public DialogTracker( int entityNum, String message, int durationMsec, 
+				Font fnt, Color textColor, Color outlineColor, int boxWidth,
+				VImage imgBackground, float alphaBackground )
+			{
+			this.mapEntityNumber = entityNum;
+			this.screenX = -1;    this.screenY = -1;
+			this.theText = message;
+			this.isOnScreen = false;
+			
+			this.fnt = fnt;
+			this.textColor = textColor;
+			this.outlineColor = outlineColor;
+			this.paddingPx = boxWidth;
+			this.imgBackground = imgBackground;
+			this.alphaBackground = alphaBackground;
+			this.fadeAlphaBackground = alphaBackground;
+			
+			long crTime = System.nanoTime();
+			this.selfDestructTime = durationMsec*1000000+crTime;
+			this.fadeTimePercent = durationMsec * 9 / 10;
+			// Fade time in ns is 1/10th of total duration (at the end)
+			this.fadeTimeDuration = durationMsec * 100000;
+			}
+		
+		public int getEntityNumber()
+			{	return this.mapEntityNumber;	}
+			
+		public boolean hasExpired()
+			{ 
+			long timeNow = System.nanoTime();
+			if( timeNow >= this.selfDestructTime )
+				{ return true; }
+			return false;
+			}
+		
+		public void calculateFadeAlpha()
+			{
+			long timeNow = System.nanoTime();
+			long fadeStart = this.selfDestructTime - this.fadeTimeDuration;
+				// Fade has not yet begun, or textbox has expired.
+			if( timeNow < fadeStart )  { return; }
+			if( timeNow > this.selfDestructTime )  { return; }
+			
+			float fadeFactor = 1.0f - ( (float) (timeNow - fadeStart ) / (float) this.fadeTimeDuration );
+			this.fadeAlphaBackground = this.alphaBackground * fadeFactor;
+			return;
+			}
+		
+		public int getX()
+			{	return this.screenX; }
+		public int getY()
+			{	return this.screenY; }
+		public String getText()
+			{ return this.theText; }
+		public Font getFont()
+			{ return this.fnt; }
+		public Color getTextColor()
+			{ return this.textColor; }
+		public Color getOutlineColor()
+			{ return this.outlineColor; }
+		public int getPaddingPx()
+			{ return this.paddingPx; }
+		public VImage getImgBackground()
+			{ return this.imgBackground; }
+		public float getAlphaBackground()
+			{ return this.alphaBackground; }
+		public float getAlphaBackgroundWithFade()
+			{ 
+			this.calculateFadeAlpha();
+			return this.fadeAlphaBackground; 
+			}
+		public long getFadeTimeDurationInNanoSeconds()
+			{ return this.fadeTimePercent; }
+
+		public void updatePositions( int playerX, int playerY, 
+				int entityX, int entityY, int screenWidth, int screenHeight )
+			{
+			int distX = entityX - playerX;
+			int distY = entityY - playerY;
+			if( Math.abs(distX) > (screenWidth / 2) )
+				{
+				this.isOnScreen = false;
+				return;
+				}
+			if( Math.abs(distY) > (screenHeight / 2) )
+				{
+				this.isOnScreen = false;
+				return;
+				}
+			this.isOnScreen = true;
+			this.screenX = screenWidth / 2 + distX;
+			this.screenY = screenHeight / 2 + distY;
+			return;
+			}
+
+		public boolean isOnScreen()
+			{	return isOnScreen;	}
+		
+		}
+
+	
 	// Adds a student to the student array list.
 	private ArrayList<VCLayer> vcl = new ArrayList<VCLayer>();
+	private ArrayList<DialogTracker> dialogBoxes = new ArrayList<DialogTracker>();
+	private VCLayer JVCLdialoglayer;
 	private int currentLayer;
 	private int standardX, standardY;
 	private Font nativefont = new Font("Tahoma",PLAIN, 18);
@@ -146,6 +288,8 @@ public class JVCL
 			vcl.add( new VCLayer(standardX,standardY) );
 			vcl.get(a+1).setActive(true);
 			}
+		
+		this.JVCLdialoglayer = new VCLayer(standardX,standardY);
 
 		JVCclearAllLayers();
 		refresh();
@@ -820,13 +964,22 @@ public class JVCL
 			Font fnt, Color textColor, Color outlineColor, int paddingPx,
 			BufferedImage imgBackground, float alphaBackground )
 		{
+		return JVCtextImageBox( vcl.get(this.currentLayer) , x, y, s, 
+				fnt, textColor, outlineColor, paddingPx,
+				imgBackground, alphaBackground );
+		}
+	
+	private boolean JVCtextImageBox( VCLayer targetLayer, int x, int y, String s, 
+			Font fnt, Color textColor, Color outlineColor, int paddingPx,
+			BufferedImage imgBackground, float alphaBackground )
+		{
 		if( this.vcl.get(currentLayer).getActive() == false )  
 			{ return(false); }
 		if( x < 0 || y < 0 ) { return(false); }
 		if( paddingPx < 1 )  { paddingPx = 1; }
 		if( paddingPx > 20 ) { paddingPx = 20; }
 
-		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		Graphics2D g2 = (Graphics2D) targetLayer.getImage().getGraphics();
 		g2.setFont( fnt );
 
 		int singleLineHeight = g2.getFontMetrics().getHeight();
@@ -984,6 +1137,117 @@ public class JVCL
 				rotationRadians, sX, sY, alphaValue );
 		this.requiresUpdate = true;
 		}
+
+	/*
+	 * External dialog processor shall: (on each frame)
+	 * 
+	 * Expire any old dialogs
+	 * Query JVCL for entity numbers of active boxes
+	 * Use these entity numbers to update current map positions
+	 * Call routine to draw all boxes
+	 * 
+	 * The methods below provide the facility to work this process.
+	 */
+
+	// This adds a entity-tracking dialog to the dialog Layer
+	//  The coordinates of the player<=>entity must be sent from 
+	//       external sources whenever one of them moves.
+	public void JVCdialogAdd( int entityNum, String message, 
+			int durationMsec, Font fnt, Color textColor, 
+			Color outlineColor, int frameWidth, VImage imgBackground,
+			float alphaBackground )
+		{
+		DialogTracker iDialog = new DialogTracker(entityNum, message, 
+			durationMsec, fnt, textColor, outlineColor, frameWidth, imgBackground, alphaBackground);
+		this.dialogBoxes.add(iDialog);
+		return;
+		}
 	
+	// makes a pass over all dialogs and removes any expired ones from the stack
+	public int JVCdialogExpire()
+		{
+		int removed = 0;
+		int count = this.dialogBoxes.size();
+		int dialogIndex = -1;
+		boolean[] deathFlag = new boolean[this.dialogBoxes.size()];
+		for( DialogTracker dt : this.dialogBoxes )
+			{
+			dialogIndex++;
+			deathFlag[dialogIndex] = dt.hasExpired();
+			}
+		
+		for( int idx = count; idx > 0; idx-- )
+			{
+			if( deathFlag[idx] == true )
+				{
+				this.dialogBoxes.remove(idx);
+				removed++;
+				}
+			}
+
+		return removed;
+		}
+	
+	public int[] JVCdialogGetEntityNumbers()
+		{
+		int[] ents = new int[this.dialogBoxes.size()];
+		int idx = -1;
+		for( DialogTracker dt : this.dialogBoxes )
+			{
+			idx++;
+			ents[idx] = dt.getEntityNumber();
+			}
+		return ents;
+		}
+
+	public void JVCdialogSetCoordinates(int index, int playerMapX,
+			int playerMapY, int entityMapX, int entityMapY,
+			int screenWidth, int screenHeight )
+		{
+		DialogTracker dt = this.dialogBoxes.get(index);
+		dt.updatePositions( playerMapX, playerMapY, 
+				entityMapX, entityMapY, screenWidth, screenHeight);
+		}
+	// Essentially same as above, but finds a particular entity number first.
+	//   returns false if that entity does not have an active dialog
+	public boolean JVCdialogSetCoordinatesViaEntityNumber(
+			int entityIndex, int playerMapX,
+			int playerMapY, int entityMapX, int entityMapY,
+			int screenWidth, int screenHeight )
+		{
+		DialogTracker dt = null;
+		boolean foundIt = false;
+		for( DialogTracker idt : this.dialogBoxes )
+			{
+			if( idt.getEntityNumber() == entityIndex )
+				{ dt = idt;  foundIt = true; }
+			}
+		
+		if( foundIt == false )  { return false; }
+		if( dt == null )  { return false; }
+		
+		dt.updatePositions( playerMapX, playerMapY, 
+				entityMapX, entityMapY, screenWidth, screenHeight);
+		return true;
+		}
+	
+	public int JVCdialogDraw()
+		{
+		int dialogsDrawn = 0;
+		this.JVCLdialoglayer.clear();
+		for( DialogTracker dt : this.dialogBoxes )
+			{
+			if( dt.isOnScreen() == false ) 	{ continue; }
+
+			this.JVCtextImageBox( this.JVCLdialoglayer, 
+					dt.getX(), dt.getY(), dt.getText(), 
+					dt.getFont(), dt.getTextColor(), dt.getOutlineColor(), 
+					dt.getPaddingPx(), dt.getImgBackground().getImage(), 
+					dt.getAlphaBackgroundWithFade() );
+
+			}
+		return(dialogsDrawn);
+		}
+
 	}
 	
