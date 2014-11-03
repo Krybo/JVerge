@@ -340,7 +340,7 @@ public class MapVerge extends MapAbstract implements Map {
 		
 		for(int i=0; i<current_map.getEntities().length; i++) {
 			Entity e = current_map.getEntities()[i];
-			
+
 		// Krybo (2014-10-22)  This was causing a NPE later on when
 		//  a bad maped based entity filename was passed and load fails, so stop it here.
 			if( loadTEST( e.chrname.replace('\\', '/') ) == false )
@@ -458,9 +458,18 @@ public class MapVerge extends MapAbstract implements Map {
 		return this.zones;
 	}
 
-	public Entity[] getEntities() {
-		return this.entities;
-	}
+	public Entity[] getEntities() 
+		{	return this.entities;	}
+	
+	// Krybo (2014-11-02) similar to getEntities, but only gets one specified.
+	//  returns null if it does not exist.
+	//    Needed this to streamline dynamic dialog boxes tied to entities.
+	public Entity getEntity(int entNumber )
+		{
+		Entity tmpEnt = this.entities[entNumber];
+		if( tmpEnt == null ) { return null; }
+		return( tmpEnt );
+		}
 
 	public void setRenderstring(String string) {
 		this.renderstring = string;

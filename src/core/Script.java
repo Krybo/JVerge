@@ -6,10 +6,12 @@ import core.JVCL;
 
 
 
+
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 import java.awt.color.ColorSpace;
@@ -34,6 +36,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
 import audio.VMusic;
 import domain.VSound;
 import domain.VImage;
@@ -1563,6 +1566,18 @@ public class Script {
 				  new Color(0.0f,0.0f,0.0f,0.0f ) );
 		  return;
 		  }
+
+  		// Krybo: (2014-11-02)  Delegator to add dynamic dialog boxes
+	  	// Using JVCL's special dialog layer
+	  public static void VCdynamicDialogBox( int mapEntityNum, String message, int durationMsec, Font fnt, 
+			 Color textColor, Color outlineColor, int frameWidth, 
+			 VImage imgBackground, float alphaBackground )
+		{
+		jvcl.JVCdialogAdd(mapEntityNum, message, durationMsec, fnt,
+				textColor, outlineColor, frameWidth, 
+				imgBackground, alphaBackground);
+		return;
+	  	}
 	  
 	  // -END- Krybo (2014-10-09)  Verge1 VC graphics emulation 
 

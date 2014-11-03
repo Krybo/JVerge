@@ -402,10 +402,39 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 						curwidth, curheight, null);			
 				}
 	
+//			jvcl.JVCdialogExpire();
+//			int[] talkingEntityNums = ;
+			for( int en : jvcl.JVCdialogGetEntityNumbers() )
+				{
+
+				jvcl.JVCdialogSetCoordinatesViaEntityNumber( en, 
+						myself.getx(), 	myself.gety(), 
+						current_map.getEntity(en).getx(), 
+						current_map.getEntity(en).gety(), 
+						screen.width, screen.height );
+				}
+			jvcl.JVCdialogDraw();
+			
+
+			
+			if( jvcl.getJVCLdialogZpos() == 0 )
+				{
+				g.drawImage( jvcl.getDialogBufferedImage(), 0, 0, 
+					curwidth, curheight, null);				
+				}
+			
 					// This displays all the VC layers
 //			g.setComposite(AlphaComposite.SRC );
-			g.drawImage( jvcl.getBufferedImage(), 0, 0, 
-					curwidth, curheight, null);
+			
+//			g.drawImage( jvcl.getBufferedImage(), 0, 0, 
+//					curwidth, curheight, null);
+			
+			if( jvcl.getJVCLdialogZpos() != 0 )
+				{
+				g.drawImage( jvcl.getDialogBufferedImage(), 0, 0, 
+					curwidth, curheight, null);				
+				}
+
 			
 			/* Do this to rotate 180 
 			Graphics2D g2d = (Graphics2D) g;

@@ -240,6 +240,9 @@ public class JVCL
 			{
 			int distX = entityX - playerX;
 			int distY = entityY - playerY;
+			int Xmargin = screenWidth * 4 / 5;
+			int Ymargin = screenHeight * 4 / 5;
+			
 			if( Math.abs(distX) > (screenWidth / 2) )
 				{
 				this.isOnScreen = false;
@@ -250,9 +253,31 @@ public class JVCL
 				this.isOnScreen = false;
 				return;
 				}
+			
 			this.isOnScreen = true;
-			this.screenX = screenWidth / 2 + distX;
-			this.screenY = screenHeight / 2 + distY;
+			
+			int mapScrollX = playerX - (screenWidth / 2);
+			int mapScrollY = playerY - (screenHeight / 2);
+			if( mapScrollX < 0 ) { mapScrollX = 0; }
+			if( mapScrollY < 0 ) { mapScrollY = 0; }
+			
+//			this.screenX = screenWidth / 2 + distX;
+//			this.screenY = screenHeight / 2 + distY;
+//   	The +16 is an adjustment made so part of the box is not
+//		directly over-top the character.
+			this.screenX = entityX - mapScrollX + 16;
+			this.screenY = entityY - mapScrollY + 16;
+			
+			// MARGINS
+			// There is a condition where boxes will degenerate if they
+			//    are put too close ot the right & bottom edge of the screen.
+			//     Protect vs. this by making a bound at 20% to right margin
+			//  consider margin violations to be "off the screen"
+			if( this.screenX > Xmargin )
+				{	this.isOnScreen = false;	}
+			if( this.screenY > Ymargin )
+				{	this.isOnScreen = false;	}
+			
 			return;
 			}
 
@@ -266,6 +291,7 @@ public class JVCL
 	private ArrayList<VCLayer> vcl = new ArrayList<VCLayer>();
 	private ArrayList<DialogTracker> dialogBoxes = new ArrayList<DialogTracker>();
 	private VCLayer JVCLdialoglayer;
+	private int JVCLdialogZpos;
 	private int currentLayer;
 	private int standardX, standardY;
 	private Font nativefont = new Font("Tahoma",PLAIN, 18);
@@ -276,8 +302,8 @@ public class JVCL
 		{
 		this.standardX = xRes;
 		this.standardY = yRes;
-		if( standardX < 320 ) { this.standardX = 320; }
-		if( standardY < 280 ) { this.standardY = 280; }
+		if( this.standardX < 320 ) { this.standardX = 320; }
+		if( this.standardY < 280 ) { this.standardY = 280; }
 		
 		// This is a base buffer layer, all must have it.
 		this.vcl.add( new VCLayer(standardX,standardY) );
@@ -285,14 +311,15 @@ public class JVCL
 		
 		for( int a = 0; a < numLayers; a++)
 			{
-			vcl.add( new VCLayer(standardX,standardY) );
-			vcl.get(a+1).setActive(true);
+			this.vcl.add( new VCLayer(standardX,standardY) );
+			this.vcl.get(a+1).setActive(true);
 			}
 		
 		this.JVCLdialoglayer = new VCLayer(standardX,standardY);
 
-		JVCclearAllLayers();
-		refresh();
+		this.JVCclearAllLayers();
+		this.setJVCLdialogZpos(0);
+		this.refresh();
 		currentLayer = 1;
 		}
 	
@@ -453,12 +480,15 @@ public class JVCL
 				// And pound down all layers that have drawing turned on.
 				// Sandwich from the top > down, using the right composite mode
 			g2.setComposite(AlphaComposite.SrcOver);
+
 			for( int ln = 1; ln < this.vcl.size(); ln++ )
 				{
 				if( vcl.get( ln ) == null )   { continue; }
 				if( this.vcl.get(ln).getVisible() == false ) { continue; }
+
 				g2.drawImage( vcl.get( ln ).getImage(), null, 0, 0 );
 				}
+
 			} 
 		catch(Exception e) { e.printStackTrace(); }
 		finally  { g2.dispose(); }
@@ -479,11 +509,17 @@ public class JVCL
 		return( this.vcl.get(0) );
 		}
 
+	public VImage getDialogVImage()
+		{	return( this.JVCLdialoglayer );	}
+
 	public BufferedImage getBufferedImage() 
 		{
 		this.flattenLayers();
 		return( this.vcl.get(0).getImage() );
 		}
+
+	public BufferedImage getDialogBufferedImage() 
+		{  return( this.JVCLdialoglayer.getImage() );	}
 
 	public int getNumVisibleLayers()
 		{
@@ -673,6 +709,16 @@ public class JVCL
 		g2.fillRect(0, 0, this.standardX, this.standardY );
 		g2.dispose();
 		this.requiresUpdate = true;
+		return;
+		}
+	
+		// Clears the dialog layer
+	public void JVCclearDialog()
+		{
+		Graphics2D g2 = (Graphics2D) this.JVCLdialoglayer.getImage().getGraphics();
+		g2.setComposite(AlphaComposite.Clear );
+		g2.fillRect(0, 0, this.standardX, this.standardY );
+		g2.dispose();
 		return;
 		}
 
@@ -990,12 +1036,16 @@ public class JVCL
 		int numLines = 1;
 
 		String tmp = new String(s);
-		int substrLen = checkX;
+		int origlen = s.length();
+		int substrLen = origlen;
+		
+		
 			// Attempt to get x+checkX within the bounds.   if not ~ must bail
 		while( ((x+checkX+(paddingPx*2)+4) >= standardX) && numLines < 5 ) 
 			{
 			numLines++;
-			substrLen = Math.floorDiv( s.length() , numLines );
+			
+			substrLen = Math.floorDiv( origlen , numLines );
 			tmp = tmp.substring(0, substrLen );
 			checkX = g2.getFontMetrics().stringWidth(tmp);
 				//  Getting dis-perportionate, stop now.
@@ -1144,7 +1194,7 @@ public class JVCL
 	 * Expire any old dialogs
 	 * Query JVCL for entity numbers of active boxes
 	 * Use these entity numbers to update current map positions
-	 * Call routine to draw all boxes
+	 * Call routine to draw all boxes (done in this.flattenLayers )
 	 * 
 	 * The methods below provide the facility to work this process.
 	 */
@@ -1160,6 +1210,7 @@ public class JVCL
 		DialogTracker iDialog = new DialogTracker(entityNum, message, 
 			durationMsec, fnt, textColor, outlineColor, frameWidth, imgBackground, alphaBackground);
 		this.dialogBoxes.add(iDialog);
+		this.requiresUpdate = true;
 		return;
 		}
 	
@@ -1176,7 +1227,7 @@ public class JVCL
 			deathFlag[dialogIndex] = dt.hasExpired();
 			}
 		
-		for( int idx = count; idx > 0; idx-- )
+		for( int idx = (count-1); idx > 0; idx-- )
 			{
 			if( deathFlag[idx] == true )
 				{
@@ -1185,6 +1236,8 @@ public class JVCL
 				}
 			}
 
+		if( removed > 0 )		// reflatten 
+			{ this.requiresUpdate = true; }
 		return removed;
 		}
 	
@@ -1207,6 +1260,8 @@ public class JVCL
 		DialogTracker dt = this.dialogBoxes.get(index);
 		dt.updatePositions( playerMapX, playerMapY, 
 				entityMapX, entityMapY, screenWidth, screenHeight);
+		this.requiresUpdate = true;
+		return;
 		}
 	// Essentially same as above, but finds a particular entity number first.
 	//   returns false if that entity does not have an active dialog
@@ -1228,13 +1283,17 @@ public class JVCL
 		
 		dt.updatePositions( playerMapX, playerMapY, 
 				entityMapX, entityMapY, screenWidth, screenHeight);
+		
+		this.requiresUpdate = true;
 		return true;
 		}
 	
 	public int JVCdialogDraw()
 		{
 		int dialogsDrawn = 0;
-		this.JVCLdialoglayer.clear();
+		if( this.dialogBoxes.size() <= 0 )   
+			{   return(0);   }
+		this.JVCclearDialog();
 		for( DialogTracker dt : this.dialogBoxes )
 			{
 			if( dt.isOnScreen() == false ) 	{ continue; }
@@ -1247,6 +1306,16 @@ public class JVCL
 
 			}
 		return(dialogsDrawn);
+		}
+
+	public int getJVCLdialogZpos()
+		{	return JVCLdialogZpos;	}
+
+	public void setJVCLdialogZpos(int jVCLdialogZpos)
+		{	
+		JVCLdialogZpos = jVCLdialogZpos;
+		this.requiresUpdate = true;
+		return;
 		}
 
 	}

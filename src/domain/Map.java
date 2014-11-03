@@ -47,6 +47,7 @@ public interface Map {
 	boolean getVerticalWrapable();
 	
 	Entity[] getEntities();
+	Entity getEntity(int entNumber);
 
 	String getRenderstring();
 	void setRenderstring(String string);

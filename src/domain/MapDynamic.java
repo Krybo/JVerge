@@ -448,9 +448,15 @@ public class MapDynamic extends MapAbstract implements Map {
 		return mapName;
 	}
 	
-	public Entity[] getEntities() {
+	public Entity[] getEntities() 
+		{
 		return null;
-	}
+		}
+	
+	public Entity getEntity(int entNumber) 
+		{
+		return null;
+		}
 	
 	public String getRenderstring() {
 		return this.renderstring;
