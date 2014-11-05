@@ -150,7 +150,7 @@ public class JVCL
 		private long fadeTimePercent;
 		private long fadeTimeDuration;
 		private long selfDestructTime;
-		private int screenX;
+		private int screenX;	// current position of the box on the screen
 		private int screenY;
 		private String theText;
 		private Font fnt;
@@ -160,15 +160,18 @@ public class JVCL
 		private VImage imgBackground;
 		private float alphaBackground;
 		private float fadeAlphaBackground;
+		private int resX, resY;
 
 		public DialogTracker( int entityNum, String message, int durationMsec, 
 				Font fnt, Color textColor, Color outlineColor, int boxWidth,
-				VImage imgBackground, float alphaBackground )
+				VImage imgBackground, float alphaBackground, int resX, int resY )
 			{
 			this.mapEntityNumber = entityNum;
 			this.screenX = -1;    this.screenY = -1;
 			this.theText = message;
 			this.isOnScreen = false;
+			this.resX = resX;
+			this.resY = resY;
 			
 			this.fnt = fnt;
 			this.textColor = textColor;
@@ -236,28 +239,33 @@ public class JVCL
 			{ return this.fadeTimePercent; }
 
 		public void updatePositions( int playerX, int playerY, 
-				int entityX, int entityY, int screenWidth, int screenHeight )
+				int entityX, int entityY, byte zoomLevel )
 			{
 			int distX = entityX - playerX;
 			int distY = entityY - playerY;
-			int Xmargin = screenWidth * 4 / 5;
-			int Ymargin = screenHeight * 4 / 5;
+			int Xmargin = this.resX * 4 / 5;
+			int Ymargin = this.resY * 4 / 5;
+			int halfWidth = Math.floorDiv(this.resX, 2);
+			int halfHeight = Math.floorDiv(this.resY, 2);
+			int zoomedHalfWidth = Math.floorDiv(this.resX, zoomLevel * 2);
+			int zoomedHalfHeight = Math.floorDiv(this.resY, zoomLevel * 2);
 			
-			if( Math.abs(distX) > (screenWidth / 2) )
+			if( Math.abs(distX) > halfWidth )
 				{
 				this.isOnScreen = false;
 				return;
 				}
-			if( Math.abs(distY) > (screenHeight / 2) )
+			if( Math.abs(distY) > halfHeight )
 				{
 				this.isOnScreen = false;
 				return;
 				}
-			
+
 			this.isOnScreen = true;
-			
-			int mapScrollX = playerX - (screenWidth / 2);
-			int mapScrollY = playerY - (screenHeight / 2);
+
+			// Adjustments need made when player is close ot edges
+			int mapScrollX = zoomedHalfWidth - playerX;
+			int mapScrollY = zoomedHalfHeight - playerY;
 			if( mapScrollX < 0 ) { mapScrollX = 0; }
 			if( mapScrollY < 0 ) { mapScrollY = 0; }
 			
@@ -265,9 +273,12 @@ public class JVCL
 //			this.screenY = screenHeight / 2 + distY;
 //   	The +16 is an adjustment made so part of the box is not
 //		directly over-top the character.
-			this.screenX = entityX - mapScrollX + 16;
-			this.screenY = entityY - mapScrollY + 16;
+			this.screenX = (entityX - mapScrollX) * ((int) zoomLevel) + 16;
+			this.screenY = (entityY - mapScrollY ) * ( (int) zoomLevel )  + 16;
 			
+			this.screenX = halfWidth  - (mapScrollX * (int)zoomLevel)  + ( (int) zoomLevel * distX);
+			this.screenY = halfHeight  - (mapScrollY * (int)zoomLevel)  + ( (int) zoomLevel * distY);
+
 			// MARGINS
 			// There is a condition where boxes will degenerate if they
 			//    are put too close ot the right & bottom edge of the screen.
@@ -277,7 +288,7 @@ public class JVCL
 				{	this.isOnScreen = false;	}
 			if( this.screenY > Ymargin )
 				{	this.isOnScreen = false;	}
-			
+
 			return;
 			}
 
@@ -554,13 +565,14 @@ public class JVCL
 
 	//  ===========   DRAWING FUNCTIONS ============
 	
-	public boolean JVCstring(int x, int y, String s, Font fnt, Color c )
+	private boolean JVCstring( VImage destLayer, int x, int y, String s, Font fnt, Color c )
 		{
 		if( this.vcl.get(currentLayer).getActive() == false )  
 			{ return(false); }
 		if( x < 0 || y < 0 ) { return(false); }
 		
-		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		Graphics2D g2 = (Graphics2D) destLayer.getImage().getGraphics();
+		g2.setComposite(AlphaComposite.Src );
 		g2.setFont( fnt );
 		
 		int checkY = g2.getFontMetrics().getHeight();
@@ -586,6 +598,13 @@ public class JVCL
 		 	// 	anything that writes to layers needs to set this ~ if successful
 		this.requiresUpdate = true; 
 		return(true);
+		}
+	
+	public boolean JVCstring(int x, int y, String s, Font fnt, Color c )
+		{
+		// Default send to active layer.
+		return JVCstring( vcl.get( this.currentLayer), x, y, 
+				s, fnt, c );
 		}
 
 		// A "dumb" overload form of the above.
@@ -1006,6 +1025,7 @@ public class JVCL
 		return(true);
 		}
 
+	// By default the public function draws to the active JVC layer.
 	public boolean JVCtextImageBox( int x, int y, String s, 
 			Font fnt, Color textColor, Color outlineColor, int paddingPx,
 			BufferedImage imgBackground, float alphaBackground )
@@ -1092,34 +1112,37 @@ public class JVCL
 
 		int longestLine = 0;
 		for( int ln = 0; ln < numLines; ln++ )
-			{ 
+			{
 			int thislen = g2.getFontMetrics().stringWidth( sParts[ln] );
 			if( thislen > longestLine )  { longestLine = thislen; }
 			}
-		
+
 			// Now, we can finally calculate the outline bounds of the box.
 		int x0 = x;    int y0 = y;
 		int w0 = longestLine + (paddingPx*2) + 4;
 		int h0 = (numLines * singleLineHeight ) + (paddingPx * 2) + 4;
 
-		JVCblitScaleBlendImage(x0,y0,w0,h0,
+		this.JVCblitScaleBlendImage( targetLayer, x0,y0,w0,h0,
 				imgBackground, alphaBackground );
 		
+		g2.setColor(Color.black);
+		g2.fillRect( x, y, w0, h0 );
 		g2.setColor( outlineColor );
 		g2.drawRect( x, y, w0, h0 );
 		g2.drawRect( x+1, y+1, w0-2, h0-2 ); 
 		g2.setColor( outlineColor.darker() );
 		g2.drawRect( x+1, y+1, w0-2, h0-2 );
-		g2.dispose();
+		g2.dispose();	
 
 		x0 = x+2+paddingPx;
 		y0 = y+2+paddingPx;
 
 		for( int ln = 0; ln < numLines; ln++, y0 += (singleLineHeight+2) )
 			{
-			this.JVCstring( x0, y0, sParts[ln], fnt, textColor );
+			this.JVCstring( targetLayer, x0, y0, sParts[ln], fnt, textColor );
 			}
 
+		
 		this.requiresUpdate = true;
 		return(true);
 		}
@@ -1132,10 +1155,28 @@ public class JVCL
 				paddingPx, imgBackground.getImage(), alphaBackground ) );
 		}
 
+	private boolean JVCtextImageBox( VCLayer targetLayer, int x, int y, String s, 
+			Font fnt, Color textColor, Color outlineColor, int paddingPx,
+			VImage imgBackground, float alphaBackground )
+		{
+		return( JVCtextImageBox( targetLayer, x, y, s, fnt, textColor, outlineColor,
+				paddingPx, imgBackground.getImage(), alphaBackground ) );
+		}
+
 
 		// Blits an image onto current layer, giving control of the alpha blending
 		// Constructs new intermediate image so this may be slow if abused.
+		//  This was delegated because of the need to draw to dialog layer
 	public void JVCblitScaleBlendImage( int x, int y, int w, int h, BufferedImage img, float blendValue )
+		{
+		JVCblitScaleBlendImage( this.vcl.get(this.currentLayer), 
+				x, y, w, h, img, blendValue );
+		return;
+		}
+
+		// Blits an image onto current layer, giving control of the alpha blending
+		// Constructs new intermediate image so this may be slow if abused.
+	private void JVCblitScaleBlendImage( VImage destLayer, int x, int y, int w, int h, BufferedImage img, float blendValue )
 		{
 		if( this.vcl.get(currentLayer).getActive() == false )  
 			{ return; }
@@ -1152,11 +1193,11 @@ public class JVCL
 			// Scale the image to blit
 		VImage interImg = new VImage(w,h);
 		Graphics2D g2i = (Graphics2D) interImg.getImage().getGraphics();
-		g2i.setComposite( AlphaComposite.Src );
+//		g2i.setComposite( AlphaComposite.Src );
 		g2i.drawImage( img, at, null );
 		g2i.dispose();
 			// Blend and blit it over the current layer at given position.
-		Graphics2D g2d = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		Graphics2D g2d = (Graphics2D) destLayer.getImage().getGraphics();
 		g2d.setComposite( AlphaComposite.getInstance(
 				AlphaComposite.SRC_OVER, blendValue )  );
 		g2d.drawImage( interImg.getImage(), x, y, Color.BLACK, null);		
@@ -1166,7 +1207,10 @@ public class JVCL
 		}
 
 	public void JVCblitScaleBlendImage( int x, int y, int w, int h, VImage img, float blendValue )
-		{ JVCblitScaleBlendImage( x, y, w, h,img.getImage(), blendValue ); }
+		{ 
+		this.JVCblitScaleBlendImage( x, y, w, h,img.getImage(), blendValue );
+		return;
+		}
 	
 	public void JVCrotateLayer(float rotationRadians)
 		{
@@ -1208,7 +1252,8 @@ public class JVCL
 			float alphaBackground )
 		{
 		DialogTracker iDialog = new DialogTracker(entityNum, message, 
-			durationMsec, fnt, textColor, outlineColor, frameWidth, imgBackground, alphaBackground);
+			durationMsec, fnt, textColor, outlineColor, frameWidth, imgBackground, 
+			alphaBackground, this.standardX, this.standardY );
 		this.dialogBoxes.add(iDialog);
 		this.requiresUpdate = true;
 		return;
@@ -1254,12 +1299,11 @@ public class JVCL
 		}
 
 	public void JVCdialogSetCoordinates(int index, int playerMapX,
-			int playerMapY, int entityMapX, int entityMapY,
-			int screenWidth, int screenHeight )
+			int playerMapY, int entityMapX, int entityMapY,	byte zoom )
 		{
 		DialogTracker dt = this.dialogBoxes.get(index);
 		dt.updatePositions( playerMapX, playerMapY, 
-				entityMapX, entityMapY, screenWidth, screenHeight);
+				entityMapX, entityMapY, zoom );
 		this.requiresUpdate = true;
 		return;
 		}
@@ -1267,8 +1311,7 @@ public class JVCL
 	//   returns false if that entity does not have an active dialog
 	public boolean JVCdialogSetCoordinatesViaEntityNumber(
 			int entityIndex, int playerMapX,
-			int playerMapY, int entityMapX, int entityMapY,
-			int screenWidth, int screenHeight )
+			int playerMapY, int entityMapX, int entityMapY,	byte zoom )
 		{
 		DialogTracker dt = null;
 		boolean foundIt = false;
@@ -1282,7 +1325,7 @@ public class JVCL
 		if( dt == null )  { return false; }
 		
 		dt.updatePositions( playerMapX, playerMapY, 
-				entityMapX, entityMapY, screenWidth, screenHeight);
+				entityMapX, entityMapY, zoom );
 		
 		this.requiresUpdate = true;
 		return true;

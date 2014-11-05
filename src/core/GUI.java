@@ -390,7 +390,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 
 		try {
 			Graphics g = strategy.getDrawGraphics();
-			if(alpha != 1f) 
+			if(alpha != 1f ) 
 				{
 				Graphics2D g2d = (Graphics2D) g;
 				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_IN, alpha));
@@ -402,6 +402,10 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 						curwidth, curheight, null);			
 				}
 	
+			Graphics2D g2d2 = (Graphics2D) g;
+//			g2d2.setComposite( AlphaComposite.SrcOver );
+
+			
 //			jvcl.JVCdialogExpire();
 //			int[] talkingEntityNums = ;
 			for( int en : jvcl.JVCdialogGetEntityNumbers() )
@@ -411,10 +415,9 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 						myself.getx(), 	myself.gety(), 
 						current_map.getEntity(en).getx(), 
 						current_map.getEntity(en).gety(), 
-						screen.width, screen.height );
+						GUIzoom );
 				}
 			jvcl.JVCdialogDraw();
-			
 
 			
 			if( jvcl.getJVCLdialogZpos() == 0 )
@@ -425,9 +428,8 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			
 					// This displays all the VC layers
 //			g.setComposite(AlphaComposite.SRC );
-			
-//			g.drawImage( jvcl.getBufferedImage(), 0, 0, 
-//					curwidth, curheight, null);
+			g.drawImage( jvcl.getBufferedImage(), 0, 0, 
+					curwidth, curheight, null);
 			
 			if( jvcl.getJVCLdialogZpos() != 0 )
 				{
