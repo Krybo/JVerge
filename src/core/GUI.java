@@ -406,7 +406,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 //			g2d2.setComposite( AlphaComposite.SrcOver );
 
 			
-//			jvcl.JVCdialogExpire();
+			jvcl.JVCdialogExpire();
 //			int[] talkingEntityNums = ;
 			for( int en : jvcl.JVCdialogGetEntityNumbers() )
 				{

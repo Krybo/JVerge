@@ -172,6 +172,8 @@ public class JVCL
 			this.isOnScreen = false;
 			this.resX = resX;
 			this.resY = resY;
+			// Cast to long is important or integer overflow will occur. here
+			long lifespan = ( (long) durationMsec) * 1000000;
 			
 			this.fnt = fnt;
 			this.textColor = textColor;
@@ -181,10 +183,9 @@ public class JVCL
 			this.alphaBackground = alphaBackground;
 			this.fadeAlphaBackground = alphaBackground;
 			
-			long crTime = System.nanoTime();
-			this.selfDestructTime = durationMsec*1000000+crTime;
-			this.fadeTimePercent = durationMsec * 9 / 10;
 			// Fade time in ns is 1/10th of total duration (at the end)
+			this.selfDestructTime = lifespan + System.nanoTime();
+			this.fadeTimePercent = durationMsec * 9 / 10;
 			this.fadeTimeDuration = durationMsec * 100000;
 			}
 		
@@ -193,22 +194,30 @@ public class JVCL
 			
 		public boolean hasExpired()
 			{ 
-			long timeNow = System.nanoTime();
-			if( timeNow >= this.selfDestructTime )
-				{ return true; }
+			if( System.nanoTime() >= this.selfDestructTime )
+				{ System.out.println("Dialog expired!"); return true; }
 			return false;
 			}
 		
 		public void calculateFadeAlpha()
 			{
 			long timeNow = System.nanoTime();
+//			long timeRemaining = this.selfDestructTime - System.nanoTime();
+//			System.out.println( "Time: "+Long.toString(timeNow)+"  Remaining : "+Long.toString(timeRemaining) );
 			long fadeStart = this.selfDestructTime - this.fadeTimeDuration;
 				// Fade has not yet begun, or textbox has expired.
-			if( timeNow < fadeStart )  { return; }
-			if( timeNow > this.selfDestructTime )  { return; }
+			if( timeNow < fadeStart )  
+				{ this.fadeAlphaBackground = 1.0f; return; }
+			if( timeNow > this.selfDestructTime )  
+				{ this.fadeAlphaBackground = 0.0f;  return; }
 			
 			float fadeFactor = 1.0f - ( (float) (timeNow - fadeStart ) / (float) this.fadeTimeDuration );
-			this.fadeAlphaBackground = this.alphaBackground * fadeFactor;
+			System.out.println( "Fade Factor: "+Float.toString(fadeFactor) );
+			this.fadeAlphaBackground = (float) this.alphaBackground * fadeFactor;
+			if( this.fadeAlphaBackground > 1.0f )
+				{ this.fadeAlphaBackground = 1.0f; }
+			if( this.fadeAlphaBackground < 0.0f )
+				{ this.fadeAlphaBackground = 0.0f; }
 			return;
 			}
 		
@@ -228,12 +237,14 @@ public class JVCL
 			{ return this.paddingPx; }
 		public VImage getImgBackground()
 			{ return this.imgBackground; }
+		public BufferedImage getBufferedImage()
+			{ return this.imgBackground.getImage(); }
 		public float getAlphaBackground()
 			{ return this.alphaBackground; }
 		public float getAlphaBackgroundWithFade()
 			{ 
 			this.calculateFadeAlpha();
-			return this.fadeAlphaBackground; 
+			return (float) this.fadeAlphaBackground; 
 			}
 		public long getFadeTimeDurationInNanoSeconds()
 			{ return this.fadeTimePercent; }
@@ -468,7 +479,11 @@ public class JVCL
 		}
 
 	private void refresh()
-		{ this.requiresUpdate = true; }
+		{ 
+		this.requiresUpdate = true;
+		this.flattenLayers();
+		return;
+		}
 	
 	private void flattenLayers()
 		{
@@ -647,7 +662,7 @@ public class JVCL
 		return;
 		}
 
-			// Blit solid images
+			// Simple solid Blit solid images
 	public void JVCblitImage(int x, int y, VImage img )
 		{
 		if( this.vcl.get(currentLayer).getActive() == false )  
@@ -858,8 +873,9 @@ public class JVCL
 		this.requiresUpdate = true;
 		return(true);
 		}
-	
-	public boolean JVCmenuImage( int leftX, int topY, int totalWidth, int totalHeight, 
+
+	private boolean JVCmenuImage( VCLayer layer, 
+			int leftX, int topY, int totalWidth, int totalHeight, 
 			BufferedImage imgBackground, float imgBkgBlend,
 			int frameWidth, Color frameColor, boolean sunkenFrame )
 		{
@@ -876,9 +892,9 @@ public class JVCL
 		if( leftX+totalWidth > this.standardX )  { return(false); }
 		if( topY+totalHeight > this.standardY )  { return(false); }
 
-		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
+		Graphics2D g2 = (Graphics2D) layer.getImage().getGraphics();
 
-		JVCblitScaleBlendImage(leftX, topY, totalWidth, totalHeight, 
+		this.JVCblitScaleBlendImage(layer, leftX, topY, totalWidth, totalHeight, 
 				imgBackground, imgBkgBlend );
 		
 //		g2.fillRect( leftX, topY, totalWidth, totalHeight );
@@ -900,6 +916,15 @@ public class JVCL
 		g2.dispose();
 		this.requiresUpdate = true;
 		return(true);
+		}
+	
+	public boolean JVCmenuImage( int leftX, int topY, int totalWidth, int totalHeight, 
+			BufferedImage imgBackground, float imgBkgBlend,
+			int frameWidth, Color frameColor, boolean sunkenFrame )
+		{
+		return this.JVCmenuImage( this.vcl.get(currentLayer),
+			leftX, topY, totalWidth, totalHeight,  imgBackground, imgBkgBlend,
+			frameWidth, frameColor, sunkenFrame );
 		}
 
 	public boolean JVCmenuImage( int leftX, int topY, int totalWidth, int totalHeight, 
@@ -1031,8 +1056,8 @@ public class JVCL
 			BufferedImage imgBackground, float alphaBackground )
 		{
 		return JVCtextImageBox( vcl.get(this.currentLayer) , x, y, s, 
-				fnt, textColor, outlineColor, paddingPx,
-				imgBackground, alphaBackground );
+			fnt, textColor, outlineColor, paddingPx,
+			imgBackground, alphaBackground );
 		}
 	
 	private boolean JVCtextImageBox( VCLayer targetLayer, int x, int y, String s, 
@@ -1122,17 +1147,20 @@ public class JVCL
 		int w0 = longestLine + (paddingPx*2) + 4;
 		int h0 = (numLines * singleLineHeight ) + (paddingPx * 2) + 4;
 
-		this.JVCblitScaleBlendImage( targetLayer, x0,y0,w0,h0,
-				imgBackground, alphaBackground );
+//		this.JVCblitScaleBlendImage( targetLayer, x0,y0,w0,h0,
+//				imgBackground, alphaBackground );
+//		
+//		g2.setColor(Color.black);
+//		g2.fillRect( x, y, w0, h0 );
+//		g2.setColor( outlineColor );
+//		g2.drawRect( x, y, w0, h0 );
+//		g2.drawRect( x+1, y+1, w0-2, h0-2 ); 
+//		g2.setColor( outlineColor.darker() );
+//		g2.drawRect( x+1, y+1, w0-2, h0-2 );
+//		g2.dispose();
 		
-		g2.setColor(Color.black);
-		g2.fillRect( x, y, w0, h0 );
-		g2.setColor( outlineColor );
-		g2.drawRect( x, y, w0, h0 );
-		g2.drawRect( x+1, y+1, w0-2, h0-2 ); 
-		g2.setColor( outlineColor.darker() );
-		g2.drawRect( x+1, y+1, w0-2, h0-2 );
-		g2.dispose();	
+		boolean tester = this.JVCmenuImage(targetLayer, x, y, w0, h0, imgBackground, 
+			alphaBackground, paddingPx, outlineColor,true );
 
 		x0 = x+2+paddingPx;
 		y0 = y+2+paddingPx;
@@ -1263,26 +1291,31 @@ public class JVCL
 	public int JVCdialogExpire()
 		{
 		int removed = 0;
-		int count = this.dialogBoxes.size();
 		int dialogIndex = -1;
-		boolean[] deathFlag = new boolean[this.dialogBoxes.size()];
+		int dialogTotal = this.dialogBoxes.size();
+//		System.out.println(Integer.toString(dialogTotal)+" Dialogs to check");
+		boolean[] deathFlag = new boolean[dialogTotal];
 		for( DialogTracker dt : this.dialogBoxes )
 			{
 			dialogIndex++;
 			deathFlag[dialogIndex] = dt.hasExpired();
 			}
 		
-		for( int idx = (count-1); idx > 0; idx-- )
+		for( int idx = (dialogTotal - 1); idx >= 0; idx-- )
 			{
 			if( deathFlag[idx] == true )
 				{
+				System.out.println(" Dialog # "+Integer.toString(idx)+" has expired.");
 				this.dialogBoxes.remove(idx);
 				removed++;
 				}
 			}
 
 		if( removed > 0 )		// reflatten 
-			{ this.requiresUpdate = true; }
+			{
+			this.JVCclearDialog();
+			this.requiresUpdate = true; 
+			}
 		return removed;
 		}
 	
@@ -1344,7 +1377,7 @@ public class JVCL
 			this.JVCtextImageBox( this.JVCLdialoglayer, 
 					dt.getX(), dt.getY(), dt.getText(), 
 					dt.getFont(), dt.getTextColor(), dt.getOutlineColor(), 
-					dt.getPaddingPx(), dt.getImgBackground().getImage(), 
+					dt.getPaddingPx(), dt.getBufferedImage(),
 					dt.getAlphaBackgroundWithFade() );
 
 			}
