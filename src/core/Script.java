@@ -262,6 +262,34 @@ public class Script {
 		if (k<0 || k>127) return;
 		bindarray[k] = s;
 	}
+	
+	/* Krybo:   June-2015
+	 * I made this because hookkey() was executing target method way
+	 * too fast (thousands of times a second) and I needed a way to
+	 * throttle it. A waitKeyUp() within the target method seemed to 
+	 * cause problems.  
+	 * -- Each key may have its own throttle level in nanoseconds. -- 10 digits
+	 * 1000000000 = 1 Second limit
+	 * 500000000 = Half a second
+	 * 10000000 = 100th of a second (commonly traditionally)
+	 *    settings much below 100000 probably won't be useful
+	 *    as "noise" in the machines background makes it inconsistant.
+	 *    
+	 *    It WILL NOT cause target method to execute *exactly* "delay"
+	 *    nanoseconds frequency.   Think of it more like a minimal throttle
+	 *    
+	 *    I am not sure what this will do on systems that do not support
+	 *    high precision timers  - specificially - System.nanoTime()
+	 * */
+
+	public static void nicedHookkey(int k, String s, long delay ) 
+		{
+		if (k<0 || k>127) return;
+		if( delay < 0 ) { delay = 0; }
+		bindarray[k] = s;
+		bindarrayDelay[k] = delay;
+		bindarrayCounter[k] = System.nanoTime();
+		}
 
 	public static void log(String s) { 
 		System.out.println(s); 

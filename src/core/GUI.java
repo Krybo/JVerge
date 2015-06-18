@@ -385,6 +385,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 			log("DEBUG:  X: "+Integer.toString(theSource.width)+" vs "+Integer.toString(screen.width)+
 					"  :-:  Y: "+Integer.toString(theSource.height)+
 					" vs "+Integer.toString(screen.height) );
+			// Krybo:  TODO This should really throw illegal state exception. 
 			return; 
 			}
 
@@ -402,7 +403,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 						curwidth, curheight, null);			
 				}
 	
-			Graphics2D g2d2 = (Graphics2D) g;
+//			Graphics2D g2d2 = (Graphics2D) g;
 //			g2d2.setComposite( AlphaComposite.SrcOver );
 
 			
@@ -467,7 +468,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 
 	}
 	
-		// Passthrough to keep any existing code happy.
+		// Krybo: Delegator to keep any existing code happy.
 	public static void updateGUI( ) 
 		{ updateGUI(screen); }
 	

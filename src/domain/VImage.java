@@ -235,10 +235,18 @@ public class VImage implements Transferable
 		// TODO Create function drawRoundRect, similar to Graphics
 
 		// Render the map and the entities to this VImage
-	    public void render() {
+	    public void render() 
+		    {
+	    		// Krybo: June-2015 : Clearing every cycle is REQUIRED.   otherwise
+	    		//   entities were leaving trails in transparent areas of the map
+	    		//   and in some instances map did not "appear" to scroll.
+	    		//  * Seems to have a negligable affect on performance given this 
+	    		//     is done every loop cycle.   This single line ended both problems
+	    		this.paintBlack(1.0f);
+	    		
 			VergeEngine.TimedProcessEntities(); 
 			VergeEngine.RenderMap(this);
-		}
+		    }
 	    
 		//VI.f. Graphics Functions
 		/*static void AdditiveBlit(int x, int y, int src, int dst) {

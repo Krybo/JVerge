@@ -1,6 +1,7 @@
 package core;
 
 import static core.Script.*;
+
 import java.awt.Point;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -34,6 +35,9 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 
 	public static String bindbutton[] = new String[4];
 	public static String bindarray[] = new String [128];
+		// Krybo : added in Script.nicedHookkey
+	public static long bindarrayDelay[] = new long [128];
+	public static long bindarrayCounter[] = new long [128];
 	
 	public static void UnUp() { kill_up = true; up = false; }
 	public static void UnDown() { kill_down = true; down = false; }
@@ -75,6 +79,7 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 		mouse_Update();
 		UpdateKeyboard();
 */
+
 		boolean oldb1 = b1,
 			 oldb2 = b2,
 		     oldb3 = b3,
@@ -120,11 +125,24 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 		if (b4 && !oldb4) callfunction(bindbutton[3]);
 		
 		// Rafael, the Esper (2014: new)
-		for(int i=0; i<bindarray.length; i++) {
-			if(getKey(i) && bindarray[i] != null && !bindarray[i].isEmpty()) {
+		for(int i=0; i<bindarray.length; i++)
+			{
+			if(getKey(i) && bindarray[i] != null && !bindarray[i].isEmpty()) 
+				{
+				// Krybo June-2015: 
+				//    If the user specified delay has NOT passed since
+				//    the last time it was executed, skip it.
+				//	If nicedHookkey was not used, this will have no effect
+				//   - purpose is to prevent a hookkey method from
+				//         executing as fast as the machine can.
+				long hkNow = System.nanoTime();
+				if( hkNow < (bindarrayCounter[i] + bindarrayDelay[i] ) )
+					{ continue; }
+				else { bindarrayCounter[i] = hkNow;  }
+				
 				callfunction(bindarray[i]);
+				}
 			}
-		}
 	}
 
 	// JGAME STUFF **** /////////////////////////////////////////////

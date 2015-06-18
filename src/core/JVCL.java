@@ -758,8 +758,10 @@ public class JVCL
 
 	public void JVCclearAllLayers()
 		{
+		System.out.println("TEST 01");
 		if( this.vcl.get(currentLayer).getActive() == false )  
 			{ return; }
+		System.out.println("TEST 02");
 		for( int a = 0; a < this.vcl.size(); a++ )
 			{
 			Graphics2D g2 = (Graphics2D) vcl.get(a).getImage().getGraphics();
@@ -1300,7 +1302,7 @@ public class JVCL
 			dialogIndex++;
 			deathFlag[dialogIndex] = dt.hasExpired();
 			}
-		
+
 		for( int idx = (dialogTotal - 1); idx >= 0; idx-- )
 			{
 			if( deathFlag[idx] == true )
