@@ -42,16 +42,17 @@ public abstract class MapAbstract implements Map {
 		return this.startY;
 	}
 
-	public void render(int x, int y, VImage dest) {
+	public void render(int x, int y, VImage dest) 
+		{
 		boolean first = true;
-		int tx = (dest.width / 16) + 2;
-		int ty = (dest.height / 16) + 2;
+		if( dest.width < 1 )  { return; }
+		if( dest.height < 1 )  { return; }
+		int tx = (dest.width >> 4 ) + 2;
+		int ty = (dest.height >> 4 ) + 2;
 
 		for (int i = 0; i < renderstring.length(); i++) {
 			char token = renderstring.charAt(i);
-			if (token == ',') {
-				continue;
-			}
+			if (token == ',') 	{ continue; }
 
 			if (token == 'E') {
 				RenderEntities(dest);
@@ -132,11 +133,11 @@ public abstract class MapAbstract implements Map {
 					
 					if (transparent) {
 						if (c != 0 || l==0) {
-							tileset.TBlit((x * 16), (y * 16), c, imgcache[l]);
+							tileset.TBlit((x << 4), (y << 4), c, imgcache[l]);
 							//tileset.TBlit((x * 16) + xofs, (y * 16) + yofs, c, dest);
 						}
 					} else {
-							tileset.Blit((x * 16), (y * 16), c, imgcache[l]);
+							tileset.Blit((x << 4), (y << 4), c, imgcache[l]);
 							//tileset.Blit((x * 16) + xofs, (y * 16) + yofs, c, dest);
 					}
 				}

@@ -5,6 +5,7 @@ import static core.Script.*;
 import static core.Sprite.RenderSpritesAboveEntity;
 import static core.Sprite.RenderSpritesBelowEntity;
 import static core.Sprite.sprites;
+import static core.VergeEngine.DefaultTimer;
 //import static core.VergeEngine.getGUI;
 import static domain.Entity.EAST;
 import core.JVCL;
@@ -16,6 +17,7 @@ import static domain.Entity.SOUTH;
 import static domain.Entity.SW;
 import static domain.Entity.WEST;
 
+
 //import java.awt.Color;
 //import java.net.MalformedURLException;
 //import java.net.URL;
@@ -24,6 +26,7 @@ import java.util.Collections;
 import java.util.Comparator;
 //import java.util.HashMap;
 import java.util.List;
+
 import domain.Config;
 import domain.Entity;
 //import domain.Map;
@@ -38,6 +41,9 @@ public class VergeEngine extends Thread {
 	
 	public static int lastentitythink;
 	public static int lastspritethink = 0;
+	
+	public static int currentMapZoneWidth = -1;
+	public static int currentMapZoneHeight = -1;
 
 	public static boolean die;
 	
@@ -592,8 +598,8 @@ public class VergeEngine extends Thread {
 		if (!inscroller && getLastKeyChar() == 41)
 			MapScroller(dest);
 
-		int rmap = (current_map.getWidth() * 16);
-		int dmap = (current_map.getHeight() * 16);
+		int rmap = currentMapZoneWidth;
+		int dmap = currentMapZoneHeight;
 
 		switch (cameratracking) {
 		case CAMERA_STATIC:
@@ -782,8 +788,28 @@ public class VergeEngine extends Thread {
 						virtualScreen.render();
 					}
 					
-					if(!die) // redundant?
-						showpage();
+//					if(!die) // redundant?
+//						showpage();
+
+			/* Krybo : June-2015 : showpage() hard substitution 
+			 * agree there were some redundancies affecting
+			 * performance.   especially the duplicate UpdateControls
+			 * Which was removed.
+			 */
+					
+					lastchangetime = 0;
+					
+					// Practically the same as screen.render() above, so removed
+//					if(virtualScreen!=null) 
+//						{ screen.blit(0, 0, virtualScreen); }
+// Seemingly unnecessary
+//				Controls.UpdateControls();
+				
+				DefaultTimer();	//[Rafael, the Esper]
+				GUI.paintFrame();
+
+				/* Copy clipboard code Stub */
+
 				}
 			}
 		}
@@ -800,9 +826,12 @@ public class VergeEngine extends Thread {
 		xwin = ywin = 0;
 		done = false;
 		die = false;
-		if(mapname.toLowerCase().endsWith(".map")) {
+		if(mapname.toLowerCase().endsWith(".map")) 
+			{
 			current_map = new MapVerge(mapname);
-		}
+			currentMapZoneWidth = current_map.getWidth() * 16;
+			currentMapZoneHeight = current_map.getHeight() * 16;
+			}
 		else {
 			current_map = new MapDynamic(mapname);
 		}

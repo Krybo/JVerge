@@ -129,6 +129,7 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 			{
 			if(getKey(i) && bindarray[i] != null && !bindarray[i].isEmpty()) 
 				{
+				
 				// Krybo June-2015: 
 				//    If the user specified delay has NOT passed since
 				//    the last time it was executed, skip it.
