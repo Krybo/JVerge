@@ -46,6 +46,28 @@ public class MapVerge extends MapAbstract implements Map {
 				+ startupscript + "; start:" + startX + "," + startY;
 	}
 
+		/* Krybo (Jan 2016)
+		 * 
+		* Sets up a completely blank map for you to programmatically fill in.
+		*  and use (or not use) for your inscrutable purposes!
+		* It requires zero on-disk resources.
+		* This will NOT automatically cause the engine to switch to this map.
+		 */
+	public MapVerge( int xTileSize, int yTileSize, int vspTileSize ) 
+		{
+		try {
+			this.createBlankMap( xTileSize, yTileSize );
+			this.tileset = new Vsp(vspTileSize);
+
+			// Auto-generated map does not have a filename.   This causes
+			//   problems if set because verge tries to find a corresponding
+			//   .java file (or compiled Class) to complement the map name.
+			this.filename = "";
+
+		} catch ( Exception e ) 
+			{	e.printStackTrace();	}
+		}
+	
 	public MapVerge(String strFilename) {
 		this(Script.load(strFilename), strFilename);
 		
@@ -205,7 +227,85 @@ public class MapVerge extends MapAbstract implements Map {
 		} catch (IOException e) {
 			System.err.println("IOException : " + e);
 		}
+	return;
 	}
+
+		/* Krybo (Jan 2016): Creates a most basic blank map of size x/y
+		*     in theory one should be able to make an expendable blank
+		*     map for cut-scenes and effects & such without putting blank 
+		*     .map files and vsp's into your project.
+		*     It will also not fail unless you somehow run out of memory.
+		*/
+	private void createBlankMap( int Xtiles, int Ytiles )
+		{
+		Double dblRandom = Math.random()*10000.0d;
+		Integer intRandom = new Integer( dblRandom.intValue() );
+		int xyIndex = (Xtiles * Ytiles) - 1;
+		// Map metadata
+		String mapSignature = domain.MapVerge.MAP_SIGNATURE;
+		int mapVersion = 3;
+		int vcOffset = 0;
+		this.filename = "BLANK_"+Integer.toString(intRandom)+".map";
+		this.mapname = "Area # "+Integer.toString(intRandom);
+		this.vspname = "blank_"+Integer.toString(intRandom)+".vsp";
+		this.musicname = "";
+		this.renderstring = "";
+		this.startupscript = null;
+		this.startX = 1;      this.startY = 1;
+		
+		DUMP = mapVersion + vcOffset;
+		
+		this.layers = new Layer[1]; 
+
+			Layer l = new Layer();
+			l.name = "Blank Layer 0";
+			l.parallax_x = 0.0d;
+			l.parallax_y = 0.0d;
+			l.width = Xtiles;
+			l.height = Ytiles;
+			l.lucent = 0;
+			l.tiledata = new int[xyIndex];
+
+			this.layers[0] = l;
+
+		
+			// Utility layers
+		this.obsLayer = new byte[xyIndex];
+		this.zoneLayer = new int[xyIndex];
+		
+		this.zones = new Zone[1];
+		
+			Zone z = new Zone();
+			z.name = "null zone";
+			z.script = "";
+			z.percent = 0;
+			z.delay = 10;
+			z.method = 1;
+			this.zones[0] = z;
+
+		this.entities = new Entity[1];
+
+			int x = 1;
+			int y = 1;
+			Entity e = new Entity(x*16, y*16, null);
+			e.face = 0;
+			e.obstructable = true;
+			e.obstruction = false;
+			e.autoface = false;
+			e.speed = 100;
+			e.movecode = (byte) 2 >> 8;
+			e.wx1 = 0;		e.wx2 = 1;
+			e.wy1 = 0;		e.wy2 = 1;
+			e.wdelay = 0;
+			e.movescript = "";
+			e.setMotionless();
+			e.chrname = "dummy0000000000dummy.chr";
+			e.description = "Placeholder entity for blank map.  Do not use!";
+			e.script = "";
+			this.entities[0] = e;
+
+		return;
+		}
 
 	/**
 	 * Saves a Map to a specified file path
@@ -330,16 +430,27 @@ public class MapVerge extends MapAbstract implements Map {
 	
 
 	// Rafael: Code disassociated with map loading
-	private void startMap() {
+	private void startMap() 
+		{
 
-		if(!musicname.trim().isEmpty())
+		if( ! musicname.trim().isEmpty())
 			playmusic(Script.load(musicname));
 		
+		// Krybo:  this instantly copies all data from this MapVerge
+		//  object into the main map running in Verge engine.
 		current_map = this;
+		
 		//se.LoadMapScript(f, mapfname);
 		
-		for(int i=0; i<current_map.getEntities().length; i++) {
+		for(int i=0; i<current_map.getEntities().length; i++) 
+			{
 			Entity e = current_map.getEntities()[i];
+			
+			// Krybo (Jan 2016): This indicates that the char is a dummy 
+			//    .chr from the blank map creation method.   This method
+			//	ignores entities, so this will end here.
+			if( e.chrname.equals("dummy0000000000dummy.chr") == true )
+				{ continue; }
 
 		// Krybo (2014-10-22)  This was causing a NPE later on when
 		//  a bad maped based entity filename was passed and load fails, so stop it here.
@@ -354,7 +465,7 @@ public class MapVerge extends MapAbstract implements Map {
 			
 			e.index = Script.numentities++;
 			entity.add(e);
-		}
+			}
 
 		//TODO Check if this is needed
 		//if(this.tileset.numobs == 0)
@@ -363,7 +474,7 @@ public class MapVerge extends MapAbstract implements Map {
 		if(startupscript != null && !startupscript.trim().equals(""))
 			callfunction(startupscript);
 
-	}
+		}
 	
 	
 	// Use
@@ -446,9 +557,12 @@ public class MapVerge extends MapAbstract implements Map {
 		return 0;
 	}
 	
-	public String getFilename() {
+	public String getFilename() 
+		{
+		if( this.filename.isEmpty() )
+			{ return(null); }
 		return this.filename;
-	}
+		}
 
 	public String getMapname() {
 		return this.mapname;

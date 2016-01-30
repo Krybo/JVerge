@@ -770,11 +770,12 @@ public class VergeEngine extends Thread {
 
 		callfunction("autoexec");
 		
-		while(mapname!=null && !mapname.isEmpty()) {
-			log("Entering: " + mapname);
+		while(mapname!=null && !mapname.isEmpty()) 
+			{
+			log("Entering Area: " + mapname);
 			engine_start();
 			
-			// Game Loop
+			// Game Map Loop
 			while(!done) {
 				updateControls();
 				//TimedProcessEntities();
@@ -811,6 +812,12 @@ public class VergeEngine extends Thread {
 				/* Copy clipboard code Stub */
 
 				}
+
+			// Krybo (Jan.2016):  loop flow comment.
+			// above engine loop dies when the map changes or player exits verge.
+			// If only the map changes, It will proceed to top & restart the engine
+			// using the filename within the static var "mapname"
+
 			}
 		}
 		
@@ -826,7 +833,16 @@ public class VergeEngine extends Thread {
 		xwin = ywin = 0;
 		done = false;
 		die = false;
-		if(mapname.toLowerCase().endsWith(".map")) 
+		
+		// Krybo (Jan 2016) : felt some exception handled is needed here.
+		try {
+		if( mapname.equals("_map_change_") == true )
+			{
+			// The contents of current_map have already been changed to the new map.
+			currentMapZoneWidth = current_map.getWidth() * 16;
+			currentMapZoneHeight = current_map.getHeight() * 16;
+			}
+		else if(mapname.toLowerCase().endsWith(".map")) 
 			{
 			current_map = new MapVerge(mapname);
 			currentMapZoneWidth = current_map.getWidth() * 16;
@@ -834,7 +850,19 @@ public class VergeEngine extends Thread {
 			}
 		else {
 			current_map = new MapDynamic(mapname);
-		}
+			}
+		
+		if( core.Script.jvcl != null )
+			{  
+			core.Script.jvcl.destroy();
+			core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
+			}
+		
+		}	catch( Exception e )
+			{ 
+			System.out.println("!!! Something went wrong with map object creation.");
+			e.printStackTrace();
+			}
 
 		// CleanupCHRs();
 		timer = 0;

@@ -123,9 +123,12 @@ public class Vsp {
 
 	
 	
-	public Vsp() {
-		
-	}
+	public Vsp() 
+		{		}
+
+		// Krybo (Jan 2016) : sets up a blank vsp, with X number of black tiles  
+	public Vsp( int blankTiles )
+		{ this.createDummy(blankTiles); }
 	
 	public Vsp(URL urlpath) {
 		try {
@@ -153,6 +156,7 @@ public class Vsp {
 			this.compression = f.readSignedIntegerLittleEndian();
 			
 			System.out.println(this.signature + ";"+this.version+";"+this.getNumtiles()+";"+this.compression);
+			// Krybo:: e.x.   5264214;6;100;1
 			
 			byte[] vspdata = f.readCompressedUnsignedShortsIntoBytes(); // tileCount * width * height * 3 bytes!
 				
@@ -214,7 +218,7 @@ public class Vsp {
 		 }		
 
 	}
-	
+
 	private void save(String filename) {
 
 		System.out.println("VSP::save at " + filename);
@@ -263,6 +267,66 @@ public class Vsp {
 		}
 	}	
 
+	private void createDummy(int blankTiles) 
+		{
+		this.signature = 5264214;
+		this.version = 6;
+		this.tileSize = 16;
+		this.format = 3;
+		this.numtiles = blankTiles;
+		this.compression = 1;
+		
+		int dataByteSize = this.numtiles * this.tileSize * this.tileSize * 3;
+		byte[] vspdata = new byte[ dataByteSize ];
+			// Black this out or we might get static from random uninit. values
+		for( int x = 0; x < dataByteSize; x++ )
+			{ vspdata[x] = (byte) 2 >> 6; }   //  ( color 1,1,1 = black)
+
+        int numAnim = 0;
+        this.anims = null;
+//        this.anims = new Vsp.Animation[numAnim];	
+//        System.out.println("numAnim = " + numAnim);
+//        
+//        for(int i=0; i<numAnim; i++) {
+//        	Vsp.Animation a = this.new Animation();
+//        	a.name = f.readFixedString(256);
+//        	a.start = f.readSignedIntegerLittleEndian();
+//        	a.finish = f.readSignedIntegerLittleEndian();
+//        	a.delay = f.readSignedIntegerLittleEndian();
+//        	a.mode = f.readSignedIntegerLittleEndian();
+//        	
+//        	this.anims[i] = a;
+//        }			
+
+        	this.numobs = 6;
+		this.obsPixels = new byte[numobs*256];
+        
+		// initialize tile anim stuff
+		tileidx = new int[getNumtiles()];
+		flipped = new int[getNumtiles()];
+		vadelay = null;
+
+		for( int i=0; i<getNumtiles(); i++ )
+			{
+			flipped[i] = 0;
+			tileidx[i] = i;
+			}
+		mytimer = systemtime;
+
+		// Get image tiles from pixel array 
+		System.out.println("Numtiles: " + getNumtiles() + "(" + vspdata.length + " bytes)");
+		try {		// Expect & ignore an NP.Exception
+			ExtendedDataInputStream f = null;
+				// Vsp tiles stored as tilesize W * tilesize H 3C (rgb) bytes
+			this.tiles = f.getBufferedImageArrayFromPixels( vspdata, 
+					this.numtiles, this.tileSize, this.tileSize );
+			}
+		catch(NullPointerException npe )
+			{   }  // ignore this NPE, we don't really use f anyway.
+	
+		return;
+		}
+
 	public void exportToClipboard(int tiles_per_row) {
 		
 		int row_size = tiles_per_row*16;
@@ -277,7 +341,7 @@ public class Vsp {
 		clipboard.copyImageToClipboard();
 
 	}
-	
+
 	static void createVspFromImages(VImage[] images) {
 		
 		// First pixel is default transparent color

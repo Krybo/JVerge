@@ -26,6 +26,14 @@ import java.util.ArrayList;
 public class JVCL
 	{
 
+	void destroy()
+		{
+		this.dialogBoxes.clear();
+		this.vcl.clear();
+		this.requiresUpdate = false;
+		this.currentLayer = -1;
+		}
+
 	private class VCLayer extends VImage
 		{
 		private boolean visible;
@@ -758,10 +766,9 @@ public class JVCL
 
 	public void JVCclearAllLayers()
 		{
-		System.out.println("TEST 01");
 		if( this.vcl.get(currentLayer).getActive() == false )  
 			{ return; }
-		System.out.println("TEST 02");
+
 		for( int a = 0; a < this.vcl.size(); a++ )
 			{
 			Graphics2D g2 = (Graphics2D) vcl.get(a).getImage().getGraphics();

@@ -7,6 +7,7 @@ import core.JVCL;
 
 
 
+
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
@@ -38,6 +39,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import audio.VMusic;
+import domain.MapVerge;
 import domain.VSound;
 import domain.VImage;
 import domain.Entity;
@@ -428,6 +430,8 @@ public class Script {
 		return Integer.valueOf(s.replace('+', ' ').trim());
 	}
 
+
+	
 	//VI.d. Map Functions
 	public static void map(String map) {
 		mapname = map;
@@ -438,7 +442,18 @@ public class Script {
 		/ According to http://verge-rpg.com/docs/the-verge-3-manual/general-utility-functions/hookretrace/
 		  hookretrace(""); */ 
 	}
-	
+
+		// Krybo (Jan.2016) : overloaded map changer 
+		// Change to a pre-built map object.
+		// Forces the engine to restart using this new map object.
+	public static void map( MapVerge newMap )
+		{
+		mapname = "_map_change_";
+		current_map = newMap;
+		die = true;
+		done = true;		
+		}
+
 	//VI.e. Entity Functions
 	public static void changeCHR(int e, String c) {
 		if (e<0 || e >= numentities) return;
@@ -1224,13 +1239,15 @@ public class Script {
 		Method[] allMethods = c.getDeclaredMethods();
 		for (Method m : allMethods) {
 			String mname = m.getName();
-			if(mname.equals(function) || mname.equals(capitalize(function))) {
-
-				if(justCheck)
-					return true;
+			if(mname.equals(function) || mname.equals(capitalize(function))) 
+				{
+				if(justCheck)		{ return true; }
 				
 				try {
-					//log("Found method " + mname + " in path " + c); // just for debug
+						/* uncomment for debug	
+					log("Found method " + mname + " in path " + c + 
+							" while attempting to invoke [" + function + "]" );
+						*/
 					m.invoke(null);
 					return true;
 				} catch (IllegalArgumentException e) {
@@ -1238,6 +1255,7 @@ public class Script {
 				} catch (IllegalAccessException e) {
 					e.printStackTrace();
 				} catch (InvocationTargetException e) {
+					e.getCause();
 					e.printStackTrace();
 				}
 			}
