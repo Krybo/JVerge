@@ -453,6 +453,14 @@ public class Script {
 		die = true;
 		done = true;		
 		}
+	
+	/*  Krybo (Jan.2016) : experimental vsp tile pixel changer.   */
+	
+	public static boolean changeVspPixel( int tileNum, int x1, int y1, int red256, int green256, int blue256 )
+		{
+		return(  current_map.getTileSet().modifyTile(
+				tileNum, x1, y1, red256, green256, blue256	)	);
+		}
 
 	//VI.e. Entity Functions
 	public static void changeCHR(int e, String c) {

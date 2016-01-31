@@ -841,6 +841,7 @@ public class VergeEngine extends Thread {
 			// The contents of current_map have already been changed to the new map.
 			currentMapZoneWidth = current_map.getWidth() * 16;
 			currentMapZoneHeight = current_map.getHeight() * 16;
+			domain.MapVerge.refreshCache();
 			}
 		else if(mapname.toLowerCase().endsWith(".map")) 
 			{

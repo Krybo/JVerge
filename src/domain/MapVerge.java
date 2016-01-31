@@ -158,6 +158,11 @@ public class MapVerge extends MapAbstract implements Map {
 				l.lucent = f.readUnsignedByte();
 				l.tiledata = f.readCompressedUnsignedShorts();
 
+log("Layer "+Integer.toString(i) + " , "+l.name+" , px " + Double.toString(l.parallax_x) +
+	" ,py " + Double.toString(l.parallax_y) + " ,w " + Integer.toString(l.width) + 
+	" ,h " + Integer.toString(l.height) + " ,lc " + Integer.toString(l.lucent) +  
+	" ,cnt " + Integer.toString( l.tiledata.length ) );
+
 				this.layers[i] = l;
 			}
 
@@ -235,6 +240,7 @@ public class MapVerge extends MapAbstract implements Map {
 		*     map for cut-scenes and effects & such without putting blank 
 		*     .map files and vsp's into your project.
 		*     It will also not fail unless you somehow run out of memory.
+		*     ! Currently This will NOT automatically setup obstruction tiles/layer.
 		*/
 	private void createBlankMap( int Xtiles, int Ytiles )
 		{
@@ -249,24 +255,26 @@ public class MapVerge extends MapAbstract implements Map {
 		this.mapname = "Area # "+Integer.toString(intRandom);
 		this.vspname = "blank_"+Integer.toString(intRandom)+".vsp";
 		this.musicname = "";
-		this.renderstring = "";
+		this.renderstring = "1,2,E,3,R";
 		this.startupscript = null;
 		this.startX = 1;      this.startY = 1;
 		
 		DUMP = mapVersion + vcOffset;
 		
-		this.layers = new Layer[1]; 
+		this.layers = new Layer[3];
 
 			Layer l = new Layer();
-			l.name = "Blank Layer 0";
-			l.parallax_x = 0.0d;
-			l.parallax_y = 0.0d;
+			l.name = "AutoGen Layer ";
+			l.parallax_x = 1.0d;
+			l.parallax_y = 1.0d;
 			l.width = Xtiles;
 			l.height = Ytiles;
 			l.lucent = 0;
 			l.tiledata = new int[xyIndex];
 
 			this.layers[0] = l;
+			this.layers[1] = l;
+			this.layers[2] = l;
 
 		
 			// Utility layers
@@ -302,6 +310,7 @@ public class MapVerge extends MapAbstract implements Map {
 			e.chrname = "dummy0000000000dummy.chr";
 			e.description = "Placeholder entity for blank map.  Do not use!";
 			e.script = "";
+			e.visible = false;
 			this.entities[0] = e;
 
 		return;
@@ -476,8 +485,6 @@ public class MapVerge extends MapAbstract implements Map {
 
 		}
 	
-	
-	// Use
 
 	public int getzone(int x, int y) {
 		if (x < 0 || y < 0 || x >= getWidth() || y >= getHeight())
@@ -533,16 +540,21 @@ public class MapVerge extends MapAbstract implements Map {
 		obsLayer[(y * getWidth()) + x] = (byte) t;
 	}
 	
-	public void settile(int x, int y, int layer, int index) { 
-		if(layer>=this.layers.length) {
-			return;
-		}
+	public void settile(int x, int y, int layer, int index) 
+		{
+		if(layer>=this.layers.length) 
+			{	return;	}
 		else {
 			this.layers[layer].setTile(x,y,index); 
-		}
+			}
 		resetCacheArray();
-	}
+		}
 	
+		// Krybo (Jan.2016)  Call is needed when core.Script.map(MapVerge newMap)
+		// 	b/c the rug is pulled from under this cache.
+	public static void refreshCache()
+		{ resetCacheArray(); }
+
 	public int getWidth() {
 		if (layers != null && layers[0] != null) {
 			return layers[0].width;

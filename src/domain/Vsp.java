@@ -1,6 +1,8 @@
 package domain;
 
 import static core.Script.*;
+
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
 //import java.awt.Color;
@@ -16,6 +18,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+
+import javax.security.auth.Destroyable;
+
 import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
 import core.Script;
@@ -51,7 +56,6 @@ public class Vsp {
 	// [Rafael, the Esper]
 	private BufferedImage [] tiles;
 
-	
 	public static void main(String args[]) throws Exception{
 
 			
@@ -275,13 +279,8 @@ public class Vsp {
 		this.format = 3;
 		this.numtiles = blankTiles;
 		this.compression = 1;
-		
-		int dataByteSize = this.numtiles * this.tileSize * this.tileSize * 3;
-		byte[] vspdata = new byte[ dataByteSize ];
-			// Black this out or we might get static from random uninit. values
-		for( int x = 0; x < dataByteSize; x++ )
-			{ vspdata[x] = (byte) 2 >> 6; }   //  ( color 1,1,1 = black)
 
+		// TODO: animations, fix this, if needed... once I understand what it does.
         int numAnim = 0;
         this.anims = null;
 //        this.anims = new Vsp.Animation[numAnim];	
@@ -313,17 +312,15 @@ public class Vsp {
 			}
 		mytimer = systemtime;
 
-		// Get image tiles from pixel array 
-		System.out.println("Numtiles: " + getNumtiles() + "(" + vspdata.length + " bytes)");
-		try {		// Expect & ignore an NP.Exception
-			ExtendedDataInputStream f = null;
-				// Vsp tiles stored as tilesize W * tilesize H 3C (rgb) bytes
-			this.tiles = f.getBufferedImageArrayFromPixels( vspdata, 
-					this.numtiles, this.tileSize, this.tileSize );
-			}
-		catch(NullPointerException npe )
-			{   }  // ignore this NPE, we don't really use f anyway.
-	
+			// Setup blank tiles.
+		this.tiles = new BufferedImage[this.numtiles];
+		VImage emptyTile = new VImage(this.tileSize,this.tileSize);
+		emptyTile.rectfill(0, 0, this.tileSize, this.tileSize, Color.BLACK );
+			// Replicates a blank tile this.numtiles times.
+		for( int tn = 0; tn < this.numtiles; tn++ )
+			{	this.tiles[tn] = emptyTile.getImage();	}
+		log("Created Blank VSP with "+Integer.toString(this.numtiles)+" tiles.");
+
 		return;
 		}
 
@@ -409,11 +406,38 @@ public class Vsp {
 	public int getNumtiles() {
 		return numtiles;
 	}
+	
+		// Krybo (Jan.2016) : 
+		// opens the internal size of tiles in pixels to public
+		//  Needed this for some display functionality
+	public int getTileSquarePixelSize()
+		{	return( this.tileSize );  }
 
 	public BufferedImage [] getTiles() {
 		return tiles;
 	}
 
+	/* Krybo (Jan.2016) */
+	
+	public boolean modifyTile( int tileNum, int x1, int y1,  
+			int red256, int green256, int blue256 )
+			{
+			if( tileNum >= this.numtiles )  { return(false); }
+			if( x1 < 0 || x1 > this.tileSize )  { return(false); }
+			if( y1 < 0 || y1 > this.tileSize )  { return(false); }
+
+			float R = (float) red256 / 256.0f; 
+			float G = (float) green256 / 256.0f;
+			float B = (float) blue256 / 256.0f;
+			Color C = new Color(R, G, B, 1.0f );
+
+			VImage dat = new VImage(this.tileSize, this.tileSize);
+			dat.setImage(this.tiles[tileNum]);
+			dat.setPixel(x1, y1, C );
+			tiles[tileNum] = dat.getImage();
+			
+			return(true);
+			}
 	
 	boolean GetObs(int t, int x, int y)
 	{
@@ -463,6 +487,7 @@ public class Vsp {
 			System.err.printf("VSP::TBlitTile(), tile %d exceeds %d", index, getNumtiles());
 			return;
 		}
+		
 		dest.tblit(x, y, current_map.getTileSet().getTiles()[tileidx[index]]);
 		//dest.g.drawImage(current_map.tileset.tiles[index], x, y, null);
 	}
@@ -508,8 +533,12 @@ public class Vsp {
 	}
 
 	boolean AnimateTiles()
-	{
+		{
 		boolean animated = false;
+			// Krybo (Jan.2016):  auto-gen maps will not have any of these.  
+		if( anims == null || anims.length == 0 )
+			{ return(false); }
+
 		for (int i=0; i<anims.length; i++)
 		{
 			if(anims[i] == null || vadelay==null)		// [Rafael, the Esper]
