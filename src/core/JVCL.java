@@ -486,7 +486,7 @@ public class JVCL
 		return;
 		}
 
-	private void refresh()
+	public void refresh()
 		{ 
 		this.requiresUpdate = true;
 		this.flattenLayers();

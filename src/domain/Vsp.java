@@ -25,8 +25,8 @@ import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
 import core.Script;
 
-public class Vsp {
-
+public class Vsp 
+	{
 	public static final int  VID_BYTESPERPIXEL	=	3;
 	public static final int  VSP_SIGNATURE	=	5264214;
 	public static final int  VSP_VERSION	=		6;
@@ -43,12 +43,13 @@ public class Vsp {
 	private int signature = VSP_SIGNATURE;
 	private int version = VSP_VERSION;
 	private int tileSize = 16;
+	private int tileArea = this.tileSize * this.tileSize;	// Krybo added as utility - not needed in vsp file 
 	private int format = 1;
 	private int compression = 1;
 	private int numtiles = 0;
 	
 	private Animation[] anims = new Animation[0];
-	private byte[] obsPixels = new byte[16*16]; // width * height * 1 bytes!
+	private byte[] obsPixels = new byte[ this.tileArea ]; // width * height * 1 bytes!
 	int numobs;
 	
 	int vadelay[], tileidx[], flipped[];
@@ -90,7 +91,7 @@ public class Vsp {
 			pos++;
 		}
 		for(int i=0; i<256; i++) { // Add vertical | left obs
-			if(i%16==0)
+			if( i % 16 == 0)
 				newPixels[pos++] = 1;
 			else
 				newPixels[pos++] = 0;
@@ -155,6 +156,7 @@ public class Vsp {
 			this.signature = f.readSignedIntegerLittleEndian();
 			this.version = f.readSignedIntegerLittleEndian();
 			this.tileSize = f.readSignedIntegerLittleEndian();
+			this.tileArea = this.tileSize * this.tileSize;
 			this.format = f.readSignedIntegerLittleEndian();
 			this.numtiles = f.readSignedIntegerLittleEndian();
 			this.compression = f.readSignedIntegerLittleEndian();
@@ -212,7 +214,7 @@ public class Vsp {
 			
 			// Get image tiles from pixel array 
 			System.out.println("Numtiles: " + getNumtiles() + "(" + vspdata.length + " bytes)");
-			this.tiles = f.getBufferedImageArrayFromPixels(vspdata, getNumtiles(), 16, 16);
+			this.tiles = f.getBufferedImageArrayFromPixels(vspdata, getNumtiles(), this.tileSize, this.tileSize);
 			//for(int x=0; x<tiles.length; x++)
 				//Script.graycolorfilter(tiles[x]);
 			
@@ -276,16 +278,17 @@ public class Vsp {
 		this.signature = 5264214;
 		this.version = 6;
 		this.tileSize = 16;
+		this.tileArea = this.tileSize * this.tileSize;
 		this.format = 3;
 		this.numtiles = blankTiles;
 		this.compression = 1;
 
-		// TODO: animations, fix this, if needed... once I understand what it does.
-        int numAnim = 0;
+//        int numAnim = 0;
         this.anims = null;
+
+       // Krybo:  nope, no animation in auto-generated VSP
 //        this.anims = new Vsp.Animation[numAnim];	
 //        System.out.println("numAnim = " + numAnim);
-//        
 //        for(int i=0; i<numAnim; i++) {
 //        	Vsp.Animation a = this.new Animation();
 //        	a.name = f.readFixedString(256);
@@ -297,8 +300,16 @@ public class Vsp {
 //        	this.anims[i] = a;
 //        }			
 
-        	this.numobs = 6;
-		this.obsPixels = new byte[numobs*256];
+        	this.numobs = 12;
+		this.obsPixels = new byte[ numobs*this.tileSize*this.tileSize ];
+		for( int op = 0; op < (numobs*this.tileSize*this.tileSize)-1; op++ )
+			{
+			this.obsPixels[op] = (byte) 0;
+				// Make 2nd obs tile is default full-tile obsturction.
+			if( (op >= this.tileArea) && (op < this.tileArea*2) )
+				{ this.obsPixels[op] = (byte) 1; }
+			// Perhaps add more later.
+			}
         
 		// initialize tile anim stuff
 		tileidx = new int[getNumtiles()];
@@ -314,11 +325,16 @@ public class Vsp {
 
 			// Setup blank tiles.
 		this.tiles = new BufferedImage[this.numtiles];
-		VImage emptyTile = new VImage(this.tileSize,this.tileSize);
-		emptyTile.rectfill(0, 0, this.tileSize, this.tileSize, Color.BLACK );
+
 			// Replicates a blank tile this.numtiles times.
 		for( int tn = 0; tn < this.numtiles; tn++ )
-			{	this.tiles[tn] = emptyTile.getImage();	}
+			{
+				// Krybo: pass-by-reference strangeness would occur if these 
+				// VImages are not created separately each pass.
+			VImage emptyTile = new VImage(this.tileSize,this.tileSize);
+			emptyTile.rectfill(0, 0, this.tileSize, this.tileSize, Color.BLACK );
+			this.tiles[tn] = emptyTile.getImage();	
+			}
 		log("Created Blank VSP with "+Integer.toString(this.numtiles)+" tiles.");
 
 		return;
@@ -417,7 +433,20 @@ public class Vsp {
 		return tiles;
 	}
 
-	/* Krybo (Jan.2016) */
+	/* Krybo (Jan.2016) : sets one whole individual tile */
+	
+	public boolean modifyTile( int tileIdx, BufferedImage newTileImage )
+		{
+		if( newTileImage.getWidth() != this.tileSize ) 	{ return(false); }
+		if( newTileImage.getHeight() != this.tileSize ) 	{ return(false); }
+		if( tileIdx < 0 || tileIdx > this.numtiles )			{ return(false); }
+		tiles[tileIdx] = newTileImage;
+		return(true);
+		}
+	public boolean modifyTile( int tileIdx, VImage newTileImage )
+		{	return(this.modifyTile(tileIdx, newTileImage.getImage() ) );	}
+
+	/* Krybo (Jan.2016) : modify pixels within an existing tile */
 	
 	public boolean modifyTile( int tileNum, int x1, int y1,  
 			int red256, int green256, int blue256 )
@@ -439,13 +468,18 @@ public class Vsp {
 			return(true);
 			}
 	
+	/* Krybo (Jan.2016) */
+	
+	public int getNumObsTiles()
+		{	return(this.numobs);	}
+	
 	boolean GetObs(int t, int x, int y)
-	{
+		{
 		if (t==0) return false;
 		if (t>=numobs || t<0) return true;
 		if (x<0 || y<0 || x>15 || y>15) return true;
-		return obsPixels[(t*256)+(y*16)+x] == 0 ? false: true;
-	}
+		return obsPixels[(t*this.tileArea)+(y*this.tileSize)+x] == 0 ? false: true;
+		}
 	
 	public boolean UpdateAnimations()
 	{
@@ -492,15 +526,27 @@ public class Vsp {
 		//dest.g.drawImage(current_map.tileset.tiles[index], x, y, null);
 	}
 
-	void BlitObs(int x, int y, int index, VImage dest)
-	{
+	public void BlitObs(int x, int y, int index, VImage dest)
+		{
 		if (index >= numobs) return;
 		//[Rafael, the Esper] char c[] = (char) obs + (index * 256);
 		//[Rafael, the Esper] int white = MakeColor(255,255,255);
-		for (int yy=0; yy<16; yy++)
-			for (int xx=0; xx<16; xx++)
-				;//[Rafael, the Esper] if (c[(yy*16)+xx]>0) PutPixel(x+xx, y+yy, white, dest);
-	}
+		int destOffsetX = 0;
+		int destOffsetY = 0;
+		byte targetPixel = 0;
+		for (int yy=0; yy< this.tileSize; yy++ )
+			for (int xx=0; xx<this.tileSize; xx++)
+				{
+				destOffsetX = x+xx;
+				destOffsetY = y+yy;
+				targetPixel = this.obsPixels[this.tileArea*index + this.tileSize*yy + xx]; 
+				if( targetPixel != 0 )
+					{
+					dest.setPixel(destOffsetX, destOffsetY, Color.WHITE );
+					}
+				}		// Krybo (Jan.2016): This now operates as intended.
+			// ; [Rafael, the Esper] if (c[(yy*16)+xx]>0) PutPixel(x+xx, y+yy, white, dest);
+		}
 
 	void AnimateTile(int i, int l)
 	{
