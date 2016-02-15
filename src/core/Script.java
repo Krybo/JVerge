@@ -73,6 +73,8 @@ public class Script {
 	public static final int CF_GREEN = 5;
 	public static final int CF_BLUE = 6;
 	public static final int CF_CUSTOM = 7;
+	public static final Color Color_DEATH_MAGENTA = 
+			new Color( 1.0f , 0.0f , 1.0f , 0.0f );
 
 		// The java vergeC graphics layers are to be controlled in core.Script
 	public static JVCL jvcl;
@@ -399,6 +401,15 @@ public class Script {
 		return s.substring(0, 1).toUpperCase() + s.substring(1);		
 	}
 	
+		/* Krybo (Feb.2016)  : Causes the verge engine Thread to pause
+		*  for the given number of seconds, take caution to consider
+		*   that other threads may still be operating while the VergeEngine
+		*     is sleeping.		     */
+	public static void waitEngine(int milliseconds)
+		{	enginePause(milliseconds);	}
+	public static void waitEngine(Long milliseconds)
+		{	enginePause(milliseconds);	}
+	
 	public static String strdup(String s, int times) {
 		String ret = "";
 		for (int i=0; i<times; i++)
@@ -483,9 +494,34 @@ public class Script {
 		if (e<0 || e >= numentities) return;
 		else entity.get(e).setWanderZone();
 	}
-	public static int entityspawn(int x, int y, String s) { 
-		return AllocateEntity(x*16,y*16,s); 
-	}
+	public static int entityspawn(int x, int y, String s) 
+		{ 	return AllocateEntity(x*16,y*16,s); 	}
+	
+	// Krybo (Feb.2016) : added more flexibility on initial active/visible
+	public static int entityspawn(int x, int y, String s, 
+			boolean initActive, boolean initVisibility ) 
+		{
+		int newNum = AllocateEntity(x*16,y*16,s);
+		entity.get(newNum).setActive(initActive);
+		entity.get(newNum).setVisible(initVisibility);
+		return(newNum);
+		}
+	public static int entitySpawnAsPlayer(int x, int y, String s) 
+		{ 	
+		int newone = AllocateEntity(x*16,y*16,s);
+		setplayer(newone);
+		return(newone);
+		}
+	public static int entitySpawnAsPlayer(int x, int y, String s, 
+			boolean initActive, boolean initVisibility ) 
+		{
+		int newNum = AllocateEntity(x*16,y*16,s);
+		entity.get(newNum).setActive(initActive);
+		entity.get(newNum).setVisible(initVisibility);
+		setplayer( newNum );
+		return(newNum);
+		}
+	
 	public static int countParty(int first) {
 		if (first<0 || first >= numentities) return 0;
 		int num = 1;
@@ -565,6 +601,10 @@ public class Script {
 			System.err.println("invalid Player.");
 			return null;
 		}
+		
+		// Krybo: since Setting player to an inactive entity would be nonsense
+		entity.get(e).setActive(true);
+
 		myself = entity.get(e);
 		player = e;
 		myself.setMotionless();

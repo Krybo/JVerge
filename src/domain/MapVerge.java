@@ -39,7 +39,7 @@ public class MapVerge extends MapAbstract implements Map {
 	Zone[] zones;
 	Entity[] entities;
 
-	
+
 	public String toString() {
 		return "Mapname: " + filename + "; vspFile:" + vspname + "; music:"
 				+ musicname + "; render:" + renderstring + "; startEvent: "

@@ -154,7 +154,8 @@ public class Entity {
 	}	
 	
 	// Used by the engine
-	public Entity(int x, int y, String chrfn) {
+	public Entity(int x, int y, String chrfn) 
+		{
 		follower = null;
 		follow = null;
 		delay = 0;
@@ -184,12 +185,45 @@ public class Entity {
 			pathy[i] = y*16;
 			pathf[i] = SOUTH;
 		}
-	
 	}
-	
-	public Entity() {
 
-	}	
+		// Krybo Feb.2016 : creates a ghost entity.
+		//     uses the default values for non-image data
+		//    This is designed to not use any external resources so that
+		//         a programmaticly built character can be made.
+	public Entity() 
+		{
+		this.follower = null;
+		this.follow = null;
+		this.delay = 0;
+		this.lucent = 0;
+		this.wdelay = 75;
+		this.x = 1;
+		this.y = 1;
+		this.setspeed(100);
+		this.speedct = 0;
+		this.chrname = "";
+		this.chr = CHR.blankChr(16, 16);
+		this.visible = false;
+		this.active = false;
+		this.specframe = 0;
+		this.movecode = 0;
+		this.moveofs = 0;
+		this.framect = 0;
+		this.frame = 0;
+		this.face = SOUTH;
+		this.hookrender = "";
+		this.script = "";
+		this.description = "NULL ghost-entity";
+		this.obstructable = false;
+		this.obstruction = false;
+		for (int i=0; i<FOLLOWDISTANCE; i++) 
+			{
+			this.pathx[i] = x*16;
+			this.pathy[i] = y*16;
+			this.pathf[i] = SOUTH;
+			}
+		}	
 	
 	public void setxy(int mapX, int mapY) 
 		{
@@ -797,5 +831,28 @@ public class Entity {
 	public int getHotH() {
 		return this.chr.hh;
 	}
+
+	// Krybo (Feb.2016) : found these elements without set/get()s
+	public boolean getActive()
+		{ return(this.active); }
+	public void setActive( boolean act )
+		{ this.active = act; }
+	public boolean toggleActive( )
+		{
+		if( this.active == true )	{ this.active = false; }
+		else { this.active = true; }
+		return(this.active);
+		}
+
+	public boolean isVisable()
+		{ return(this.visible); }
+	public void setVisible( boolean vis )
+		{ this.visible = vis; }
+	public boolean toggleVisible()
+		{  
+		if( this.visible == true )	{ this.visible = false; }
+		else { this.visible = true; }
+		return(this.visible);
+		}
 	
-}
+	}

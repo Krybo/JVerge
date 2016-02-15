@@ -34,8 +34,8 @@ import domain.MapDynamic;
 import domain.MapVerge;
 import domain.VImage;
 
-public class VergeEngine extends Thread {
-
+public class VergeEngine extends Thread 
+	{
 	public static boolean done, inscroller = false;
 	public static int px, py;
 	
@@ -63,14 +63,47 @@ public class VergeEngine extends Thread {
 
 	/****************************** code ******************************/
 
+	// Krybo : experimental wait(x) engine-level function(s)  U.W.C.!
+	public static void enginePause( int milliseconds )
+		{
+		Long ms = new Long(milliseconds);
+		try {
+			Thread.sleep(ms); 
+			}
+		catch(InterruptedException ex) {
+		    Thread.currentThread().interrupt();
+			}
+		return;
+		}
+	public static void enginePause( Long milliseconds )
+		{
+		try {
+			Thread.sleep(milliseconds); 
+			}
+		catch(InterruptedException ex) {
+		    Thread.currentThread().interrupt();
+			}
+		return;
+		}
+
 	// main engine code
 
-	static int AllocateEntity(int x, int y, String chr) {
-		Entity e = new Entity(x, y, chr);
+	static int AllocateEntity(int x, int y, String chr) 
+		{
+		// Krybo (Feb.2016) : added capability to handle blank "ghost" entities.
+		Entity e;
+		if( chr == null || chr.isEmpty() )
+			{	
+			e = new Entity();
+			e.setx(x);
+			e.sety(y);
+			}			// A "ghost"
+		else
+			{ e = new Entity(x, y, chr); }		// entity-CHR from file.
 		e.index = numentities;
 		entity.add(e);
 		return numentities++;
-	}
+		}
 
 	protected static class EntityComparator implements Comparator<Entity> {
 		public int compare(Entity ent1, Entity ent2) {

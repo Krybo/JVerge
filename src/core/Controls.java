@@ -124,9 +124,15 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 		if (b3 && !oldb3) callfunction(bindbutton[2]);
 		if (b4 && !oldb4) callfunction(bindbutton[3]);
 		
+		long hkNow = System.nanoTime();
+		
 		// Rafael, the Esper (2014: new)
 		for(int i=0; i<bindarray.length; i++)
 			{
+			
+//			if( getKey(i) ) 
+//				{ log("key # "+Integer.toString(i)+" is down"); } 
+			
 			if(getKey(i) && bindarray[i] != null && !bindarray[i].isEmpty()) 
 				{
 				
@@ -136,7 +142,7 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 				//	If nicedHookkey was not used, this will have no effect
 				//   - purpose is to prevent a hookkey method from
 				//         executing as fast as the machine can.
-				long hkNow = System.nanoTime();
+				
 				if( hkNow < (bindarrayCounter[i] + bindarrayDelay[i] ) )
 					{ continue; }
 				else { bindarrayCounter[i] = hkNow;  }

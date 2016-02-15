@@ -27,12 +27,12 @@ public class CHR {
 	
 	//private byte[] pixels = new byte[16*16*3]; // frames * width * height * 3 bytes!
 	
-	public int fxsize, fysize;					// frame x/y dimensions
+	public int fxsize, fysize;				// frame x/y dimensions
 	public int hx, hy;						// x/y obstruction hotspot
 	public int hw;							// hotspot width/height
 	public int hh;
-	int totalframes;					// total # of frames.
-    public int idle[] = new int[5];			// idle frames
+	int totalframes;						// total # of frames.
+    public int idle[] = new int[5];		// idle frames
 
 	private int animsize[] = new int[9];
 	private int anims[][] = new int[9][];
@@ -107,6 +107,45 @@ public class CHR {
 			 e.printStackTrace();
 		 }
 	}
+
+	// Krybo (Feb.2016) : create a blank (ghost) CHR
+	public static CHR blankChr( int frameXpixelSize, int frameYpixelSize )
+		{		
+		CHR c = new CHR();
+		
+		c.fxsize = frameXpixelSize;
+		c.fysize = frameYpixelSize;
+		c.hx = c.fxsize/2;	  c.hy = c.fysize/2;
+		c.hw = c.hx-2;
+		c.hh = c.hy-2;
+
+		c.totalframes = 8;
+
+		c.idle[Entity.SOUTH] = 0;
+		c.idle[Entity.NORTH] = 0;
+		c.idle[Entity.WEST] = 0;
+		c.idle[Entity.EAST] = 0;
+		
+		c.animsize = new int[]{0,1,1,1,1,1,1,1,1};
+		c.anims = new int[][]{new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}};
+		c.frames = new BufferedImage[c.totalframes];
+		
+		for( int fnum = 0; fnum < c.totalframes; fnum++ )
+			{
+			VImage blankFrame = new VImage(c.fxsize, c.fysize);
+//			blankFrame.paintBlack();
+			blankFrame.rectfill(0, 0, c.fxsize, c.fysize, 
+					core.Script.Color_DEATH_MAGENTA);
+			blankFrame.rect(0, 0, c.fxsize-1, c.fysize-1, Color.WHITE );
+			
+			c.frames[fnum] = blankFrame.getImage();
+
+//			this.frames = f.getBufferedImageArrayFromPixels(
+//				pixels, totalframes, fxsize, fysize);
+			}
+		return(c);
+		}
+
 
 	// Based on: chr_file.cpp (vopenchr)
 	private void loadChrVersion2(ExtendedDataInputStream f) throws IOException {
@@ -441,8 +480,8 @@ public class CHR {
 				
 			f.writeInt(Integer.reverseBytes(24)); // bitDepth		
 			f.writeInt(Integer.reverseBytes(0)); // unused, poss. alpha blend
-			
-			// Transparent color
+
+			// Transparent color "Death Magenta"
 			f.writeUnsignedByte(255); // Red
 			f.writeUnsignedByte(0); // Green
 			f.writeUnsignedByte(255); // Blue
@@ -520,7 +559,7 @@ public class CHR {
 	
 	public int getFrame(int d, int framect)
 	{
-		if (d<0 || d >= anims.length) {
+		if (d<0 || d >= this.anims.length) {
 			System.err.printf("CHR::GetFrame() - invalid direction %d", d);
 			return 0;
 		}
@@ -530,7 +569,7 @@ public class CHR {
 	
 	int GetFrameConst(int d, int framect)
 	{
-		if (d<0 || d >= anims.length) {
+		if (d<0 || d >= this.anims.length) {
 			System.err.printf("CHR::GetFrame() - invalid direction %d", d);
 			return 0;
 		}
@@ -621,7 +660,10 @@ public class CHR {
 	/**Rafael:
 	 * New method implemented to allow bypassing .chr files and use an image file instead
 	 */
-	public static CHR createCHRFromImage(int startx, int starty, int sizex, int sizey, int skipx, int skipy, int columns, int totalframes, boolean padding, VImage image) {
+	public static CHR createCHRFromImage(int startx, int starty, 
+			int sizex, int sizey, int skipx, int skipy, int columns, int totalframes, 
+			boolean padding, VImage image) 
+		{
 		log("createCHRFromImage (" + sizex + "x" + sizey + ": " + totalframes + " frames)");
 		VImage[] images = new VImage[totalframes];
 		
@@ -631,7 +673,8 @@ public class CHR {
 			posy++;
 
 		// First pixel is default transparent color
-		Color transC = new Color(image.image.getRGB(0+(padding?1:0), 0+(padding?1:0)));
+		Color transC = new Color(
+				image.image.getRGB(0+(padding?1:0), 0+(padding?1:0)));
 		Color unused = transC;   transC = unused;   // kill warning
 		
 		while(frames < totalframes) {
@@ -659,7 +702,7 @@ public class CHR {
 	
 	public static CHR createCHRFromImage(int sizex, int sizey, VImage[] images) {
 		CHR c = new CHR();
-		
+
 		c.fxsize = sizex;
 		c.fysize = sizey;
 		c.totalframes = images.length;
@@ -669,10 +712,16 @@ public class CHR {
 	
 		c.frames = new BufferedImage[c.totalframes];
 		for(int i=0; i<c.totalframes; i++)
+			{
+			// Krybo (Feb.2016)  : really should verify x/y size of each image.
+			// 		one violation makes this fail with null object.
+			if( images[i].width != sizex )  { return null; }
+			if( images[i].height != sizey )  { return null; }
 			c.frames[i] = images[i].image;
-		
+			}
+
 		return c;
-	}
+		}
 
 	public int GetFrame(int face, int framect)
 		{
