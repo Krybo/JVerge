@@ -5,9 +5,6 @@ import static core.Controls.*;
 import core.JVCL;
 
 
-
-
-
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
@@ -410,6 +407,18 @@ public class Script {
 	public static void waitEngine(Long milliseconds)
 		{	enginePause(milliseconds);	}
 	
+		// Increment camera tracking mode by 1, loop around
+	public static int nextCameraTrackingMode()
+		{ 
+		cameratracking++;
+		if( cameratracking > 3 )
+			{ cameratracking=0; }
+		log("changed cameratracking to : "+Integer.toString(cameratracking));
+		return(cameratracking);
+		}
+	public static void setCameraTrackingMode( int mode )
+		{ cameratracking = mode;  return;  }
+
 	public static String strdup(String s, int times) {
 		String ret = "";
 		for (int i=0; i<times; i++)
@@ -461,7 +470,7 @@ public class Script {
 		{
 		mapname = "_map_change_";
 		current_map = newMap;
-		die = true;
+		die = true;		// these two kill the current map only.
 		done = true;		
 		}
 	

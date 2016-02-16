@@ -203,7 +203,7 @@ public class Entity {
 		this.setspeed(100);
 		this.speedct = 0;
 		this.chrname = "";
-		this.chr = CHR.blankChr(16, 16);
+		this.chr = CHR.blankChr(16, 16, false);
 		this.visible = false;
 		this.active = false;
 		this.specframe = 0;

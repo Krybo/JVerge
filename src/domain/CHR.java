@@ -109,7 +109,8 @@ public class CHR {
 	}
 
 	// Krybo (Feb.2016) : create a blank (ghost) CHR
-	public static CHR blankChr( int frameXpixelSize, int frameYpixelSize )
+	public static CHR blankChr( int frameXpixelSize, 
+			int frameYpixelSize, boolean frameBorder )
 		{		
 		CHR c = new CHR();
 		
@@ -136,8 +137,9 @@ public class CHR {
 //			blankFrame.paintBlack();
 			blankFrame.rectfill(0, 0, c.fxsize, c.fysize, 
 					core.Script.Color_DEATH_MAGENTA);
-			blankFrame.rect(0, 0, c.fxsize-1, c.fysize-1, Color.WHITE );
-			
+			if( frameBorder )
+				{ blankFrame.rect(0, 0, c.fxsize-1, c.fysize-1, Color.GRAY ); }
+
 			c.frames[fnum] = blankFrame.getImage();
 
 //			this.frames = f.getBufferedImageArrayFromPixels(
