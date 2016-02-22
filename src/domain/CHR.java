@@ -111,7 +111,7 @@ public class CHR {
 	// Krybo (Feb.2016) : create a blank (ghost) CHR
 	public static CHR blankChr( int frameXpixelSize, 
 			int frameYpixelSize, boolean frameBorder )
-		{		
+		{
 		CHR c = new CHR();
 		
 		c.fxsize = frameXpixelSize;
@@ -147,7 +147,44 @@ public class CHR {
 			}
 		return(c);
 		}
+	// Similar to blankCHR, except uses a VImage instead of emptyness.
+	public static CHR cursorChr( int cursorSize, Color cClr1, Color cClr2,
+			Color cClr3,  boolean hasFramedBorder )
+		{
+		CHR c = new CHR();
 
+		int frameXpixelSize = cursorSize;
+		int frameYpixelSize = cursorSize;
+		c.fxsize = frameXpixelSize;
+		c.fysize = frameYpixelSize;
+		c.hx = c.fxsize/2;	  c.hy = c.fysize/2;
+		c.hw = c.hx-2;
+		c.hh = c.hy-2;
+
+		c.totalframes = 8;
+
+		c.idle[Entity.SOUTH] = 0;
+		c.idle[Entity.NORTH] = 0;
+		c.idle[Entity.WEST] = 0;
+		c.idle[Entity.EAST] = 0;
+		
+		c.animsize = new int[]{0,1,1,1,1,1,1,1,1};
+		c.anims = new int[][]{new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}, new int[]{0}};
+		c.frames = new BufferedImage[c.totalframes];
+		
+		for( int fnum = 0; fnum < c.totalframes; fnum++ )
+			{
+			VImage blankFrame = core.Script.createCursorImage( 
+					c.fxsize, cClr1, cClr2, cClr3 );
+
+			if( hasFramedBorder )
+				{ blankFrame.rect(0, 0, c.fxsize-1, c.fysize-1, Color.WHITE ); }
+
+			c.frames[fnum] = blankFrame.getImage();
+			}
+		return(c);
+		}
+	
 
 	// Based on: chr_file.cpp (vopenchr)
 	private void loadChrVersion2(ExtendedDataInputStream f) throws IOException {

@@ -264,6 +264,41 @@ public class Script {
 		bindarray[k] = s;
 	}
 	
+	// Krybo ( Feb.2016)
+	// Instances a very simple square symetric cursor - size controlable.
+	//   Has a circle (color 3), X (color 2) and a + (Color 1) overlayed.
+	public static VImage createCursorImage( int squareSizePixels,
+			Color c1, Color c2, Color c3 )
+		{
+		VImage theCursor = new VImage(squareSizePixels, squareSizePixels);
+		theCursor.rectfill(0, 0, squareSizePixels-1, squareSizePixels-1, 
+				Color_DEATH_MAGENTA );
+		
+		Double ptCenter = new Double( squareSizePixels / 2 );
+		Double ptCRAD = new Double( ptCenter / 2.0d );
+		Double priIndent = new Double( squareSizePixels * 0.20d );
+		
+		// Circle.
+		theCursor.circle(ptCenter.intValue(), ptCenter.intValue(), 
+				ptCRAD.intValue(), ptCRAD.intValue(), c3, theCursor );
+		// X
+		theCursor.line( priIndent.intValue()+1, 
+			priIndent.intValue()+1, 
+			squareSizePixels - priIndent.intValue() - 1, 
+			squareSizePixels - priIndent.intValue() - 1, c2 );
+		theCursor.line( squareSizePixels - priIndent.intValue() - 1, 
+			priIndent.intValue()+1, 
+			priIndent.intValue()+1, 
+			squareSizePixels - priIndent.intValue() - 1, c2 );
+		// plus
+		theCursor.line( priIndent.intValue(), ptCenter.intValue(), 
+			squareSizePixels - priIndent.intValue(), ptCenter.intValue(), c1);
+		theCursor.line( ptCenter.intValue() , priIndent.intValue() ,  
+			ptCenter.intValue(), squareSizePixels - priIndent.intValue(), c1 );
+		
+		return(theCursor);
+		}
+
 	/* Krybo:   June-2015
 	 * I made this because hookkey() was executing target method way
 	 * too fast (thousands of times a second) and I needed a way to
@@ -530,7 +565,21 @@ public class Script {
 		setplayer( newNum );
 		return(newNum);
 		}
-	
+	// Sets the player to a new Entity, its image uses a scripted cursor.
+	public static int entitySpawnAsCursorPlayer(int x, int y, 
+			int cursorSize, Color cursorColor1,Color cursorColor2, 
+			Color cursorColor3,  boolean initActive, boolean initVisibility ) 
+		{
+		int newNum = AllocateEntityCursor( x*16,y*16, cursorSize, 
+				cursorColor1, cursorColor2, cursorColor3 );
+
+		entity.get(newNum).setActive(initActive);
+		entity.get(newNum).setVisible(initVisibility);
+		entity.get(newNum).speed = 300;
+		setplayer( newNum );
+		return(newNum);
+		}
+
 	public static int countParty(int first) {
 		if (first<0 || first >= numentities) return 0;
 		int num = 1;

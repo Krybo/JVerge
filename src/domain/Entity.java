@@ -1,7 +1,8 @@
 package domain;
 
-import core.Script;
+import java.awt.Color;
 
+import core.Script;
 import static core.VergeEngine.*;
 import static core.Script.*;
 
@@ -223,7 +224,42 @@ public class Entity {
 			this.pathy[i] = y*16;
 			this.pathf[i] = SOUTH;
 			}
-		}	
+		}
+	// Krybo:  a static cursor entity.
+	public Entity( int pixelSize, Color cColor1, Color cColor2, Color cColor3 ) 
+		{
+		this.follower = null;
+		this.follow = null;
+		this.delay = 0;
+		this.lucent = 0;
+		this.wdelay = 75;
+		this.x = 1;
+		this.y = 1;
+		this.setspeed(100);
+		this.speedct = 0;
+		this.chrname = "";
+		this.chr = CHR.cursorChr( pixelSize, 
+				cColor1, cColor2, cColor3, false );
+		this.visible = false;
+		this.active = false;
+		this.specframe = 0;
+		this.movecode = 0;
+		this.moveofs = 0;
+		this.framect = 0;
+		this.frame = 0;
+		this.face = SOUTH;
+		this.hookrender = "";
+		this.script = "";
+		this.description = "NULL ghost-entity";
+		this.obstructable = false;
+		this.obstruction = false;
+		for (int i=0; i<FOLLOWDISTANCE; i++) 
+			{
+			this.pathx[i] = x*16;
+			this.pathy[i] = y*16;
+			this.pathf[i] = SOUTH;
+			}
+		}
 	
 	public void setxy(int mapX, int mapY) 
 		{

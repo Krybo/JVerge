@@ -18,6 +18,8 @@ import static domain.Entity.SW;
 import static domain.Entity.WEST;
 
 
+
+import java.awt.Color;
 //import java.awt.Color;
 //import java.net.MalformedURLException;
 //import java.net.URL;
@@ -100,6 +102,18 @@ public class VergeEngine extends Thread
 			}			// A "ghost"
 		else
 			{ e = new Entity(x, y, chr); }		// entity-CHR from file.
+		e.index = numentities;
+		entity.add(e);
+		return numentities++;
+		}
+	static int AllocateEntityCursor( int x, int y, int cSize, 
+			Color cClr1, Color cClr2, Color cClr3 ) 
+		{
+		// Krybo (Feb.2016) : added capability to handle blank "ghost" entities.
+		Entity e = new Entity( cSize, cClr1, cClr2, cClr3 );
+		e.setx(x);
+		e.sety(y);
+
 		e.index = numentities;
 		entity.add(e);
 		return numentities++;
