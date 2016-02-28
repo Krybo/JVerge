@@ -5,6 +5,7 @@ import static core.Controls.*;
 import core.JVCL;
 
 
+
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
@@ -47,6 +48,7 @@ import domain.Map;
 //import static core.Script.showpage;
 //import static core.Script.timer;
 import static core.SinCos.*;
+import static java.awt.Font.PLAIN;
 
 public class Script {
 
@@ -55,6 +57,17 @@ public class Script {
 	public static int TEST_POS = 0;
 	public static int[] TEST_OPTIONS;
 
+		// Krybo (Feb.2016) : Some Global Fonts
+		// This one is guarenteed to work anywhere and used as backup
+		//  if fancy fonts are not avbl on a particular machine.
+	public static Font fntMASTER =
+			new Font("Monospaced", Font.PLAIN, 14 );
+		// Plain, Large, easy on the eyes, textbox() kinda font.
+	public static Font fntVERGE = 
+			new Font("Tahoma",Font.PLAIN, 18 );
+		// good console font
+	public static Font fntCONSOLE = 
+			new Font("Consolas",Font.PLAIN, 12 );
 	
 	//public static final int VCFILES		=		51;
 	public static final int  VC_READ	=			1;

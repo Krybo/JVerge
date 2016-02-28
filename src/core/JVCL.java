@@ -17,9 +17,13 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+
 import static java.awt.Font.*;
 import domain.VImage;
+
 import java.util.ArrayList;
+
+import menus.Vmenuitem;
 //import static core.Script.currentLucent;
 //import java.awt.image.ImageObserver;
 
@@ -740,6 +744,19 @@ public class JVCL
 		JVCblitFullscreenImage( img, AlphaComposite.getInstance(
 			AlphaComposite.SRC_OVER, alphaValue )  );
 		return; 
+		}
+
+	// Krybo (Feb.2016)  : copies anything that implements Vmenuitem
+	public void JVCpaintMenuItem( Vmenuitem vmi )
+		{
+		vmi.paint( vcl.get(this.currentLayer) );
+		return;
+		}
+	public void JVCpaintMenuItem( ArrayList<Vmenuitem> vmi )
+		{
+		for( Vmenuitem mi : vmi )
+			{	mi.paint( vcl.get(this.currentLayer) );	   }
+		return;
 		}
 
 	public void JVCclear()

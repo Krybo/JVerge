@@ -52,6 +52,12 @@ public class VImage implements Transferable
 		//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
 		g = (Graphics2D)image.getGraphics();
 		}
+	// Krybo (Feb.2016)  : builds a new VImage & fills it with solid Color c
+	public VImage(int x, int y, Color c ) 
+		{
+		this(x,y);
+		this.rectfill(0, 0, x, y, c);
+		}
 			// Krybo (2014-10-03) Essentially a copy method.
 	public VImage( VImage existingVImage ) 
 		{
@@ -730,7 +736,9 @@ public class VImage implements Transferable
 		public void rect(int x1, int y1, int x2, int y2, int c) {
 			this.rect(x1, y1, x2, y2, palette.getColor(c, currentLucent));
 		}
-		public void rect(int x1, int y1, int x2, int y2, Color c) { // [Rafael, the Esper]
+		public void rect(int x1, int y1, int x2, int y2, Color c) 
+			{ // [Rafael, the Esper]
+			if( c == null ) 	{ c = Color_DEATH_MAGENTA; }
 			this.g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), currentLucent));
 			if(x1>x2) {	int temp = x1;	x1 = x2;	x2 = temp;	} // swap x1,x2
 			if(y1>y2) {	int temp = y1;	y1 = y2;	y2 = temp;	} // swap y1,y2
@@ -749,7 +757,10 @@ public class VImage implements Transferable
 				this.rectfill(x1, y1, x2, y2, palette.getColor(c, currentLucent));
 		}
 		
-		public void rectfill(int x1, int y1, int x2, int y2, Color c) { // [Rafael, the Esper]
+		public void rectfill(int x1, int y1, int x2, int y2, Color c) 
+			{ 	// [Rafael, the Esper]
+			if( c == null )   
+				{ c = Color_DEATH_MAGENTA; }
 			if(c.getAlpha()==255)
 				c = new Color(c.getRed(), c.getGreen(), c.getBlue(), currentLucent);
 
@@ -846,7 +857,14 @@ public class VImage implements Transferable
 			this.g.setFont(font);
 			this.g.setColor(Color.WHITE);
 			this.g.drawString(text, x, y);
-		}
+			}
+		// Krybo (Feb.2016) enable color control
+		public void printString(int x, int y, Font font, Color cf, String text) 
+			{
+			this.g.setFont(font);
+			this.g.setColor( cf );
+			this.g.drawString(text, x, y);
+			}
 		
 
 		// Fade functions
