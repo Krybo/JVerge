@@ -23,6 +23,7 @@ import domain.VImage;
 
 import java.util.ArrayList;
 
+import menus.Vmenu;
 import menus.Vmenuitem;
 //import static core.Script.currentLucent;
 //import java.awt.image.ImageObserver;
@@ -758,6 +759,13 @@ public class JVCL
 			{	mi.paint( vcl.get(this.currentLayer) );	   }
 		return;
 		}
+	// Print an entire menu to this layer.
+	public void JVCpaintMenu( Vmenu vm )
+		{
+		vm.paint( vcl.get(this.currentLayer) );
+		return;
+		}
+
 
 	public void JVCclear()
 		{

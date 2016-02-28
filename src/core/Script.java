@@ -56,6 +56,11 @@ public class Script {
 	public static boolean TEST_SIMULATION = false;
 	public static int TEST_POS = 0;
 	public static int[] TEST_OPTIONS;
+	
+		// Menu system
+		// menus focus controllers, x24
+	public static Integer[] MENU_FOCUS = new Integer[]
+				{0,0,0,0,0,0 ,0,0,0,0,0,0 ,0,0,0,0,0,0 ,0,0,0,0,0,0};
 
 		// Krybo (Feb.2016) : Some Global Fonts
 		// This one is guarenteed to work anywhere and used as backup

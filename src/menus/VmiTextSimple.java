@@ -28,6 +28,7 @@ public class VmiTextSimple implements Vmenuitem
 	private int ulx,uly = 0;		// Upper-left absolute x & y coords
 	private int sx,sy = 0;			// String pixel space consumption
 	private int w,h = 1;			// Total calculated width and height
+	private int extX=0,extY=0;	// empty buffer space width/height
 	private int keycode = -1;	// key stroke used to activate
 	private int rx,ry;				// relative x/y.
 	private int boundX, boundY;	// Externally imposed clipping dimensions
@@ -101,6 +102,7 @@ public class VmiTextSimple implements Vmenuitem
 		this.mode = 0;
 		this.rx = 0;	this.ry = 0;
 		this.ulx = 1;	this.uly = 1;
+		this.extX = 0; this.extY = 0;
 		this.boundX = 9999;
 		this.boundY = 9999;
 		this.keycode = -1;
@@ -172,7 +174,8 @@ public class VmiTextSimple implements Vmenuitem
 		return;
 		}
 	
-	
+
+
 	
 	
 	public void setFont( Font f )
@@ -222,12 +225,17 @@ public class VmiTextSimple implements Vmenuitem
 		this.h = this.sy + (this.FrameThicknessPx*2)+iconY+6;
 		}
 	
-	public boolean reposition(Double relPosX, Double relPosY)
+	public boolean reposition(int anchorX, int anchorY, int relPosX, int relPosY)
 		{
-		if( relPosX < 0.0d || relPosY < 0.0d )
+			// refuse to send the item off the upper left of the screen.
+		if( anchorX < 0 || anchorY < 0 )
 			{ return(false); }
-		this.rx =  relPosX.intValue();
-		this.ry =  relPosY.intValue();
+		if( (anchorX+relPosX) < 0 || (anchorY+relPosY) < 0 )
+			{ return(false); }
+		this.ulx = anchorX;
+		this.uly = anchorY;
+		this.rx = relPosX;
+		this.ry = relPosY;
 		return true;
 		}
 
@@ -242,9 +250,9 @@ public class VmiTextSimple implements Vmenuitem
 		if( this.visible == false ) { return; }
 		int x1 = this.ulx + this.rx;
 		int y1 = this.uly + this.ry;
-		int x2 = x1+this.w;
-		int y2 = y1+this.h;
-		
+		int x2 = x1 + this.w + this.extX;
+		int y2 = y1 + this.h + this.extY;
+
 		int tmpX1, tmpY1, tmpX2, tmpY2;
 
 		Color bgFlatColor;
@@ -318,7 +326,6 @@ public class VmiTextSimple implements Vmenuitem
 				target.rect(tmpX1, tmpY1, tmpX2, tmpY2, fc );
 				}
 			}
-		
 		
 		
 		if( this.showText )
@@ -498,4 +505,27 @@ public class VmiTextSimple implements Vmenuitem
 	public VImage getIcon( enumMenuStxtSTATE n )
 		{ return(this.iconItems.get( n.value() )); }
 
+	public boolean isActive()
+		{ return(this.active ); }
+	public boolean isVisible()
+		{ return( this.visible ); }
+	public Integer getState()
+		{ return( this.state ); }
+	
+	public void setExtendX( int desiredWidth )
+		{
+		if( desiredWidth < this.w )
+			{ this.extX = 0;   return; }
+		this.extX = desiredWidth - this.w;
+		return;
+		}
+	public void setExtendY( int desiredHeight )
+		{
+		if( desiredHeight < this.h )
+			{ this.extY = 0;   return; }
+		this.extY = desiredHeight - this.h;
+		return;
+		}
+
 	}
+

@@ -29,7 +29,7 @@ public interface Vmenuitem
 //	public Vmenuitem();
 			
 	// Change the position of the menuitem within the parent.
-	public boolean reposition( Double relPosX,Double relPosY );
+	public boolean reposition( int posX, int posY, int relPosX, int relPosY );
 	// Sets the method called when the thing is used.
 	public void setAction( Method action );
 	public boolean doAction();
@@ -44,6 +44,9 @@ public interface Vmenuitem
 	public Double getY();
 	public Double getDX();
 	public Double getDY();
+		// Lets menus enforce a certain width/height for their Items
+	public void setExtendX( int itemWidth );
+	public void setExtendY( int itemHeight );
 
 	// Control and change the menu content.
 	public void setTextContent( HashMap<Integer,String> textItems );
@@ -59,6 +62,11 @@ public interface Vmenuitem
 	public void enableBackdrop( boolean enable );
 	public void enableFrame( boolean enable );
 	public void setState( Integer itemState );
+	public Integer getState();
+	
+	public boolean isActive();
+	public boolean isVisible();
+	
 
 	//  To attach a menuitem to a keystroke.
 	public Integer getKeycode();
