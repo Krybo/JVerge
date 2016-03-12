@@ -47,16 +47,20 @@ public class JVCL
 		private int layerHeigth;
 		// Each layer carries a sets of flags that may be used
 		// by the programmer to track anything going on for that layer.
+		private int layernum = -1;
 		private final int flagArraySize = 100;
 		private boolean[] boolFlags = new boolean[flagArraySize]; 
 		private int[] intFlags = new int[flagArraySize];
 		private double[] decFlags = new double[flagArraySize];
+		
+		private Vmenu vm = null; 
 		
 		private VCLayer(int  sizeX, int sizeY )
 			{
 			super(sizeX,sizeY);
 			this.layerWidth = sizeX;
 			this. layerHeigth = sizeY;
+			this.layernum = -1;
 			this.visible = false;
 			this.active = false;
 			this.clearAllFlags();
@@ -78,6 +82,9 @@ public class JVCL
 			if( n >= this.flagArraySize ) { return(flagArraySize - 1); }
 			return(0);
 			}
+
+		public int getNum()	{ return(this.layernum); }
+		public void setNum(int id)	{ this.layernum = id; }
 
 		public boolean getBoolFlag(int flagNum)
 			{
@@ -342,11 +349,13 @@ public class JVCL
 		
 		// This is a base buffer layer, all must have it.
 		this.vcl.add( new VCLayer(standardX,standardY) );
+		this.vcl.get(0).setNum(0);
 		this.vcl.get(0).setActive(true);
 		
 		for( int a = 0; a < numLayers; a++)
 			{
 			this.vcl.add( new VCLayer(standardX,standardY) );
+			this.vcl.get(a+1).setNum(a+1);
 			this.vcl.get(a+1).setActive(true);
 			}
 		
@@ -362,6 +371,7 @@ public class JVCL
 		{
 		VCLayer L = new VCLayer(this.standardX,this.standardY); 
 		this.vcl.add(L);
+		L.setNum(this.vcl.size()-1);
 		return( this.vcl.size() );
 		}	
 	public int dropLayer()
@@ -379,6 +389,21 @@ public class JVCL
 		if( layerNum >= this.vcl.size() )  { return(false); }
 		if( this.vcl.get(layerNum).getActive() == false )  
 			{ return(false); }		// Layer is avbl, but is "write protected"
+		this.currentLayer = layerNum;
+		return(true);
+		}
+	/**
+	 * Changes to a layer # and fully activates it - unlike setWriteLayer that
+	 *    will switch layers but NOT activate it.
+	 * @param layerNum	The target layer number to switch to
+	 * @return  boolean - true if layer exists and switch successful.
+	 */
+	public boolean setWriteLayerAndEnable( int layerNum )
+		{
+		if( layerNum <= 0 ) { return(false); }
+		if( layerNum >= this.vcl.size() )  { return(false); }
+		this.vcl.get(layerNum).active = true;
+		this.vcl.get(layerNum).visible = true;
 		this.currentLayer = layerNum;
 		return(true);
 		}
@@ -747,25 +772,173 @@ public class JVCL
 		return; 
 		}
 
-	// Krybo (Feb.2016)  : copies anything that implements Vmenuitem
-	public void JVCpaintMenuItem( Vmenuitem vmi )
+	/**	(krybo feb.2016)
+	 * Blits a single Vmenuitem object onto the current VC layer.
+	 * @param vmi	the implemented Vmenuitems to draw
+	 */
+	public void JVCmenuPaintItems( Vmenuitem vmi )
 		{
+		if( ! vcl.get(this.currentLayer).active )	{ return; }
 		vmi.paint( vcl.get(this.currentLayer) );
+		this.requiresUpdate = true;
 		return;
 		}
-	public void JVCpaintMenuItem( ArrayList<Vmenuitem> vmi )
+	
+	/**	
+	 * Blits multiple Vmenuitem objects onto the current VC layer.
+	 * (krybo feb.2016)
+	 * @param vmi	ArrayList of Vmenuitems
+	 */
+	public void JVCmenuPaintItems( ArrayList<Vmenuitem> vmi )
 		{
+		if( ! vcl.get(this.currentLayer).active )	{ return; }
 		for( Vmenuitem mi : vmi )
 			{	mi.paint( vcl.get(this.currentLayer) );	   }
+		this.requiresUpdate = true;
 		return;
 		}
-	// Print an entire menu to this layer.
-	public void JVCpaintMenu( Vmenu vm )
+	/**
+	 * Blits a external Vmenu object onto the current VC layer.
+	 * @param vm	Fully built Jmenu object.
+	 */
+	public void JVCmenuPaint( Vmenu vm )
 		{
+		if( ! vcl.get(this.currentLayer).active )	{ return; }
 		vm.paint( vcl.get(this.currentLayer) );
+		this.requiresUpdate = true;
 		return;
 		}
 
+	/**
+	 * Draws the attached menu
+	 * If there is no menu attached, it returns having done nothing.
+	 */
+	public void JVCmenuPaint( )
+		{
+		if( ! vcl.get(this.currentLayer).active )	{ return; }
+		if( vcl.get( this.currentLayer ).vm == null ) 
+			{ return; }
+		vcl.get( this.currentLayer ).vm.paint( 
+			vcl.get(this.currentLayer) );
+		this.requiresUpdate = true;
+		return;
+		}
+
+	/**
+	 * Passes through all available layers and prints any menus 
+	 *     that are in a visible state.
+	 * @param reverseOrder	set true to Reverse the blit order.
+	 * @return	Count of the menus actually drawn
+	 */
+	public Integer JVCmenuPaintAll( boolean reverseOrder )
+		{
+		Integer rtn = 0;
+		int nMax = this.vcl.size();
+		if( nMax <= 1 )  { return(0); }
+		if( reverseOrder  == false )
+			{
+			for( int n = 1; n < nMax; n++ )
+				{
+				if( ! this.vcl.get(n).active )	
+					{ continue; }
+				if( this.vcl.get(n).vm == null )	
+					{ continue; }
+				this.vcl.get(n).vm.paint( vcl.get(n) );
+				rtn++;
+				}
+			}
+		else
+			{
+			for( int x = nMax-1; x > 1; x-- )
+				{
+				if( ! this.vcl.get(x).active )	
+					{ continue; }
+				if( this.vcl.get(x).vm == null )	
+					{ continue; }
+				this.vcl.get(x).vm.paint( vcl.get(x) );
+				rtn++;
+				}			
+			}
+		return(rtn);
+		}
+	
+	/**
+	 * 
+	 * @param focalRef		menu focus index
+	 * @return	A VCLayer reference of the layer having in-focus menu
+	 */
+	private VCLayer menuCheckFocus( Long focalRef )
+		{
+		for( VCLayer vc : this.vcl )
+			{
+			if( vc.vm == null ) { continue; }
+			if( vc.vm.isFocus(focalRef) )
+				{ return(vc); }
+			}
+		return(null);
+		}
+	
+		/**
+		 * Activates the DoControl method if a menu focus is found.
+		 * @param focalRef	Menu focus index (Long)
+		 * @return	true if activated, else false.
+		 */
+	public boolean JVCmenuDoControls( Long focalRef, 
+			Integer ext_keycode )
+		{
+		// Looks for the first menu with focus in this JVCL stack.
+		VCLayer vc = this.menuCheckFocus(focalRef);
+		if( vc == null ) 	{ return(false); }
+//		System.out.println(" JVCmenuDoControls got "+ext_keycode.toString() );
+		if( vc.vm.doControls(ext_keycode) )
+			{
+			// This looks intricate, but all its doing is grabbing its Vmenu
+			//   member (vc.vm) ~ redrawing its menu graphics onto itself.
+			//  layer 0 is the "flatten" layer, layer 1 is used as backdrop.
+			if( vc.getNum() > 1 )	// never clear the backdrop
+				{ vc.clear(); }
+			vc.vm.paint(vc);
+			}
+		this.refresh();
+		return(true);
+		}
+	
+	/**
+	 * Associates a Vmenu object to the currently selected VC layer.
+	 *  - it can then be drawn on-demand with JVCmenuPaint()
+	 * @param menus  The Fully built Vmenu object to attach. 
+	 */
+	public void JVCmenuAttach( Vmenu menus )
+		{
+		if( ! vcl.get( this.currentLayer ).active )	{ return; }
+		this.vcl.get( this.currentLayer ).vm = menus;	  
+		return; 
+		}
+	/**
+	 * Attaches a Vmenu to a particular layer.
+	 * @param menus		The constructed menu object
+	 * @param layerNum		the layer
+	 * @return	true on success, false if aborted
+	 */
+	public boolean JVCmenuAttachToLayer( Vmenu menus, int layerNum )
+		{
+		if( layerNum <= 0 || layerNum > (this.vcl.size()-1) )
+			{ return(false); }
+		if( ! this.vcl.get( layerNum ).active )	{ return(false); }		
+		vcl.get( layerNum ).vm = menus;	
+		return(true); 
+		}
+	/**
+	 * Dissociates the attached menu object from the current layer.
+	 * @return	Vmenu ref. that was removed.
+	 */
+	public Vmenu JVCmenuDetach( )
+		{
+		if( ! vcl.get( this.currentLayer ).active )	{ return(null); }
+		Vmenu rtn = this.vcl.get( this.currentLayer ).vm;
+		vcl.get( this.currentLayer ).vm = null;
+		return(rtn);
+		}
 
 	public void JVCclear()
 		{
@@ -774,6 +947,24 @@ public class JVCL
 		Graphics2D g2 = (Graphics2D) vcl.get(this.currentLayer).getImage().getGraphics();
 		g2.setComposite(AlphaComposite.Clear );
 		g2.fillRect(0, 0, this.standardX, this.standardY );
+		g2.dispose();
+		this.requiresUpdate = true;
+		return;
+		}
+	// Clears active layer to a solid color, rather than transparent.
+	public void JVCclear( Color floodColor )
+		{
+		if( this.vcl.get(currentLayer).getActive() == false )  
+			{ return; }
+		Graphics2D g2 = (Graphics2D) vcl.get(
+				this.currentLayer).getImage().getGraphics();
+		g2.setComposite(AlphaComposite.Clear );
+		g2.fillRect(0, 0, this.standardX, this.standardY );
+
+		g2.setColor(floodColor);
+		g2.setComposite(AlphaComposite.Src );
+		g2.fillRect( 0, 0, this.standardX, this.standardY );
+
 		g2.dispose();
 		this.requiresUpdate = true;
 		return;
@@ -869,6 +1060,10 @@ public class JVCL
 		return;
 		}
 
+/**   Not an actual menu, calls drawing function to draw
+ * 			what only looks like a menu, but has no function.
+* 		  @deprecated Use {@link #JVCpaintMenu} for a real menus
+ */
 	public boolean JVCmenuPanel( int leftX, int topY, int totalWidth, int totalHeight, Color backgroundColor,
 			int frameWidth, Color frameColor, boolean sunkenFrame )
 		{
@@ -908,6 +1103,10 @@ public class JVCL
 		return(true);
 		}
 
+	/**   Not an actual menu, calls drawing function to draw
+	 * 			what only looks like a menu, but has no function.
+	* 		  @deprecated Use {@link #JVCpaintMenu} for a real menus
+	 */
 	private boolean JVCmenuImage( VCLayer layer, 
 			int leftX, int topY, int totalWidth, int totalHeight, 
 			BufferedImage imgBackground, float imgBkgBlend,
@@ -951,7 +1150,11 @@ public class JVCL
 		this.requiresUpdate = true;
 		return(true);
 		}
-	
+
+	/**   Not an actual menu, calls drawing function to draw
+	 * 			what only looks like a menu, but has no function.
+	* 		  @deprecated Use {@link #JVCpaintMenu} for a real menus
+	 */
 	public boolean JVCmenuImage( int leftX, int topY, int totalWidth, int totalHeight, 
 			BufferedImage imgBackground, float imgBkgBlend,
 			int frameWidth, Color frameColor, boolean sunkenFrame )
@@ -961,6 +1164,10 @@ public class JVCL
 			frameWidth, frameColor, sunkenFrame );
 		}
 
+	/**   Not an actual menu, calls drawing function to draw
+	 * 			what only looks like a menu, but has no function.
+	* 		  @deprecated Use {@link #JVCpaintMenu} for a real menus
+	 */
 	public boolean JVCmenuImage( int leftX, int topY, int totalWidth, int totalHeight, 
 			VImage imgBackground, float imgBkgBlend,
 			int frameWidth, Color frameColor, boolean sunkenFrame )

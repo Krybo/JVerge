@@ -34,6 +34,9 @@ public class VmiTextSimple implements Vmenuitem
 	private int boundX, boundY;	// Externally imposed clipping dimensions
 	private int FrameThicknessPx = 1;
 	
+	private Color highlighter = new Color(1.0f, 1.0f, 1.0f, 0.28f );
+	private Color highlighter2 = new Color(1.0f, 1.0f, 0.2f, 0.50f );
+
 	private Integer state;
 	private Integer mode;
 	// Active means it is shown but the action is disabled, it is greyed out.
@@ -77,23 +80,9 @@ public class VmiTextSimple implements Vmenuitem
 			{ return(this.index.intValue()); }
 		}
 
-		// There are images & icons (in theory) for each state.
-	public static enum enumMenuStxtSTATE
-		{
-		NORMAL (0),
-		SELECTED (1),
-		ACTIVATED (2),
-		DISABLED (3);
-		
-		private final Integer index;
-		enumMenuStxtSTATE( Integer n )
-			{	this.index = n;	}
-		public Integer value()
-			{ return(this.index); }
-		public int val()
-			{ return(this.index.intValue()); }
-		}
 
+	
+// ===========================================
 	
 		// Most basic Constructor:  
 	public VmiTextSimple( String text )
@@ -121,13 +110,13 @@ public class VmiTextSimple implements Vmenuitem
 		this.showIcon = false;
 		this.showText = true;
 
-		this.imageItems.put(enumMenuStxtSTATE.ACTIVATED.value(), 
+		this.imageItems.put(enumMenuItemSTATE.ACTIVATED.value(), 
 				new VImage(this.w,this.h,Color.GREEN ) );
-		this.imageItems.put(enumMenuStxtSTATE.NORMAL.value(), 
+		this.imageItems.put(enumMenuItemSTATE.NORMAL.value(), 
 				new VImage(this.w,this.h,Color.BLACK) );
-		this.imageItems.put(enumMenuStxtSTATE.SELECTED.value(), 
+		this.imageItems.put(enumMenuItemSTATE.SELECTED.value(), 
 				new VImage(this.w,this.h,Color.BLACK ) );
-		this.imageItems.put(enumMenuStxtSTATE.DISABLED.value(), 
+		this.imageItems.put(enumMenuItemSTATE.DISABLED.value(), 
 				new VImage(this.w,this.h,Color.DARK_GRAY ) );
 
 		this.colorItems.put(enumMenuStxtCOLORS.BKG_ACTIVE.value(), 
@@ -142,6 +131,21 @@ public class VmiTextSimple implements Vmenuitem
 				Color.WHITE );
 		this.colorItems.put(enumMenuStxtCOLORS.TEXT_INACTIVE.value(),
 				Color.DARK_GRAY );
+		
+		// Set the 4 boring solid-box icons.
+		this.iconItems.clear();
+		this.iconItems.put(0, new VImage(16,16,
+				new Color(1.0f,1.0f,1.0f,1.0f)) );
+		this.iconItems.put(1, new VImage(16,16,
+				new Color(0.0f,1.0f,0.0f,1.0f)) );
+		this.iconItems.put(2, new VImage(16,16,
+				new Color(1.0f,0.0f,0.0f,1.0f)) );
+		this.iconItems.put(3, new VImage(16,16,
+				new Color(0.1f,0.1f,0.1f,1.0f)) );
+
+//		this.highlighter = new VImage(this.w*10, this.h*10);
+//		highlighter.rectfill(0, 0, this.w*10, this.h*10, 
+//			new Color(1.0f, 1.0f, 1.0f, 0.25f ) );
 
 		try	{
 			this.myAction = Vmenuitem.class.getMethod("nullAction", 
@@ -250,8 +254,13 @@ public class VmiTextSimple implements Vmenuitem
 		if( this.visible == false ) { return; }
 		int x1 = this.ulx + this.rx;
 		int y1 = this.uly + this.ry;
-		int x2 = x1 + this.w + this.extX;
-		int y2 = y1 + this.h + this.extY;
+		int x2 = x1 + this.w;
+		if( this.extX > this.w )		{ x2 = x1 + this.extX; }
+		int y2 = y1 + this.h;
+		if( this.extY > this.h )		{ y2 = y1 + this.extY; }
+
+		System.out.println("Paint menu item state : "+state.toString()+
+				" this ("+Integer.toString(this.state)+" )" );
 
 		int tmpX1, tmpY1, tmpX2, tmpY2;
 
@@ -287,7 +296,9 @@ public class VmiTextSimple implements Vmenuitem
 		
 		if( this.showBG )
 			{
-			target.blit(x1, y1, this.imageItems.get(state) );
+				// Scale desired image to fit the box.
+			target.scaleblit(x1, y1, x2-x1,y2-y1, 
+					this.imageItems.get(state) );
 			}
 		else		// Use a flat color rather than image.
 			{
@@ -300,8 +311,9 @@ public class VmiTextSimple implements Vmenuitem
 			{
 			tmpX1 = x1 + 3 + this.FrameThicknessPx;
 			tmpY1 = y1 + 3;
-			target.blit(tmpX1, tmpY1, this.iconItems.get(state) );
+			target.blit(tmpX1, tmpY1, this.iconItems.get(this.state) );
 			}
+
 		if( this.showFrame )
 			{
 			Color fc;
@@ -343,7 +355,13 @@ public class VmiTextSimple implements Vmenuitem
 //		 show the "string rectangle"
 //			target.rect(tmpX1, y1+3, tmpX1+this.sx, tmpY1, Color.WHITE );
 			}
-		
+
+		// If its selected, highlight the background
+		if( this.state == enumMenuItemSTATE.SELECTED.value() )
+			{	target.rectfill(x1, y1, x2-1, y2-1, highlighter );	}
+		if( this.state == enumMenuItemSTATE.ACTIVATED.value() )
+			{	target.rectfill(x1, y1, x2-1, y2-1, highlighter2 );	}		
+
 		return;
 		}
 
@@ -440,16 +458,16 @@ public class VmiTextSimple implements Vmenuitem
 		{
 		if( this.active == false )		{ return(false); }
 		if( this.myAction == null ) 	{ return(false); }
-		if( ! this.myAction.isAccessible() )  
-			{ return(false); }
 
-		try {
-			// 	call the method.		
+//  This doesn't do what one may first think. - its not necessary.
+//		if( ! this.myAction.isAccessible() )  
+//			{ return(false); }
+
+		try { 			// 	call the method. and prey
+			this.myAction.invoke(null);
 			}
 		catch(Exception e)
-			{
-			e.printStackTrace();
-			}
+			{	e.printStackTrace();	}
 
 		return(true);
 		}
@@ -472,7 +490,7 @@ public class VmiTextSimple implements Vmenuitem
 	// Sets icons for all states to a simple colored square of pixel size
 	private void setAllColorIcon( int size, Color c )
 		{
-		for( enumMenuStxtSTATE s : enumMenuStxtSTATE.values() )
+		for( enumMenuItemSTATE s : enumMenuItemSTATE.values() )
 			{
 			this.iconItems.put(s.value(), new VImage(size,size,c) );
 			}
@@ -485,11 +503,16 @@ public class VmiTextSimple implements Vmenuitem
 		this.colorItems.put(n.value(), c );	
 		}
 	public void setState( Integer theState )
-		{ 
+		{
+		// this method is ineffective if the item is in a disabled state.
+		//    you will need to reenable it first.
+		if( this.state == enumMenuItemSTATE.DISABLED.value() )
+			{ return; }
 		this.state = theState;
+		System.out.println("menuitem set state => "+Integer.toString(this.state));
 		this.calcDims();
 		}
-	public void setStateImages(enumMenuStxtSTATE n, 
+	public void setStateImages(enumMenuItemSTATE n, 
 			VImage theIcon, VImage theBackGround )
 		{
 		this.imageItems.put(n.value(), theBackGround );
@@ -500,9 +523,9 @@ public class VmiTextSimple implements Vmenuitem
 
 	public String getText()
 		{ return(this.textItems.get(this.mode)); }
-	public VImage getBackground( enumMenuStxtSTATE n )
+	public VImage getBackground( enumMenuItemSTATE n )
 		{ return(this.imageItems.get( n.value() )); }
-	public VImage getIcon( enumMenuStxtSTATE n )
+	public VImage getIcon( enumMenuItemSTATE n )
 		{ return(this.iconItems.get( n.value() )); }
 
 	public boolean isActive()
@@ -512,20 +535,49 @@ public class VmiTextSimple implements Vmenuitem
 	public Integer getState()
 		{ return( this.state ); }
 	
-	public void setExtendX( int desiredWidth )
+	/**
+	 * These allow Vmenu objects control the width and height of 
+	 * an arrangement of Vmenuitems. by adding blank space
+	 */
+	public void setExtendX( int desiredWidth, boolean onlyIfGreater )
 		{
 		if( desiredWidth < this.w )
 			{ this.extX = 0;   return; }
-		this.extX = desiredWidth - this.w;
+		if( onlyIfGreater == true && (desiredWidth <= this.extX  ) )
+			{	return;	}
+		this.extX = desiredWidth;
 		return;
 		}
-	public void setExtendY( int desiredHeight )
+	public void setExtendY( int desiredHeight, boolean onlyIfGreater )
 		{
 		if( desiredHeight < this.h )
 			{ this.extY = 0;   return; }
-		this.extY = desiredHeight - this.h;
+		if( onlyIfGreater == true && (desiredHeight <= this.extY  ) )
+			{ return; }
+		this.extY = desiredHeight;
 		return;
 		}
 
+
+	private String getStateString()
+		{
+		String rslt = "UNKNOWN";
+		
+		for( enumMenuItemSTATE e : enumMenuItemSTATE.values() )
+			{
+			if( e.ordinal() == this.state )
+				{ rslt = e.getName(); }
+			}
+
+		return(rslt);
+		}
+
+	public  Integer debug_function( Integer ignore )
+		{
+		this.textItems.put(this.mode, this.getStateString() );
+		this.calcDims();
+		return(0);
+		}
+	
 	}
 

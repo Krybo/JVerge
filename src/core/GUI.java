@@ -406,8 +406,8 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 //			Graphics2D g2d2 = (Graphics2D) g;
 //			g2d2.setComposite( AlphaComposite.SrcOver );
 
-			
 			jvcl.JVCdialogExpire();
+
 //			int[] talkingEntityNums = ;
 			for( int en : jvcl.JVCdialogGetEntityNumbers() )
 				{
@@ -438,6 +438,17 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 					curwidth, curheight, null);				
 				}
 
+			if( Controls.MENU_OPEN && jvclMenu == null )
+				{
+				Controls.MENU_OPEN = false;
+				log(" In menu mode .... but menu is null?!  so turning it off."); 
+				}
+			if( Controls.MENU_OPEN )
+				{
+				g.drawImage( jvclMenu.getBufferedImage(), 0, 0, 
+					curwidth, curheight, null);
+				}
+
 			
 			/* Do this to rotate 180 
 			Graphics2D g2d = (Graphics2D) g;
@@ -450,10 +461,13 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 				{
 				g.setFont(fps_font);
 				g.setColor(Color.WHITE);
-				g.drawString("FPS: " + Float.toString(frameInLastSecond), 10, 20);
-				g.drawString(Integer.toString(GUIzoom)+"x", 15, 40);
+				g.drawString("FPS: " + Float.toString(frameInLastSecond), 10, 15);
+				if( GUIzoom != 1 )
+					{ g.drawString(Integer.toString(GUIzoom)+"x", 92, 15); }
+				if( Controls.MENU_OPEN )
+					{ g.drawString( " <MENU> ", 110, 15); }
 				if( ! playerIsSet()  )
-					{  g.drawString(" !!! UNSET PLAYER", 15, 60);  } 
+					{  g.drawString(" !!! UNSET PLAYER", 100, 35);  } 
 				}
 				
 			g.dispose();

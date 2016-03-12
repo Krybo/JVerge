@@ -65,7 +65,7 @@ public class VergeEngine extends Thread
 
 	/****************************** code ******************************/
 
-	// Krybo : experimental wait(x) engine-level function(s)  U.W.C.!
+	// Krybo : experimental wait(x) engine-level function(s)  U.w/Caution.!
 	public static void enginePause( int milliseconds )
 		{
 		Long ms = new Long(milliseconds);
@@ -327,13 +327,22 @@ public class VergeEngine extends Thread
 		}
 	}
 
-	public static void ProcessControls() {
+	public static void ProcessControls() 
+		{
 		Controls.UpdateControls();
+
+			// Krybo (Mar.2016) We are in menu mode.  Stop entity controls
+			// Controls can then be re-purposed for menus manipulation.
+		if( Controls.MENU_OPEN == true )
+			{
+			Controls.UpdateMenusControls( new Long(90000000) );
+			return; 
+			}
+
 		// No player movement can be done if there's no ready player, or if
 		// there's a script active.
-		if (myself == null || !myself.ready() || invc != 0) {
-			return;
-		}
+		if (myself == null || !myself.ready() || invc != 0) 
+			{	return;	}
 
 		if (myself.movecode == 3) {
 			// ScriptEngine::
@@ -551,8 +560,7 @@ public class VergeEngine extends Thread
 						entity.get(i).setface(WEST);
 						break;
 					default:
-						System.err
-								.println("ProcessControls() - uwahh? invalid myself.face parameter");
+						System.err.println("ProcessControls() - uwahh? invalid myself.face parameter");
 					}
 				}
 
@@ -761,8 +769,8 @@ public class VergeEngine extends Thread
 	}
 
 	public static void TimedProcessEntities() {
-		if (entitiespaused)
-			return;
+		if (entitiespaused || Controls.MENU_OPEN )
+			{ return; }
 
 		while (lastentitythink < systemtime) {
 			if (done)
@@ -826,9 +834,10 @@ public class VergeEngine extends Thread
 			while(!done) {
 				updateControls();
 				//TimedProcessEntities();
-				while (!die) {
+				while (!die) 
+					{
 					updateControls();
-					
+
 					if(virtualScreen==null) {
 						screen.render();
 					}
@@ -872,7 +881,8 @@ public class VergeEngine extends Thread
 	}
 
 
-	public static void engine_start() {
+	public static void engine_start() 
+		{
 		numentities = 0;
 		entity.clear();
 		player = -1;
@@ -900,10 +910,16 @@ public class VergeEngine extends Thread
 			current_map = new MapDynamic(mapname);
 			}
 		
+		// Krybo:  Initialize the graphics and menu layers if need.
 		if( core.Script.jvcl != null )
 			{  
 			core.Script.jvcl.destroy();
 			core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
+			}
+		if( core.Script.jvclMenu != null )
+			{
+			core.Script.jvclMenu.destroy();
+			core.Script.jvclMenu = new JVCL(24,screen.width,screen.height);
 			}
 		
 		}	catch( Exception e )
@@ -975,8 +991,9 @@ public class VergeEngine extends Thread
 		getGUI().updateCanvasSize();
 
 			// Start with 4 user friendly graphics drawing layers.
+			// and 24 menu layers.
 		core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
-
+		core.Script.jvclMenu = new JVCL(24,screen.width,screen.height );
 	}
 	
 }

@@ -5,7 +5,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import menus.VmiTextSimple.enumMenuStxtSTATE;
 import domain.VImage;
 
 /*
@@ -28,6 +27,24 @@ public interface Vmenuitem
 
 //	public Vmenuitem();
 			
+	public static enum enumMenuItemSTATE
+		{
+		NORMAL (0),
+		SELECTED (1),
+		ACTIVATED (2),
+		DISABLED (3);
+		
+		private final Integer index;
+		enumMenuItemSTATE( Integer n )
+			{	this.index = n;	}
+		public Integer value()
+			{ return(this.index); }
+		public String getName()
+			{ return(this.name()); }
+		public int val()
+			{ return(this.index.intValue()); }
+		}
+
 	// Change the position of the menuitem within the parent.
 	public boolean reposition( int posX, int posY, int relPosX, int relPosY );
 	// Sets the method called when the thing is used.
@@ -45,8 +62,8 @@ public interface Vmenuitem
 	public Double getDX();
 	public Double getDY();
 		// Lets menus enforce a certain width/height for their Items
-	public void setExtendX( int itemWidth );
-	public void setExtendY( int itemHeight );
+	public void setExtendX( int itemWidth, boolean onlyIfGreater );
+	public void setExtendY( int itemHeight, boolean onlyIfGreater );
 
 	// Control and change the menu content.
 	public void setTextContent( HashMap<Integer,String> textItems );
@@ -72,7 +89,18 @@ public interface Vmenuitem
 	public Integer getKeycode();
 	public void setKeycode(Integer vergeKeyCode );
 
+	/**
+	 * This typically can do nothing.
+	 * Otherwise, use it for your own inscrutable purposes
+	 * @param argv  a number that can be used to change behavior
+	 * @return  a number code as the result
+	 */
+	public Integer debug_function( Integer argv );
+
 	// Default action Method, safely does nothing.
 	public static void nullAction()
-		{ return; }
+		{
+		System.out.println("NULL ACTION called.");
+		return; 
+		}
 	}

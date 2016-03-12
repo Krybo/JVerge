@@ -1,6 +1,7 @@
 package menus;
 
 import domain.VImage;
+import domain.VSound;
 
 /* Krybo (Feb.2016)
  * 
@@ -29,7 +30,42 @@ import domain.VImage;
 public interface Vmenu
 	{
 
+	// Generalizes user events that can happen within a menu.
+	public static enum enumMenuEVENT
+		{
+		MOVE (0),
+		CONFIRM (1),
+		CANCEL (2),
+		INCREMENT (3),
+		DECREMENT (4),
+		SPECIAL (5);
+		
+		private final Integer index;
+		enumMenuEVENT( Integer n )
+			{	this.index = n;	}
+		public Integer value()
+			{ return(this.index); }
+		public String getName()
+			{ return(this.name()); }
+		public int val()
+			{ return(this.index.intValue()); }
+		}
+	
+	/**
+	 * The main drawing routine.  handles drawing of child menuitems.
+	 * @param target  a VImage reference to draw on.
+	 * @return boolean success or fail.
+	 */
 	public boolean paint( VImage target );
+	
+	/**
+	 * Control handler,  handles "signals" passed to the menu by external
+	 *     control managing routines.   It changes the state of the menu
+	 *     on a single keystroke basis.
+	 * @param ext_keycode External extended keycode that was pressed
+	 * @return	boolean- does the menu need redrawn?  in most cases, true.
+	 */
+	public boolean doControls( Integer ext_keycode );
 	
 	public void moveAbs(int x, int y);
 	public void moveRel(int x, int y);
@@ -47,11 +83,12 @@ public interface Vmenu
 	public int getSelectedIndexPosY();
 	
 	public void setSelectedIndex(Integer index);
-	public void setFocus( int focusControlIndex );
+	public void setFocusId( Long id );
+	public Long getFocusId( );
+	public boolean isFocus( Long id );
 	public void setActive( boolean active );
 	public void setVisible( boolean vis );
 	
-	public boolean isFocus( int focusControlIndex );
 	public boolean isActive();
 	public boolean isVisible();
 	
@@ -65,5 +102,13 @@ public interface Vmenu
 	public int countSubmenus();
 
 	public void activateSelected();
+
+	/**
+	 * Implement this to attach sounds to generalized menu events
+	 * @param slot	enum menu event
+	 * @param sfx	The VSound object to play on this event.
+	 */
+	public void attachSound( enumMenuEVENT slot, VSound sfx );
+	public boolean playMenuSound( enumMenuEVENT slot, int volume0to100 );
 	
 	}

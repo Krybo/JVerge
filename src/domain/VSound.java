@@ -10,9 +10,16 @@ public class VSound {
 	URL url;
 	float volume;
 	
-	public VSound(URL url) {
+	// Krybo (Mar.2016) : check on construct
+		public VSound(URL url) 
+			{
 			this.url = url;
-	}
+			if(url == null || url.getFile() == null) 
+				{
+				System.err.println("WARN: Bad VSound.- "+url.toString() );
+				}
+			return;
+			}
 	
 	static Mp3Player mp3player;
 	static WavPlayer wavplayer;

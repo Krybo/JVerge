@@ -13,10 +13,12 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 
-public class Controls 
-implements MouseListener, MouseMotionListener, FocusListener, KeyListener, WindowListener
-{
+public class Controls implements 
+				MouseListener, MouseMotionListener, FocusListener, 
+				KeyListener, WindowListener
+	{
 
 	// The VERGE 3 Project is originally by Ben Eirich and is made available via
 	//  the BSD License.
@@ -38,7 +40,7 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 		// Krybo : added in Script.nicedHookkey
 	public static long bindarrayDelay[] = new long [128];
 	public static long bindarrayCounter[] = new long [128];
-	
+
 	public static void UnUp() { kill_up = true; up = false; }
 	public static void UnDown() { kill_down = true; down = false; }
 	public static void  UnLeft() { kill_left = true; left = false; }
@@ -61,6 +63,17 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 		 k_right = SCAN_RIGHT;*/
 
 	byte j_b1=0, j_b2=1, j_b3=2, j_b4=3;
+	
+	// Krybo (Feb.2016)  Adding a low level menu toggle variable.
+	public static boolean MENU_OPEN;
+	public static Long MENU_TIMER = new Long(0);
+	// Keeps a stack of button keypress codes intended to be fed to menus
+	//   the int keeps track of how many items were sent out to process.
+	protected static ArrayList<Integer> menusKeyStack = new ArrayList<Integer>();
+	protected static int menusKeyStackSent = 0;
+	// A shameless counter of the number of pieces of keystrokes
+	//		sucessfully sent to menus.
+	public static long menuKeyCount = 0;
 
 	/***************************** code *****************************/
 	//int _input_killswitch;
@@ -97,7 +110,8 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 		if (getKey(KeyEsc)) b3 = true; else b3 = false;
 		if (getKey(KeyFire)) b4 = true; else b4 = false;
 
-		if (!up && kill_up) kill_up = false;
+		if (!up && kill_up) 
+			{ kill_up = false; log("UP Key released."); }
 		if (!down && kill_down) kill_down = false;
 		if (!left && kill_left) kill_left = false;
 		if (!right && kill_right) kill_right = false;
@@ -141,7 +155,7 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 				//    the last time it was executed, skip it.
 				//	If nicedHookkey was not used, this will have no effect
 				//   - purpose is to prevent a hookkey method from
-				//         executing as fast as the machine can.
+				//    executing as fast as the machine cycles this.
 				
 				if( hkNow < (bindarrayCounter[i] + bindarrayDelay[i] ) )
 					{ continue; }
@@ -150,7 +164,95 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 				callfunction(bindarray[i]);
 				}
 			}
+		
+		if( MENU_OPEN )	{ UpdateMenusControls( new Long(90000000) ); }
 	}
+
+	/**
+	 * Determine the menu instances that have focus
+	 *    and call their .controls() method.
+	 *  Several menus can be controlled at once.   This is the purpose
+	 *      behind MENU_FOCUS[] to hold the focusID of each operable
+	 *      Vmenu object.      For the initial implementation, all Vmenu's
+	 *      are confined to the JVCL (core.Script.jvclMenu) so this
+	 *      method knows where the menus are.
+	 *      
+	 *      The arg controls how frequently this function is allowed  
+	 *         to execute.   a value of  100 000 000 is ~ 10 x a second.
+	 *  
+	 *      Krybo (Mar.2016)
+	 */
+	public static void UpdateMenusControls( Long minTimingNanoseconds )
+		{
+		Long delta = System.nanoTime() - MENU_TIMER;
+		if( delta < minTimingNanoseconds )  { return; }		// Timing control.
+		MENU_TIMER = System.nanoTime();
+//		log("Menu controls read @ "+
+//			Long.toString(MENU_TIMER) + " delta " + delta.toString() );
+
+		// First, see if there is any input to send.
+		if( Controls.menusKeyStack.isEmpty() ) { return; }
+		int nstrokes = Controls.menusKeyStack.size();
+//		System.out.println(Integer.toString(nstrokes)+" new keystrokes VS "+Integer.toString( Controls.menusKeyStackSent ));
+		while( nstrokes > Controls.menusKeyStackSent )
+			{
+//	System.out.println(Integer.toString(nstrokes)+" DEBUG new keystrokes VS "
+//			+Integer.toString( Controls.menusKeyStackSent ));
+			Controls.menusKeyStackSent++;
+				// now send it to all menus with focus.
+			for( Long x : MENU_FOCUS )
+				{
+				if(	jvclMenu.JVCmenuDoControls(x, 
+					Controls.menusKeyStack.get(
+					Controls.menusKeyStackSent-1 ) ) )
+					{ Controls.menuKeyCount++; }
+				}
+			}
+		
+		return;
+		}
+	
+	/**
+	 * Utility statics to help parse the extended menu codes passed to 
+	 *   menu objects doControls() method
+	 *   (Krybo Mar.2016)
+	 * @param ext_code   keycode that includes high bits for cntl shift alt
+	 * @return  --various--
+	 */
+	public static Integer extcodeGetBasecode(Integer ext_code )
+		{ return( new Integer(ext_code >> 3));  }
+	public static Byte extcodeGetExtentionByte( Integer ext_code )
+		{
+		return( new Byte(  new Integer( 
+			ext_code - Controls.extcodeGetBasecode(ext_code) ).byteValue()
+			 ));
+		}
+	public static int extcodeGetExtention( Integer ext_code )
+		{
+		return(  new Integer( 
+			ext_code - (( ext_code >> 3 ) << 3)  ));
+		}
+	public static boolean extcodeGetSHIFT( Integer ext_code )
+		{
+		int tmp = Controls.extcodeGetExtention(ext_code); 
+		if( (tmp & 1) == 1 )
+			{ return(true); }
+		return(false);
+		}
+	public static boolean extcodeGetCNTL( Integer ext_code )
+		{
+		int tmp = Controls.extcodeGetExtention(ext_code);
+		if( (tmp & 2) == 2 )
+			{ return(true); }
+		return(false);
+		}
+	public static boolean extcodeGetALT( Integer ext_code )
+		{
+		int tmp = Controls.extcodeGetExtention(ext_code);
+		if( (tmp & 4) == 4 )
+			{ return(true); }
+		return(false);
+		}
 
 	// JGAME STUFF **** /////////////////////////////////////////////
 	
@@ -216,9 +318,10 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 			}
 
 			/* Standard Wimp event handlers */
-			public void keyPressed(KeyEvent e) {
+			public void keyPressed(KeyEvent e) 
+				{
 				char keychar = e.getKeyChar();
-				int keycode = e.getKeyCode();
+				int keycode = e.getKeyCode();				
 				if (keycode>=0 && keycode < 256) {
 					keymap[keycode]=true;
 					lastkey=keycode;
@@ -237,12 +340,45 @@ implements MouseListener, MouseMotionListener, FocusListener, KeyListener, Windo
 				// [Rafael, the Esper]&& !eng.isApplet()) {
 					System.exit(0);
 				}
+				
+				// Krybo (Feb.2016)  menu mode toggle
+				
+				if( MENU_OPEN && keycode != 27 &&  
+						keycode != 16 && keycode != 17 && keycode != 18 )
+					{
+					
+					Integer MKEYCODE = new Integer( keycode << 3);
+					if( e.isShiftDown() ) 
+						{ MKEYCODE += 1; }
+					if( e.isControlDown() ) 	
+						{ MKEYCODE += 2; }
+					if( e.isAltDown() ) 
+						{ MKEYCODE += 4; } 
+					menusKeyStack.add(MKEYCODE);
+					}
+
+				// Menu open <> close toggle.
+				// TODO:  make this keycode configurable in verge.cfg
+				if( e.getKeyCode() == KeyEvent.VK_ESCAPE ) 
+					{
+					if( MENU_OPEN == false )	
+						{ 
+						MENU_OPEN = true;
+						log("           --< MENU MODE >--");
+						}
+					else { 
+						MENU_OPEN = false;
+						log("           --< STANDARD MODE >--");
+						}
+					}
+
 				//System.out.println(e+" keychar"+e.getKeyChar());
 			}
 
 			/* handle keys, shift-escape patch by Jeff Friesen */
 			public void keyReleased (KeyEvent e) 
 				{
+//				log("KeyEvent released: "+Integer.toString(e.getKeyCode() ));
 //				char keychar = e.getKeyChar ();   --  Krybo: b/c its not used.
 				int keycode = e.getKeyCode ();   
 				if (keycode >= 0 && keycode < 256) {

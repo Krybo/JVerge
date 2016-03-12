@@ -59,8 +59,11 @@ public class Script {
 	
 		// Menu system
 		// menus focus controllers, x24
-	public static Integer[] MENU_FOCUS = new Integer[]
-				{0,0,0,0,0,0 ,0,0,0,0,0,0 ,0,0,0,0,0,0 ,0,0,0,0,0,0};
+	public static Long[] MENU_FOCUS = new Long[]
+			{ 	new Long(0), new Long(0), new Long(0), new Long(0), 
+				new Long(0), new Long(0), new Long(0), new Long(0),
+				new Long(0), new Long(0), new Long(0), new Long(0) };
+
 
 		// Krybo (Feb.2016) : Some Global Fonts
 		// This one is guarenteed to work anywhere and used as backup
@@ -91,9 +94,14 @@ public class Script {
 	public static final Color Color_DEATH_MAGENTA = 
 			new Color( 1.0f , 0.0f , 1.0f , 0.0f );
 
-		// The java vergeC graphics layers are to be controlled in core.Script
+		// The java vergeC graphics layers are to be controlled using 
+		//		core.Script functions and a few rendering engine ties.
+		// 	User graphics layers are drawn over the map layers.
+		//   Menus are drawn over map and graphics.
+		//  		[Map] < [graphics & text] < [menu]
 	public static JVCL jvcl;
 	public static JVCL jvclText;
+	public static JVCL jvclMenu;
 
 	// VERGE ENGINE VARIABLES: Moved to Script for easy of use
 	/**
