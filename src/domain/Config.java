@@ -51,6 +51,7 @@ public class Config {
 	private int gamerate = 100;
 	private boolean use_lua = false;
 	private boolean vc_oldstring = false;
+	private int setSysMenuKC = -1;
 
 		// this exists to do just that.  it functionally does not do anything
 	private void killUnusedVarWarnings()
@@ -131,8 +132,18 @@ public class Config {
 				if(strD.toLowerCase().startsWith("nosound")) {
 					int i = Integer.parseInt(strD.substring("nosound".length()).trim());
 					this.setNosound(i == 0 ? false : true);
-				}	
-				
+				}
+					// Krybo (Mar.2016) : added menu hotkey.
+				if(strD.toLowerCase().startsWith("sysmenukeycode")) 
+					{
+					int n = Integer.parseInt(strD.substring(
+							"sysmenukeycode".length()).trim());
+					if( n > 0 && n < 255 )
+						{
+						this.setSysMenuKeycode(n);
+						}
+					}
+
 			}
 			
 		} catch (IOException e) {
@@ -241,6 +252,12 @@ public class Config {
 	public void setNosound(boolean nosound) {
 		this.nosound = nosound;
 	}
+	
+	// Krybo : menu keycode encapsulation
+	public void setSysMenuKeycode(int n)
+		{ this.setSysMenuKC = n; }
+	public int getSysMenuKeycode()
+		{ return( this.setSysMenuKC ); } 
 
 	public void setWindowmode(boolean windowmode) {
 		this.windowmode = windowmode;

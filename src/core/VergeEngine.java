@@ -26,10 +26,6 @@ import static domain.Entity.WEST;
 
 
 
-
-
-
-
 import java.awt.Color;
 import java.lang.reflect.Method;
 //import java.awt.Color;
@@ -988,6 +984,13 @@ public class VergeEngine extends Thread
 			mapname = config.getMapname();
 			log("Mapname from config file: " + mapname);
 		}
+		
+		// Krybo (Mar.2016)  configurable master menu key code.
+		if( config.getSysMenuKeycode() > -1 )
+			{
+			MENU_MASTERKEY = config.getSysMenuKeycode();
+			}
+		log(" Menu master key is : "+Integer.toString(MENU_MASTERKEY) );
 
 		// [Rafael, the Esper]: See http://www.cap-lore.com/code/java/JavaPixels.html
 		// config.v3_xres = config.v3_xres * 2;

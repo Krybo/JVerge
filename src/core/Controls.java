@@ -67,6 +67,7 @@ public class Controls implements
 	// Krybo (Feb.2016)  Adding a low level menu toggle variable.
 	public static boolean MENU_OPEN;
 	public static Long MENU_TIMER = new Long(0);
+	public static int MENU_MASTERKEY = -1; 
 	// Keeps a stack of button keypress codes intended to be fed to menus
 	//   the int keeps track of how many items were sent out to process.
 	protected static ArrayList<Integer> menusKeyStack = new ArrayList<Integer>();
@@ -343,7 +344,7 @@ public class Controls implements
 				
 				// Krybo (Feb.2016)  menu mode toggle
 				
-				if( MENU_OPEN && keycode != 27 &&  
+				if( MENU_OPEN && keycode != MENU_MASTERKEY &&  
 						keycode != 16 && keycode != 17 && keycode != 18 )
 					{
 					
@@ -358,8 +359,8 @@ public class Controls implements
 					}
 
 				// Menu open <> close toggle.
-				// TODO:  make this keycode configurable in verge.cfg
-				if( e.getKeyCode() == KeyEvent.VK_ESCAPE ) 
+
+				if( e.getKeyCode() == MENU_MASTERKEY ) 
 					{
 					if( MENU_OPEN == false )	
 						{ 
@@ -511,7 +512,7 @@ public class Controls implements
 		if (key >= 33 && key <= 95)
 			return new String(new char[] {(char)key});
 		return "keycode "+key;
-	}
+		}
 
 	public static int getKeyCodeStatic(String keydesc) {
 		// tab, enter, backspace, insert, delete, home, end, pageup, pagedown
