@@ -1036,14 +1036,21 @@ public class VergeEngine extends Thread
 			Script.class, "menuClose") );
 		SYS_MENU.addItem( vmix );
 
-		SYS_MENU.addItem( 
-			new VmiTextSimple("NEW") );
-		SYS_MENU.addItem( 
-			new VmiTextSimple("SAVE") );
-		SYS_MENU.addItem( 
-			new VmiTextSimple("LOAD") );
-		SYS_MENU.addItem( 
-			new VmiTextSimple("Debug Consoles") );
+		vmix = new VmiTextSimple("NEW");
+		vmix.setState(3);  //  Disabled
+		SYS_MENU.addItem( vmix );
+		
+		vmix = new VmiTextSimple("SAVE");
+		vmix.setState(3);  //  Disabled
+		SYS_MENU.addItem( vmix );
+		
+		vmix = new VmiTextSimple("LOAD");
+		vmix.setState(3);  //  Disabled
+		SYS_MENU.addItem( vmix );
+		
+		vmix = new VmiTextSimple("CNFIG");
+		vmix.setState(3);  //  Disabled
+		SYS_MENU.addItem( vmix );
 		
 		vmix = new VmiTextSimple("END GAME");
 		vmix.setAction( core.Script.getFunction( 

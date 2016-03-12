@@ -122,7 +122,7 @@ public class VmiTextSimple implements Vmenuitem
 		this.colorItems.put(enumMenuStxtCOLORS.BKG_ACTIVE.value(), 
 				Color.BLUE );
 		this.colorItems.put(enumMenuStxtCOLORS.BKG_INACTIVE.value(), 
-				Color.BLACK );
+				new Color( 0.0f, 0.1f, 0.5f, 1.0f ) );
 		this.colorItems.put(enumMenuStxtCOLORS.FRAME_INNER.value(), 
 				Color.GRAY );
 		this.colorItems.put(enumMenuStxtCOLORS.FRAME_OUTER.value(),
@@ -130,7 +130,7 @@ public class VmiTextSimple implements Vmenuitem
 		this.colorItems.put(enumMenuStxtCOLORS.TEXT_ACTIVE.value(),
 				Color.WHITE );
 		this.colorItems.put(enumMenuStxtCOLORS.TEXT_INACTIVE.value(),
-				Color.DARK_GRAY );
+				new Color( 0.62f, 0.62f, 0.62f, 1.0f )  );
 		
 		// Set the 4 boring solid-box icons.
 		this.iconItems.clear();
