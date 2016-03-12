@@ -833,6 +833,7 @@ public class JVCL
 	public Integer JVCmenuPaintAll( boolean reverseOrder )
 		{
 		Integer rtn = 0;
+		System.out.println(" *** menu paint all called.");
 		int nMax = this.vcl.size();
 		if( nMax <= 1 )  { return(0); }
 		if( reverseOrder  == false )

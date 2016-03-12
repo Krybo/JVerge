@@ -364,6 +364,9 @@ public class Controls implements
 					if( MENU_OPEN == false )	
 						{ 
 						MENU_OPEN = true;
+						// This ensures the menu redraws immediated
+						// The fake-keystroke of -1 does nothing
+						Controls.menusKeyStack.add(-1);
 						log("           --< MENU MODE >--");
 						}
 					else { 
@@ -551,6 +554,23 @@ public class Controls implements
 	}
 	
 	
-	
+	// Krybo (Mar.2016) : utility to open & close menu mode.
+	public static boolean changeMenuMode()	// Toggle
+		{
+		if( MENU_OPEN ) 	{ MENU_OPEN = false; }
+		else 				
+			{
+			MENU_OPEN = true;
+			jvclMenu.JVCmenuPaintAll(false);
+			}
+		Controls.menusKeyStack.add(-1);
+		return(MENU_OPEN);
+		}
+	public static boolean changeMenuMode(boolean onOff)
+		{
+		MENU_OPEN = onOff;
+		Controls.menusKeyStack.add(-1);
+		return(MENU_OPEN);
+		}
 	
 }

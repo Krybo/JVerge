@@ -259,8 +259,8 @@ public class VmiTextSimple implements Vmenuitem
 		int y2 = y1 + this.h;
 		if( this.extY > this.h )		{ y2 = y1 + this.extY; }
 
-		System.out.println("Paint menu item state : "+state.toString()+
-				" this ("+Integer.toString(this.state)+" )" );
+//		System.out.println("Paint menu item state : "+state.toString()+
+//				" this ("+Integer.toString(this.state)+" )" );
 
 		int tmpX1, tmpY1, tmpX2, tmpY2;
 
@@ -509,7 +509,7 @@ public class VmiTextSimple implements Vmenuitem
 		if( this.state == enumMenuItemSTATE.DISABLED.value() )
 			{ return; }
 		this.state = theState;
-		System.out.println("menuitem set state => "+Integer.toString(this.state));
+//		System.out.println("menuitem set state => "+Integer.toString(this.state));
 		this.calcDims();
 		}
 	public void setStateImages(enumMenuItemSTATE n, 

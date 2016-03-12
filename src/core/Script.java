@@ -6,6 +6,11 @@ import core.JVCL;
 
 
 
+
+
+
+
+
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
@@ -36,12 +41,14 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import menus.Vmenuitem;
 import audio.VMusic;
 import domain.MapVerge;
 import domain.VSound;
 import domain.VImage;
 import domain.Entity;
 import domain.Map;
+import static core.Script.jvclMenu;
 //import static core.Script.log;
 //import static core.Script.screen;
 //import static core.Script.setlucent;
@@ -261,11 +268,16 @@ public class Script {
 	
 	// Rafael: Changed to ExecuteFunctionString 
 	/*public void ExecuteCallback(String function, boolean callingFromLibrary) */
-	
-	public static void exit(String message) { 
+
+	// Silent engine termination.
+	public static void terminate() 
+		{ 	System.exit(0); 	}
+	public static void exit(String message) 
+		{ 
+		// TODO:  any emergency cleanup before exiting.
 		System.err.println(message);
-		System.exit(0); 
-	}
+		terminate(); 
+		}
 
 	/* Rafael: TODO Implement this.
 	 public static void SetButtonJB(int b, int jb) {
@@ -353,6 +365,21 @@ public class Script {
 		bindarrayCounter[k] = System.nanoTime();
 		}
 
+	/**
+	 * opens & closes menus
+	 * Krybo (Mar.2016)
+	 */
+	public static void menuOpen()
+		{ 
+		Controls.changeMenuMode(true);
+		jvclMenu.JVCmenuPaintAll(false);
+		}
+	public static void menuClose()
+		{ Controls.changeMenuMode(false); }
+	public static void menuToggle()
+		{ Controls.changeMenuMode(); }
+	
+	
 	public static void log(String s) { 
 		System.out.println(s); 
 	}
@@ -1294,6 +1321,40 @@ public class Script {
 	public static void callfunction(String function) {
 		executefunction(function, false);
 	}
+	
+	/**
+	 * Just gets a java.reflect.Method while handling exceptions.
+	 * If its not found, a nullAction method that does nothing is returned.
+	 * Krybo (Mar.2016)
+	 * @param theClass			Generic parent Class
+	 * @param methodName		String name of the desired Method.
+	 * @return		a Method Object, upon total failure, returns null
+	 */
+	public static Method getFunction(Class<?> theClass, String methodName )
+		{
+		Method rslt = null;
+		if( methodName.isEmpty() )	{ return(null); }
+		
+		for( Method m : theClass.getMethods() )
+			{
+			if( m.getName().equals(methodName) == true )
+				{ rslt = m; }
+			}
+		if( rslt != null )
+			{ return(rslt); }
+
+		log( "Cannot find method "+methodName+
+			" in "+theClass.getName()+" -- null action was returned" );
+
+		try	{
+			rslt = Vmenuitem.class.getMethod("nullAction", 
+					(Class<?>[]) null );
+			}
+		catch (NoSuchMethodException | SecurityException e1)
+			{ 	return(null);	}		// BLARRRG
+
+		return(rslt);
+		}
 	
 	private static boolean executefunction(String function, boolean justCheck) {
 		

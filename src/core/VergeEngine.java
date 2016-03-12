@@ -19,7 +19,19 @@ import static domain.Entity.WEST;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 import java.awt.Color;
+import java.lang.reflect.Method;
 //import java.awt.Color;
 //import java.net.MalformedURLException;
 //import java.net.URL;
@@ -29,12 +41,17 @@ import java.util.Comparator;
 //import java.util.HashMap;
 import java.util.List;
 
+import menus.VmenuVertical;
+import menus.Vmenuitem;
+import menus.VmiTextSimple;
+import menus.Vmenu.enumMenuEVENT;
 import domain.Config;
 import domain.Entity;
 //import domain.Map;
 import domain.MapDynamic;
 import domain.MapVerge;
 import domain.VImage;
+import domain.VSound;
 
 public class VergeEngine extends Thread 
 	{
@@ -46,6 +63,8 @@ public class VergeEngine extends Thread
 	
 	public static int currentMapZoneWidth = -1;
 	public static int currentMapZoneHeight = -1;
+	
+	public static final String JVERGE_VERSION = "1.1.0";
 
 	public static boolean die;
 	
@@ -827,8 +846,11 @@ public class VergeEngine extends Thread
 		
 		while(mapname!=null && !mapname.isEmpty()) 
 			{
-			log("Entering Area: " + mapname);
+			log("JVerge Engine Startup  v( "+
+				JVERGE_VERSION+" )");
 			engine_start();
+			log(" --------------------------------------------------------------" );
+			log("Entering Area: " + mapname);
 			
 			// Game Map Loop
 			while(!done) {
@@ -890,6 +912,8 @@ public class VergeEngine extends Thread
 		xwin = ywin = 0;
 		done = false;
 		die = false;
+			// Krybo (Mar.2016) : System menus are built once, here.
+		init_system_menus();
 		
 		// Krybo (Jan 2016) : felt some exception handled is needed here.
 		try {
@@ -915,11 +939,6 @@ public class VergeEngine extends Thread
 			{  
 			core.Script.jvcl.destroy();
 			core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
-			}
-		if( core.Script.jvclMenu != null )
-			{
-			core.Script.jvclMenu.destroy();
-			core.Script.jvclMenu = new JVCL(24,screen.width,screen.height);
 			}
 		
 		}	catch( Exception e )
@@ -995,6 +1014,63 @@ public class VergeEngine extends Thread
 		core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
 		core.Script.jvclMenu = new JVCL(24,screen.width,screen.height );
 	}
+
+	// Krybo (Mar.2016)
+	// This does the work for building the standard system menu.
+	// It can be modified, deleted, or used by games.
+	private static void init_system_menus()
+		{
+			// First need to ensure the menu container is (re)initialized.
+		if( jvclMenu != null )
+			{	jvclMenu.destroy();	}
+		jvclMenu = new JVCL(24,screen.width,screen.height);
+
+		VmenuVertical SYS_MENU = new VmenuVertical(2,2);
+
+		VmiTextSimple vmix;
+		vmix = new VmiTextSimple("RETURN");
+		vmix.setAction( core.Script.getFunction( 
+			Script.class, "menuClose") );
+		SYS_MENU.addItem( vmix );
+
+		SYS_MENU.addItem( 
+			new VmiTextSimple("NEW") );
+		SYS_MENU.addItem( 
+			new VmiTextSimple("SAVE") );
+		SYS_MENU.addItem( 
+			new VmiTextSimple("LOAD") );
+		SYS_MENU.addItem( 
+			new VmiTextSimple("Debug Consoles") );
+		
+		vmix = new VmiTextSimple("END GAME");
+		vmix.setAction( core.Script.getFunction( 
+			Script.class, "terminate") );
+		SYS_MENU.addItem( vmix );
+
+		SYS_MENU.setVisible(true);
+		SYS_MENU.setActive(true);
+		SYS_MENU.setCaption("  JVERGE  ");
+		SYS_MENU.setCaptionVisible(true);
+		MENU_FOCUS[0] = SYS_MENU.getFocusId();
+
+		SYS_MENU.attachSound(enumMenuEVENT.CANCEL,
+			new VSound( load("\\sounds\\cancel.wav" ) )	);
+		SYS_MENU.attachSound(enumMenuEVENT.CONFIRM,
+			new VSound( load("\\sounds\\select.wav" ) )	);
+		SYS_MENU.attachSound(enumMenuEVENT.MOVE,
+			new VSound( load("\\sounds\\pointer.wav" ) )	);
+
+		jvclMenu.JVCclearAllLayers();
+		jvclMenu.setWriteLayerExclusive(1);
+		jvclMenu.setWriteLayerAndEnable(2);
+		jvclMenu.JVCmenuAttach( SYS_MENU );
+		jvclMenu.refresh();
+		Integer sysmenutest = jvclMenu.JVCmenuPaintAll( false );
+		
+		log("System Menu Init returned : "+sysmenutest.toString());
+
+		return;
+		}
 	
 }
 
