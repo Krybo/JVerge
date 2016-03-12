@@ -61,7 +61,7 @@ public class VmenuVertical implements Vmenu
 
 	public boolean paint(VImage target)
 		{
-		System.out.println("VerticalMenu draw called.");
+//		System.out.println("VerticalMenu draw called.");
 		if( this.isVisible == false )	{ return(false);	}
 		if( target == null )			{ return(false);	}
 
