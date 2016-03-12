@@ -16,7 +16,8 @@ public class VSound {
 			this.url = url;
 			if(url == null || url.getFile() == null) 
 				{
-				System.err.println("WARN: Bad VSound.- "+url.toString() );
+				System.err.println("WARN: Bad VSound.- ");
+//				+url.toString() );
 				}
 			return;
 			}
