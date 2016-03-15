@@ -95,32 +95,18 @@ public class VmenuVertical implements Vmenu
 	public boolean doControls( Integer kc )
 		{
 		boolean redraw = false;
+		
+		if( kc <= -1 )	// fake keystroke.   cause redraw
+			{
+			this.resolvePositions();
+			return(true);
+			}
+		
 		Integer basecode = Controls.extcodeGetBasecode( kc );
 		Integer extCode = Controls.extcodeGetExtention( kc );
 		boolean isShift = Controls.extcodeGetSHIFT( kc );
 		boolean isCntl = Controls.extcodeGetCNTL( kc );
-		boolean isAlt = Controls.extcodeGetALT( kc );
-		
-//		System.out.println("DEBUG: doControls got "+kc.toString()+
-//				" ("+basecode.toString()+" )" );
-		
-		/*  -- uncomment to Debug --
-		String debugtext = new String(" <Vmenu>.doControls got "+
-				kc.toString()+" -- base code : "+basecode.toString() +
-				" EXT: " + extCode.toString());
-		if( isShift == true ) 
-			{ debugtext = debugtext.concat(" w<SHIFT> "); }
-		if( isCntl == true ) 
-			{ debugtext = debugtext.concat(" w<CNTL> "); }
-		if( isAlt == true ) 
-			{ debugtext = debugtext.concat(" w<ALT> "); }
-		
-		System.out.println( debugtext );
-		*/
-		
-		
-		// TODO : add method to interface that will allow alterations to 
-		//  all submenus items - like icons on/off, borders.. etc.
+		boolean isAlt = Controls.extcodeGetALT( kc );		
 		
 		switch ( basecode )
 			{
@@ -460,6 +446,7 @@ public class VmenuVertical implements Vmenu
 
 	public boolean playMenuSound( enumMenuEVENT slot, int volume0to100 )
 		{
+		if( this.hmSounds == null )				{ return(false); }
 		if( this.hmSounds.get(slot) == null )	{ return(false); }
 		this.hmSounds.get(slot).start( volume0to100 );
 		return(true);
@@ -505,5 +492,21 @@ public class VmenuVertical implements Vmenu
 		{	this.enableCaption = show;	return;	}
 	public boolean isCaptionEnabled()
 		{ return(this.enableCaption); }
-	
+
+	public void setIconsAll( boolean onOff )
+		{
+		for( Vmenuitem myvmi : this.content )
+			{	myvmi.enableIcons(onOff);	}
+		return;
+		}
+	public void setBorderAll( boolean onOff, int thick )
+		{
+		for( Vmenuitem myvmi : this.content )
+			{
+			myvmi.enableFrame(onOff);
+			myvmi.setFrameThicknessPx(thick);
+			}		
+		return;
+		}
+
 	}

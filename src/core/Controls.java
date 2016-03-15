@@ -203,6 +203,7 @@ public class Controls implements
 				// now send it to all menus with focus.
 			for( Long x : MENU_FOCUS )
 				{
+				if( x <= 0 )  { continue; }	// this one is not being used.
 				if(	jvclMenu.JVCmenuDoControls(x, 
 					Controls.menusKeyStack.get(
 					Controls.menusKeyStackSent-1 ) ) )

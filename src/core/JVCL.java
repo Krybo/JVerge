@@ -833,7 +833,7 @@ public class JVCL
 	public Integer JVCmenuPaintAll( boolean reverseOrder )
 		{
 		Integer rtn = 0;
-		System.out.println(" *** menu paint all called.");
+//		System.out.println(" *** menu paint all called.");
 		int nMax = this.vcl.size();
 		if( nMax <= 1 )  { return(0); }
 		if( reverseOrder  == false )
@@ -879,8 +879,58 @@ public class JVCL
 		return(null);
 		}
 	
+	/**
+	 *  returns JVCL layer number the focused menu stored in the given
+	 *  focus array index resides on.  -1 if DNE
+	 * @param focusIndex	The array index of the focus tracker
+	 * @return	JVCL layer number
+	 */
+	public int JVCmenuGetFocusLayer( int focusIndex )
+		{
+		Long target = core.Script.MENU_FOCUS[focusIndex];
+		int result = -1;
+		for( VCLayer myvcl : this.vcl )
+			{
+			if( myvcl.vm == null )  { continue; }
+			if( myvcl.vm.getFocusId() == target )
+				{ result = myvcl.getNum(); }
+			}
+		return(result);
+		}
+
+	/**
+	 * Gets a reference to the focused menu (entire object)
+	 * @param focusIndex	The array index of the focus tracker
+	 * @return	a full Vmenu implementated object.
+	 */
+	public Vmenu JVCmenuGetFocusedMenu( int focusIndex )
+		{
+		Long target = core.Script.MENU_FOCUS[focusIndex];
+		for( VCLayer myvcl : this.vcl )
+			{
+			if( myvcl.vm == null )	{ continue; }
+			if( myvcl.vm.getFocusId() == target )
+				{ return( myvcl.vm ); }
+			}
+		return(null);
+		}
+
+	/** Given a focus tracker index, obtains the focused menu within
+	 *   this JVCL stack.. if it is there... and runs the doControls() method
+	 *   with the given extended keycode.
+	 * @param focusIndex	The array index of the focus tracker
+	 * @param ext_keycode	The extended keycode to process
+	 * @return	true if an action was done that requires a menu redraw
+	 */
+	public boolean JVCmenuFocusDoControls( int focusIndex,
+			int ext_keycode )
+		{
+		return this.JVCmenuGetFocusedMenu(
+				focusIndex).doControls(ext_keycode);
+		}
+	
 		/**
-		 * Activates the DoControl method if a menu focus is found.
+		 * Activates the DoControl method if its focusID is found
 		 * @param focalRef	Menu focus index (Long)
 		 * @return	true if activated, else false.
 		 */
@@ -919,12 +969,19 @@ public class JVCL
 	 * Attaches a Vmenu to a particular layer.
 	 * @param menus		The constructed menu object
 	 * @param layerNum		the layer
+	 * @param enableLayer	true Will enable the target layer if needed
 	 * @return	true on success, false if aborted
 	 */
-	public boolean JVCmenuAttachToLayer( Vmenu menus, int layerNum )
+	public boolean JVCmenuAttachToLayer( Vmenu menus,
+			int layerNum, boolean enableLayer )
 		{
 		if( layerNum <= 0 || layerNum > (this.vcl.size()-1) )
 			{ return(false); }
+		if( enableLayer == true )
+			{
+			this.vcl.get( layerNum ).setActive( true );
+			this.vcl.get( layerNum ).setVisible( true );
+			}
 		if( ! this.vcl.get( layerNum ).active )	{ return(false); }		
 		vcl.get( layerNum ).vm = menus;	
 		return(true); 
@@ -938,6 +995,7 @@ public class JVCL
 		if( ! vcl.get( this.currentLayer ).active )	{ return(null); }
 		Vmenu rtn = this.vcl.get( this.currentLayer ).vm;
 		vcl.get( this.currentLayer ).vm = null;
+		vcl.get( this.currentLayer ).clear();
 		return(rtn);
 		}
 
@@ -1063,7 +1121,8 @@ public class JVCL
 
 /**   Not an actual menu, calls drawing function to draw
  * 			what only looks like a menu, but has no function.
-* 		  @deprecated Use {@link #JVCpaintMenu} for a real menus
+* 		  @deprecated Use {@link #JVCpaintMenu} after JVCmenuAttach 
+* for a real menus
  */
 	public boolean JVCmenuPanel( int leftX, int topY, int totalWidth, int totalHeight, Color backgroundColor,
 			int frameWidth, Color frameColor, boolean sunkenFrame )

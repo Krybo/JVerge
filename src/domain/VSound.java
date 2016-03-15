@@ -21,10 +21,10 @@ public class VSound {
 				}
 			return;
 			}
-	
+
 	static Mp3Player mp3player;
 	static WavPlayer wavplayer;
-	
+
 	public void start(float volume)
 	{
 		if(url == null || url.getFile() == null) {

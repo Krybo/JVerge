@@ -110,5 +110,9 @@ public interface Vmenu
 	 */
 	public void attachSound( enumMenuEVENT slot, VSound sfx );
 	public boolean playMenuSound( enumMenuEVENT slot, int volume0to100 );
+
+	// Delegators to Vmenuitem interface 
+	public void setIconsAll( boolean onOff );
+	public void setBorderAll( boolean onOff, int thick );
 	
 	}

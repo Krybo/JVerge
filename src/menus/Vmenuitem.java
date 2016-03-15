@@ -88,6 +88,7 @@ public interface Vmenuitem
 	//  To attach a menuitem to a keystroke.
 	public Integer getKeycode();
 	public void setKeycode(Integer vergeKeyCode );
+	public void setFrameThicknessPx(int thick);
 
 	/**
 	 * This typically can do nothing.
@@ -103,4 +104,7 @@ public interface Vmenuitem
 		System.out.println("NULL ACTION called.");
 		return; 
 		}
+
+	
+
 	}

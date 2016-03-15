@@ -33,7 +33,7 @@ public class VmiTextSimple implements Vmenuitem
 	private int rx,ry;				// relative x/y.
 	private int boundX, boundY;	// Externally imposed clipping dimensions
 	private int FrameThicknessPx = 1;
-	
+
 	private Color highlighter = new Color(1.0f, 1.0f, 1.0f, 0.28f );
 	private Color highlighter2 = new Color(1.0f, 1.0f, 0.2f, 0.50f );
 
