@@ -29,25 +29,33 @@ public class VmenuConfirmPrompt implements Vmenu
 	private VmiTextSimple caption;
 	private Color bkgColor;
 	private VImage bkgImage;
+	private ArrayList<String> multiLineDialog = new ArrayList<String>();
 	private VmiTextSimple vmiYes = new VmiTextSimple("YES");
 	private VmiTextSimple vmiNo = new VmiTextSimple("NO");
 	private ArrayList<Vmenu> submenus = new ArrayList<Vmenu>();
 	private HashMap<enumMenuEVENT,VSound> hmSounds;
 
-	public VmenuConfirmPrompt(int x, int y, int width,
+	public VmenuConfirmPrompt( int x, int y, int width,
 			String myDialog, String positiveCaption, String negativeCaption )
 		{
 		this.x = x;
 		this.y = y;
+
 		this.maxDialogWidthPx = width;
+		this.content.put("dialog", myDialog );
+		this.parseDialog();
 		this.framewidth = 3;
+
 		this.content.put("yes", positiveCaption );
 		this.content.put("no", negativeCaption );
-		this.vmiNo.setExtendX( (maxDialogWidthPx/2), false);
-		this.vmiYes.setExtendX( (this.maxDialogWidthPx/2), false);
-		this.content.put("dialog", myDialog );
-		this.refresh();
+
 		this.bkgColor = new Color( 0.0f,0.0f,0.0f,1.0f );
+
+		this.selectedIndex = new Integer(0);
+		this.vmiNo.setState(enumMenuItemSTATE.SELECTED.value() );
+		this.vmiYes.setState(enumMenuItemSTATE.NORMAL.value() );
+		this.refresh();
+		
 		this.focusID =
 			new Double(Math.random()*1000000000.0d).longValue();
 		return;
@@ -58,12 +66,13 @@ public class VmenuConfirmPrompt implements Vmenu
 		int targetWidth = target.width;
 		int targetHeight = target.height;
 		this.calcTextArea();
-		
+
 			// Calc bounds
 		int bx1 = this.x - (this.maxDialogWidthPx/2) - this.smargin;
 		int bx2 = this.x + (this.maxDialogWidthPx/2) + this.smargin;
 		int by1 = this.y;
-		int by2 = by1 + 20+this.sy+this.vmiNo.getDY().intValue();
+		int by2 = by1 + (this.smargin*2) + 
+				this.sy+this.vmiNo.getDY().intValue();
 
 			// Body
 		if( this.bkgImage != null )
@@ -84,22 +93,32 @@ public class VmenuConfirmPrompt implements Vmenu
 			target.setPixel(bx1, by2, new Color(0.0f,0.0f,0.0f,0.0f) );
 			target.setPixel(bx1, by2, new Color(0.0f,0.0f,0.0f,0.0f) );
 			}
+
+		int lh = this.sy / this.sline;		// rederive line height [px]
+		int ln = 0;
+		for( String s : this.multiLineDialog )
+			{
+			target.printString( bx1 + this.smargin, 
+					by1 + this.smargin + (ln * lh), 
+					this.fnt, s );
+			ln++;
+			}
 		
 			// Draw the multi-line Dialog string.
-		if( this.sline < 1 ) 	{ this.sline = 1; }
-		int lineLen = this.content.get("dialog").length() / this.sline;
-		int lineHgt = this.sy / this.sline;
-		for( int ln = 0; ln < this.sline; ln++ )
-			{
-			int st = ln * lineLen;
-			int ed = st + lineLen;
-			String thisLine = new String( 
-				this.content.get("dialog").substring( st, ed ) );
-
-			target.printString( bx1 + this.smargin, 
-					by1 + this.smargin + (ln*lineHgt), 
-					this.fnt, thisLine );
-			}
+//		if( this.sline < 1 ) 	{ this.sline = 1; }
+//		int lineLen = this.content.get("dialog").length() / this.sline;
+//		int lineHgt = this.sy / this.sline;
+//		for( int ln = 0; ln < this.sline; ln++ )
+//			{
+//			int st = ln * lineLen;
+//			int ed = st + lineLen;
+//			String thisLine = new String( 
+//				this.content.get("dialog").substring( st, ed ) );
+//
+//			target.printString( bx1 + this.smargin, 
+//					by1 + this.smargin + (ln*lineHgt), 
+//					this.fnt, thisLine );
+//			}
 
 		this.vmiNo.paint(target);
 		this.vmiYes.paint(target);
@@ -107,33 +126,80 @@ public class VmenuConfirmPrompt implements Vmenu
 		return false;
 		}
 
+	/**  Parses the desired dialog into multiple parts
+	 *    depending on the box-space available for it.
+	 *    Should be run every time the dialog text changes.
+	 */
+	private void parseDialog()
+		{
+		String text = this.content.get("dialog");
+		String[] words = text.split(" ");
+		
+		AffineTransform affinetransform = new AffineTransform();     
+		FontRenderContext frc = 
+				new FontRenderContext(affinetransform,true,true);
+		this.sx = (int)( this.fnt.getStringBounds(text, frc).getWidth());
+		int pxPerChar = this.sx / text.length();
+		int charPerLine = this.maxDialogWidthPx / pxPerChar;
+		
+		ArrayList<String> arWords = new ArrayList<String>();
+		for(int x = 0; x < words.length; x++)
+			{
+			arWords.add(words[x]);
+			}
+		String ln = new String("");
+		while( ! arWords.isEmpty() )
+			{
+				// Going to go over-bound
+				// start new line.
+			if( ln.length() + arWords.get(0).length() > charPerLine  )
+				{
+				this.multiLineDialog.add( ln );
+				ln = arWords.remove(0)+" ";
+				}
+			else		// build line..
+				{
+				ln = ln.concat( arWords.remove(0)+" " );
+//				if( ! arWords.isEmpty() )
+//					{ ln = ln.concat( " " ); }
+				}
+			}
+		
+		ln.trim();
+		if( ln.length() != 0  )
+			{	this.multiLineDialog.add( ln );		}
+		
+		}
+	
 	private void calcTextArea()
 		{
 	// Thank you : http://stackoverflow.com/questions/258486/calculate-the-display-width-of-a-string-in-java
 		String text = this.content.get("dialog");
-		if( text == null || text.length() == 0 || text.isEmpty() )
+		this.sline = this.multiLineDialog.size();
+		if( text == null || text.length() == 0 || text.isEmpty() 
+				|| this.sline <= 0 )
 			{
 			this.sx = 0;   this.sy = 0;
+			this.sline = 1;
 			return;
 			}
 		AffineTransform affinetransform = new AffineTransform();     
 		FontRenderContext frc = 
 				new FontRenderContext(affinetransform,true,true);
 
-		this.sline = 1;
+		
 		this.sx = (int)( this.fnt.getStringBounds(text, frc).getWidth());
-		this.sy = Math.abs( (int) this.fnt.getStringBounds(text, frc).getMinY() );
+		this.sy = Math.abs( 
+				(int) this.fnt.getStringBounds(text, frc).getMinY() );
 		this.smargin = this.sy;
-		while( this.sx > this.maxDialogWidthPx )
-			{
-			this.sx -= maxDialogWidthPx;
-			this.sline++;
-			}
+
 		if( this.sline > 1 )
 			{
 			this.sx = maxDialogWidthPx;
 			this.sy = this.sy * this.sline;
 			}
+		else
+			{	this.sline = 1;	}
 		return;
 		}
 	
@@ -166,7 +232,7 @@ public class VmenuConfirmPrompt implements Vmenu
 				// : set negative state.
 			case 8:		// BACKSPACE <CANCEL>
 			case 37:		// ARROW-UP 
-			case 38:  		// ARROW-RIGHT
+			case 38:  		// ARROW-LEFT
 
 				if( isShift || isCntl )	{ break; }
 				redraw = true;
@@ -211,10 +277,15 @@ public class VmenuConfirmPrompt implements Vmenu
 	private void resolvePositions()
 		{
 		int buttonX = this.maxDialogWidthPx/2;
-		int buttonY = this.y + this.sy + 20;
+		int buttonY = this.sy + this.smargin;
+		
 		this.vmiYes.reposition( this.x, this.y, 
-			10 - buttonX, buttonY );
-		this.vmiNo.reposition( this.x, this.y, 10, buttonY );
+			this.smargin, buttonY );
+		this.vmiNo.reposition( this.x, this.y, 
+			this.smargin - buttonX, buttonY );
+		
+		this.vmiYes.setExtendX( (this.maxDialogWidthPx/2)-20, false );
+		this.vmiNo.setExtendX( (this.maxDialogWidthPx/2)-20, false );
 		return;
 		}
 

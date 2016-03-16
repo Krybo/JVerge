@@ -251,6 +251,7 @@ public class VmiTextSimple implements Vmenuitem
 
 	public void paint( VImage target, Integer state )
 		{
+
 		if( this.visible == false ) { return; }
 		int x1 = this.ulx + this.rx;
 		int y1 = this.uly + this.ry;
