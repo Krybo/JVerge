@@ -438,14 +438,15 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 					curwidth, curheight, null);				
 				}
 
-			if( Controls.MENU_OPEN && jvclMenu == null )
+			if( Controls.MENU_OPEN && 
+					(Vmm == null || Vmm.getJVCL() == null )  )
 				{
 				Controls.MENU_OPEN = false;
 				log(" In menu mode .... but menu is null?!  so turning it off."); 
 				}
 			if( Controls.MENU_OPEN )
 				{
-				g.drawImage( jvclMenu.getBufferedImage(), 0, 0, 
+				g.drawImage( Vmm.getBufferedImage(), 0, 0, 
 					curwidth, curheight, null);
 				}
 

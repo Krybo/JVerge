@@ -26,6 +26,9 @@ import static domain.Entity.WEST;
 
 
 
+
+
+
 import java.awt.Color;
 import java.lang.reflect.Method;
 //import java.awt.Color;
@@ -37,6 +40,9 @@ import java.util.Comparator;
 //import java.util.HashMap;
 import java.util.List;
 
+import menus.VMenuManager;
+import menus.Vmenu;
+import menus.VmenuConfirmPrompt;
 import menus.VmenuVertical;
 import menus.Vmenuitem;
 import menus.VmiTextSimple;
@@ -59,6 +65,9 @@ public class VergeEngine extends Thread
 	
 	public static int currentMapZoneWidth = -1;
 	public static int currentMapZoneHeight = -1;
+		// Krybo (Mar.2016) : keep this a static in case we lose menu focus.
+	public static VMenuManager Vmm;
+	private static Long SYSTEM_MENU_FOCUS_ID = new Long( -1 );
 	
 	public static final String JVERGE_VERSION = "1.1.0";
 
@@ -909,7 +918,11 @@ public class VergeEngine extends Thread
 		done = false;
 		die = false;
 			// Krybo (Mar.2016) : System menus are built once, here.
-		init_system_menus();
+		VergeEngine.Vmm = new VMenuManager(  );
+		VergeEngine.SYSTEM_MENU_FOCUS_ID = 
+				Vmm.getSystemMenuFocusID();
+		
+//		init_system_menus();
 		
 		// Krybo (Jan 2016) : felt some exception handled is needed here.
 		try {
@@ -1013,74 +1026,9 @@ public class VergeEngine extends Thread
 		getGUI().updateCanvasSize();
 
 			// Start with 4 user friendly graphics drawing layers.
-			// and 24 menu layers.
 		core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
-		core.Script.jvclMenu = new JVCL(24,screen.width,screen.height );
 	}
 
-	// Krybo (Mar.2016)
-	// This does the work for building the standard system menu.
-	// It can be modified, deleted, or used by games.
-	private static void init_system_menus()
-		{
-			// First need to ensure the menu container is (re)initialized.
-		if( jvclMenu != null )
-			{	jvclMenu.destroy();	}
-		jvclMenu = new JVCL(24,screen.width,screen.height);
-
-		VmenuVertical SYS_MENU = new VmenuVertical(2,2);
-
-		VmiTextSimple vmix;
-		vmix = new VmiTextSimple("RETURN");
-		vmix.setAction( core.Script.getFunction( 
-			Script.class, "menuClose") );
-		SYS_MENU.addItem( vmix );
-
-		vmix = new VmiTextSimple("NEW");
-		vmix.setState(3);  //  Disabled
-		SYS_MENU.addItem( vmix );
-		
-		vmix = new VmiTextSimple("SAVE");
-		vmix.setState(3);  //  Disabled
-		SYS_MENU.addItem( vmix );
-		
-		vmix = new VmiTextSimple("LOAD");
-		vmix.setState(3);  //  Disabled
-		SYS_MENU.addItem( vmix );
-		
-		vmix = new VmiTextSimple("CNFIG");
-		vmix.setState(3);  //  Disabled
-		SYS_MENU.addItem( vmix );
-		
-		vmix = new VmiTextSimple("END GAME");
-		vmix.setAction( core.Script.getFunction( 
-			Script.class, "terminate") );
-		SYS_MENU.addItem( vmix );
-
-		SYS_MENU.setVisible(true);
-		SYS_MENU.setActive(true);
-		SYS_MENU.setCaption("  JVERGE  ");
-		SYS_MENU.setCaptionVisible(true);
-		MENU_FOCUS[0] = SYS_MENU.getFocusId();
-
-		SYS_MENU.attachSound(enumMenuEVENT.CANCEL,
-			new VSound( load("\\sounds\\cancel.wav" ) )	);
-		SYS_MENU.attachSound(enumMenuEVENT.CONFIRM,
-			new VSound( load("\\sounds\\select.wav" ) )	);
-		SYS_MENU.attachSound(enumMenuEVENT.MOVE,
-			new VSound( load("\\sounds\\pointer.wav" ) )	);
-
-		jvclMenu.JVCclearAllLayers();
-		jvclMenu.setWriteLayerExclusive(1);
-		jvclMenu.setWriteLayerAndEnable(2);
-		jvclMenu.JVCmenuAttach( SYS_MENU );
-		jvclMenu.refresh();
-		Integer sysmenutest = jvclMenu.JVCmenuPaintAll( false );
-		
-		log("System Menu Init returned : "+sysmenutest.toString());
-
-		return;
-		}
 	
-}
+}		// END VergeEngine CLASS
 

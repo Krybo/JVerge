@@ -8,9 +8,11 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
 import java.lang.Thread.State;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 
 import domain.VImage;
+import static core.Script.setMenuFocus;
 import static core.Script.Color_DEATH_MAGENTA;
 
 /*
@@ -33,6 +35,9 @@ public class VmiTextSimple implements Vmenuitem
 	private int rx,ry;				// relative x/y.
 	private int boundX, boundY;	// Externally imposed clipping dimensions
 	private int FrameThicknessPx = 1;
+	private Long parentID = new Long(-1);
+	private Long id = new Long(-1);
+	private Long childID = new Long(-1);
 
 	private Color highlighter = new Color(1.0f, 1.0f, 1.0f, 0.28f );
 	private Color highlighter2 = new Color(1.0f, 1.0f, 0.2f, 0.50f );
@@ -88,6 +93,7 @@ public class VmiTextSimple implements Vmenuitem
 	public VmiTextSimple( String text )
 		{
 		this.textItems.put(0, text );
+		this.id = Vmenuitem.getRandomID();
 		this.mode = 0;
 		this.rx = 0;	this.ry = 0;
 		this.ulx = 1;	this.uly = 1;
@@ -147,12 +153,8 @@ public class VmiTextSimple implements Vmenuitem
 //		highlighter.rectfill(0, 0, this.w*10, this.h*10, 
 //			new Color(1.0f, 1.0f, 1.0f, 0.25f ) );
 
-		try	{
-			this.myAction = Vmenuitem.class.getMethod("nullAction", 
-					(Class<?>[]) null );
-			}
-		catch( NoSuchMethodException | SecurityException e )
-			{		this.myAction = null;		}
+		this.myAction = core.Script.getFunction(Vmenuitem.class, 
+				"nullAction" );
 
 		return;
 		}
@@ -465,10 +467,18 @@ public class VmiTextSimple implements Vmenuitem
 //			{ return(false); }
 
 		try { 			// 	call the method. and prey
-			this.myAction.invoke(null);
+//			this.myAction.invoke(null);
+	        if( this.myAction.getModifiers() == Modifier.STATIC )
+	     	   { this.myAction.invoke( null ); }
+	        else
+	     	   { this.myAction.invoke( this ); }
 			}
 		catch(Exception e)
-			{	e.printStackTrace();	}
+			{	
+			e.printStackTrace();
+			System.out.println( e.getMessage() );
+			return(false); 
+			}
 
 		return(true);
 		}
@@ -572,6 +582,15 @@ public class VmiTextSimple implements Vmenuitem
 
 		return(rslt);
 		}
+	
+	public void setParentID( Long id )
+		{	this.parentID = id;	}
+	public void setChildID( Long id )
+		{ 	this.childID = id;	}
+	public Long getParentID()
+		{	return(this.parentID);	}
+	public Long getChildID()
+		{	return(this.childID);	}
 
 	public  Integer debug_function( Integer ignore )
 		{
@@ -579,6 +598,27 @@ public class VmiTextSimple implements Vmenuitem
 		this.calcDims();
 		return(0);
 		}
+	
+	public void goParent()
+		{
+//		System.out.println("focusing parent menu # "+
+//				this.parentID.toString() );
+		if( this.parentID < 0 ) { return; }
+		setMenuFocus( 0, this.parentID );
+		return;
+		}
+	public void goChild()
+		{
+//		System.out.println("Switching to child menu # "+
+//				this.childID.toString() );
+		if( this.childID < 0 ) { return; }
+		setMenuFocus( 0, this.childID );
+//		MENU_FOCUS[0] = this.childID;
+		return;
+		}
+
+	public Long getId()
+		{ return(this.id); }
 	
 	}
 

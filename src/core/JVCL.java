@@ -74,7 +74,9 @@ public class JVCL
 		public void setActive(boolean truefalse)
 			{  this.active = truefalse;   }
 		public void setVisible(boolean truefalse)
-			{  this.visible = truefalse;   }
+			{
+			this.visible = truefalse;   
+			}
 		
 		private int flagBound(int n)
 			{
@@ -380,6 +382,10 @@ public class JVCL
 		return(this.vcl.size() - 1);
 		}
 
+	/**  Returns the number of usable layers - counts all but layer 0
+	 *   and other internal layers.
+	 * @return	int number of usable layers.
+	 */
 	public int getLayerCount()
 		{ return(this.vcl.size() - 1); }
 	
@@ -809,6 +815,23 @@ public class JVCL
 		return;
 		}
 
+	/**  Draws the Vmenu object attached to a given layer --
+	 * onto the given layer.   Does nothing if there is no attachment. 
+	 * 
+	 * @param vcLayerNum	The VClayer number
+	 */
+	public void JVCmenuPaintAttached( int vcLayerNum )
+		{
+		if( ! this.vcl.get( vcLayerNum).active )	
+			{ return; }
+		if( this.vcl.get( vcLayerNum ).vm == null )
+			{ return; }
+		this.vcl.get( vcLayerNum ).vm.paint( 
+			this.vcl.get( vcLayerNum ) );
+		this.requiresUpdate = true;
+		return;
+		}
+
 	/**
 	 * Draws the attached menu
 	 * If there is no menu attached, it returns having done nothing.
@@ -863,96 +886,6 @@ public class JVCL
 		return(rtn);
 		}
 	
-	/**
-	 * 
-	 * @param focalRef		menu focus index
-	 * @return	A VCLayer reference of the layer having in-focus menu
-	 */
-	private VCLayer menuCheckFocus( Long focalRef )
-		{
-		for( VCLayer vc : this.vcl )
-			{
-			if( vc.vm == null ) { continue; }
-			if( vc.vm.isFocus(focalRef) )
-				{ return(vc); }
-			}
-		return(null);
-		}
-	
-	/**
-	 *  returns JVCL layer number the focused menu stored in the given
-	 *  focus array index resides on.  -1 if DNE
-	 * @param focusIndex	The array index of the focus tracker
-	 * @return	JVCL layer number
-	 */
-	public int JVCmenuGetFocusLayer( int focusIndex )
-		{
-		Long target = core.Script.MENU_FOCUS[focusIndex];
-		int result = -1;
-		for( VCLayer myvcl : this.vcl )
-			{
-			if( myvcl.vm == null )  { continue; }
-			if( myvcl.vm.getFocusId() == target )
-				{ result = myvcl.getNum(); }
-			}
-		return(result);
-		}
-
-	/**
-	 * Gets a reference to the focused menu (entire object)
-	 * @param focusIndex	The array index of the focus tracker
-	 * @return	a full Vmenu implementated object.
-	 */
-	public Vmenu JVCmenuGetFocusedMenu( int focusIndex )
-		{
-		Long target = core.Script.MENU_FOCUS[focusIndex];
-		for( VCLayer myvcl : this.vcl )
-			{
-			if( myvcl.vm == null )	{ continue; }
-			if( myvcl.vm.getFocusId() == target )
-				{ return( myvcl.vm ); }
-			}
-		return(null);
-		}
-
-	/** Given a focus tracker index, obtains the focused menu within
-	 *   this JVCL stack.. if it is there... and runs the doControls() method
-	 *   with the given extended keycode.
-	 * @param focusIndex	The array index of the focus tracker
-	 * @param ext_keycode	The extended keycode to process
-	 * @return	true if an action was done that requires a menu redraw
-	 */
-	public boolean JVCmenuFocusDoControls( int focusIndex,
-			int ext_keycode )
-		{
-		return this.JVCmenuGetFocusedMenu(
-				focusIndex).doControls(ext_keycode);
-		}
-	
-		/**
-		 * Activates the DoControl method if its focusID is found
-		 * @param focalRef	Menu focus index (Long)
-		 * @return	true if activated, else false.
-		 */
-	public boolean JVCmenuDoControls( Long focalRef, 
-			Integer ext_keycode )
-		{
-		// Looks for the first menu with focus in this JVCL stack.
-		VCLayer vc = this.menuCheckFocus(focalRef);
-		if( vc == null ) 	{ return(false); }
-//		System.out.println(" JVCmenuDoControls got "+ext_keycode.toString() );
-		if( vc.vm.doControls(ext_keycode) )
-			{
-			// This looks intricate, but all its doing is grabbing its Vmenu
-			//   member (vc.vm) ~ redrawing its menu graphics onto itself.
-			//  layer 0 is the "flatten" layer, layer 1 is used as backdrop.
-			if( vc.getNum() > 1 )	// never clear the backdrop
-				{ vc.clear(); }
-			vc.vm.paint(vc);
-			}
-		this.refresh();
-		return(true);
-		}
 	
 	/**
 	 * Associates a Vmenu object to the currently selected VC layer.
@@ -997,6 +930,29 @@ public class JVCL
 		vcl.get( this.currentLayer ).vm = null;
 		vcl.get( this.currentLayer ).clear();
 		return(rtn);
+		}
+
+	/** Gets the menu focus id of the Vmenu object attached
+	 *    to a specified VClayer.
+	 * @param laternum	The target VClayer number
+	 * @return	The menu id, else -1
+	 */
+	public Long JVCmenuGetMenuFocusID( int laternum )
+		{
+		if( this.vcl.get(laternum).vm == null )   
+			{ return( new Long(-1) ); }
+		return( this.vcl.get(laternum).vm.getFocusId() );
+		}
+
+	/** Gets the menu focus id of the Vmenu object attached
+	 *    to the current layer.
+	 * @return	The menu id, else -1
+	 */
+	public Long JVCmenuGetMenuFocusID( )
+		{
+		if( this.vcl.get( this.currentLayer ).vm == null )   
+			{ return( new Long(-1) ); }
+		return( this.vcl.get( this.currentLayer ).vm.getFocusId() );
 		}
 
 	public void JVCclear()

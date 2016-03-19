@@ -31,15 +31,20 @@ public class VmenuVertical implements Vmenu
 	private boolean enableCaption = false;
 	private VmiTextSimple caption;
 	private ArrayList<Vmenuitem> content = new ArrayList<Vmenuitem>();
-	private ArrayList<Vmenu> submenus = new ArrayList<Vmenu>();
-	private HashMap<enumMenuEVENT,VSound> hmSounds;
-	
+//	private ArrayList<Vmenu> submenus = new ArrayList<Vmenu>();
+	private HashMap<Integer,Vmenu> hmSubmenus = 
+			new HashMap<Integer,Vmenu>();
+	private HashMap<enumMenuEVENT,VSound> hmSounds =
+			new HashMap<enumMenuEVENT,VSound>();
+
 	// Focus : is the player currently controlling this menu?
 	// give each menu an id, control focus externally
 	// The external variable you use to control focus is not important.
 	//   but there needs to be one and it must be consistant accross 
 	//    Vmenu implementations.
 	Long focusID = new Long(-1);
+	private Long parentID = new Long(-1);
+	private Long childID = new Long(-1);
 
 	public VmenuVertical()
 		{ 	this(0,0);	}
@@ -49,10 +54,9 @@ public class VmenuVertical implements Vmenu
 		this.x = x;
 		this.y = y;
 		this.content.clear();
-		this.submenus.clear();
+		this.hmSubmenus.clear();
 		this.selectedIndex = -1;
-		this.focusID = 
-			new Double(Math.random()*1000000000.0d).longValue();
+		this.focusID = Vmenu.getRandomID();
 		this.hmSounds = new HashMap<enumMenuEVENT,VSound>();
 		this.setCaption(" ");
 		this.enableCaption = false;
@@ -366,12 +370,12 @@ public class VmenuVertical implements Vmenu
 	public Long getFocusId()	
 		{ return(this.focusID); }
 
-	public void setActive(boolean active)
+	public void setActive( boolean active)
 		{
 		this.isActive = active;
 		return;
 		}
-	public void setVisible(boolean vis)
+	public void setVisible( boolean vis)
 		{
 		this.isVisible = vis;
 		return;
@@ -389,47 +393,47 @@ public class VmenuVertical implements Vmenu
 	public boolean isVisible()
 		{	return this.isVisible;	}
 
-	public int addSubmenus(Vmenu slave)
-		{
-		this.submenus.add(slave);
-		return(this.submenus.size());
-		}
+//	public int addSubmenus( Vmenu slave)
+//		{
+//		this.hmSubmenus.put( this.hmSubmenus.size()-1 ,slave);
+//		return(this.hmSubmenus.size());
+//		}
 
-	public Vmenu getSubmenus(int submenuIndex)
-		{
-		if( this.hasSubmenus() == false )   { return(null);  }
-		if( submenuIndex >= this.submenus.size() )   { return(null);  }
-		return this.submenus.get(submenuIndex);
-		}
+//	public Vmenu getSubmenus( Integer submenuIndex )
+//		{
+//		if( this.hasSubmenus() == false )   { return(null);  }
+//		if( submenuIndex >= this.hmSubmenus.size() )   { return(null);  }
+//		return this.hmSubmenus.get(submenuIndex);
+//		}
 
-	public boolean setSubmenus(Vmenu slave, int index)
-		{
-		if( index >= this.submenus.size() || index < 0 )
-			{
-			this.submenus.add(slave);
-			return(false);
-			}
-		this.submenus.add(index, slave );
-		return true;
-		}
+//	public boolean setSubmenus( Vmenu slave , Integer slot )
+//		{
+//		if( slot >= this.hmSubmenus.size() || slot < 0 )
+//			{
+//			this.hmSubmenus.put( slot, null );
+//			return(false);
+//			}
+//		this.hmSubmenus.put( slot, slave );
+//		return(true);
+//		}
 
-	public Vmenu popSubmenus()
-		{
-		if( this.hasSubmenus() == false )   {  return(null); }
-		return this.submenus.remove( this.submenus.size()-1 );
-		}
+//	public Vmenu popSubmenus()
+//		{
+//		if( this.hasSubmenus() == false )   {  return(null); }
+//		return this.hmSubmenus.remove( this.hmSubmenus.size()-1 );
+//		}
 
-	public boolean hasSubmenus()
-		{
-		if( this.submenus.isEmpty() )  { return(false); }
-		return true;
-		}
+//	public boolean hasSubmenus()
+//		{
+//		if( this.hmSubmenus.isEmpty() )  { return(false); }
+//		return true;
+//		}
 
-	public int countSubmenus()
-		{
-		if( this.hasSubmenus() == false ) { return(0); }
-		return(this.submenus.size());
-		}
+//	public int countSubmenus()
+//		{
+//		if( this.hasSubmenus() == false ) { return(0); }
+//		return(this.hmSubmenus.size());
+//		}
 
 	public void activateSelected()
 		{
@@ -509,4 +513,74 @@ public class VmenuVertical implements Vmenu
 		return;
 		}
 
+	public void setParentID( Long id )
+		{
+		this.parentID = id;
+		for( Vmenuitem vmi : this.content )
+			{	vmi.setParentID(id);	}
+		}
+	public void setChildID( Long id )
+		{
+		this.childID = id;
+		for( Vmenuitem vmi : this.content )
+			{	vmi.setChildID(id);	}
+		}
+	public Long getParentID()
+		{	return(this.parentID);	}
+	public Long getChildID()
+		{	return(this.childID);	}
+	
+//	
+//	private ArrayList<Long> getSubmenuFocusID()
+//		{
+//		boolean recurse = true;
+//		ArrayList<Long> rslt = new ArrayList<Long>();
+//
+//			// Recurses up to 5 levels and gets IDs
+//		for( Integer x : this.hmSubmenus.keySet() ))
+//			{
+//			rslt.add( this.hmSubmenus.get(x).getFocusId() );
+//			if( this.hmSubmenus.get(x).hasSubmenus() == true )
+//				{
+//				Vmenu tmp = this.getSubmenus(x);
+//				rslt.add(tmp.getFocusId());
+//				if( tmp.hasSubmenus() == true )
+//					{
+//					Vmenu tmp2 = tmp.getSubmenus(x);
+//					rslt.add(tmp2.getFocusId());
+//					if( tmp2.hasSubmenus() == true )
+//						{
+//						Vmenu tmp3 = tmp2.getSubmenus(x);
+//						rslt.add(tmp3.getFocusId());
+//						if( tmp3.hasSubmenus() == true )
+//							{
+//							Vmenu tmp4 = tmp3.getSubmenus(x);
+//							rslt.add(tmp4.getFocusId());
+//							if( tmp4.hasSubmenus() == true )
+//								{
+//								Vmenu tmp5 = tmp4.getSubmenus(x);
+//								rslt.add( tmp5.getFocusId() );
+//								}
+//							}
+//						}					
+//					}
+//				}
+//			}
+//		return(rslt);
+//		}
+	
+//	public Vmenu getSubmenuByID( Long targetID )
+//		{
+//
+//		for( Integer x : this.hmSubmenus.keySet() ))
+//			{
+//			Vmenu tmp = this.hmSubmenus.get(x);
+//			if( tmp.getFocusId() == targetID )	{ return(tmp); }
+//			if( tmp.hasSubmenus()  == true )
+//				{
+//					
+//				}
+//			}
+//		}
+	
 	}

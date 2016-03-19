@@ -34,6 +34,8 @@ public class VmenuConfirmPrompt implements Vmenu
 	private VmiTextSimple vmiNo = new VmiTextSimple("NO");
 	private ArrayList<Vmenu> submenus = new ArrayList<Vmenu>();
 	private HashMap<enumMenuEVENT,VSound> hmSounds;
+	private Long parentID = new Long(-1);
+	private Long childID = new Long(-1);
 
 	public VmenuConfirmPrompt( int x, int y, int width,
 			String myDialog, String positiveCaption, String negativeCaption )
@@ -46,8 +48,8 @@ public class VmenuConfirmPrompt implements Vmenu
 		this.parseDialog();
 		this.framewidth = 3;
 
-		this.content.put("yes", positiveCaption );
-		this.content.put("no", negativeCaption );
+		this.content.put( this.vmiYes.getText(), positiveCaption );
+		this.content.put( this.vmiNo.getText() , negativeCaption );
 
 		this.bkgColor = new Color( 0.0f,0.0f,0.0f,1.0f );
 
@@ -56,8 +58,9 @@ public class VmenuConfirmPrompt implements Vmenu
 		this.vmiYes.setState(enumMenuItemSTATE.NORMAL.value() );
 		this.refresh();
 		
-		this.focusID =
-			new Double(Math.random()*1000000000.0d).longValue();
+		this.hmSounds = new HashMap<enumMenuEVENT,VSound>();
+		
+		this.focusID = Vmenu.getRandomID();
 		return;
 		}
 
@@ -71,7 +74,7 @@ public class VmenuConfirmPrompt implements Vmenu
 		int bx1 = this.x - (this.maxDialogWidthPx/2) - this.smargin;
 		int bx2 = this.x + (this.maxDialogWidthPx/2) + this.smargin;
 		int by1 = this.y;
-		int by2 = by1 + (this.smargin*2) + 
+		int by2 = by1 + (this.smargin*4) + 
 				this.sy+this.vmiNo.getDY().intValue();
 
 			// Body
@@ -103,26 +106,23 @@ public class VmenuConfirmPrompt implements Vmenu
 					this.fnt, s );
 			ln++;
 			}
-		
-			// Draw the multi-line Dialog string.
-//		if( this.sline < 1 ) 	{ this.sline = 1; }
-//		int lineLen = this.content.get("dialog").length() / this.sline;
-//		int lineHgt = this.sy / this.sline;
-//		for( int ln = 0; ln < this.sline; ln++ )
-//			{
-//			int st = ln * lineLen;
-//			int ed = st + lineLen;
-//			String thisLine = new String( 
-//				this.content.get("dialog").substring( st, ed ) );
-//
-//			target.printString( bx1 + this.smargin, 
-//					by1 + this.smargin + (ln*lineHgt), 
-//					this.fnt, thisLine );
-//			}
 
-		this.vmiNo.paint(target);
-		this.vmiYes.paint(target);
+		this.vmiNo.paint( target );
+		this.vmiYes.paint( target );
 		
+		int tipY = by1 + (this.smargin*3) + (multiLineDialog.size() * lh) 
+				+ this.vmiNo.getDY().intValue();
+		String tipKey = this.vmiNo.getText();
+		if( this.selectedIndex == 1 )
+			{  tipKey = this.vmiYes.getText(); }
+		if( ! this.content.get( tipKey ).isEmpty() )
+			{
+			target.printString( bx1 + this.smargin, 
+				tipY, this.fnt,	this.content.get(tipKey) );
+			}
+		
+//		this.content.get( this.selectedIndex )
+
 		return false;
 		}
 
@@ -291,8 +291,11 @@ public class VmenuConfirmPrompt implements Vmenu
 
 	private void funcActivate()
 		{
-		// TODO Auto-generated method stub
-		
+		if( this.selectedIndex == 0 )
+			{ this.vmiNo.doAction(); }
+		if( this.selectedIndex == 1 )
+			{ this.vmiYes.doAction(); }
+		return;
 		}
 
 	public void moveAbs(int x, int y)
@@ -393,47 +396,47 @@ public class VmenuConfirmPrompt implements Vmenu
 	public boolean isVisible()
 		{	return this.isVisible;	}
 
-	public int addSubmenus(Vmenu slave)
-		{
-		this.submenus.add(slave);
-		return(this.submenus.size());
-		}
+//	public int addSubmenus(Vmenu slave)
+//		{
+//		this.submenus.add(slave);
+//		return(this.submenus.size());
+//		}
 
-	public Vmenu getSubmenus(int submenuIndex)
-		{
-		if( this.hasSubmenus() == false )   { return(null);  }
-		if( submenuIndex >= this.submenus.size() )   { return(null);  }
-		return this.submenus.get(submenuIndex);
-		}
+//	public Vmenu getSubmenus( Integer submenuIndex)
+//		{
+//		if( this.hasSubmenus() == false )   { return(null);  }
+//		if( submenuIndex >= this.submenus.size() )   { return(null);  }
+//		return this.submenus.get(submenuIndex);
+//		}
 
-	public boolean setSubmenus(Vmenu slave, int index)
-		{
-		if( index >= this.submenus.size() || index < 0 )
-			{
-			this.submenus.add(slave);
-			return(false);
-			}
-		this.submenus.add(index, slave );
-		return true;
-		}
+//	public boolean setSubmenus(Vmenu slave, Integer index)
+//		{
+//		if( index >= this.submenus.size() || index < 0 )
+//			{
+//			this.submenus.add(slave);
+//			return(false);
+//			}
+//		this.submenus.add(index, slave );
+//		return true;
+//		}
 
-	public Vmenu popSubmenus()
-		{
-		if( this.hasSubmenus() == false )   {  return(null); }
-		return this.submenus.remove( this.submenus.size()-1 );
-		}
+//	public Vmenu popSubmenus()
+//		{
+//		if( this.hasSubmenus() == false )   {  return(null); }
+//		return this.submenus.remove( this.submenus.size()-1 );
+//		}
 
-	public boolean hasSubmenus()
-		{
-		if( this.submenus.isEmpty() )  { return(false); }
-		return true;
-		}
+//	public boolean hasSubmenus()
+//		{
+//		if( this.submenus.isEmpty() )  { return(false); }
+//		return true;
+//		}
 
-	public int countSubmenus()
-		{
-		if( this.hasSubmenus() == false ) { return(0); }
-		return(this.submenus.size());
-		}
+//	public int countSubmenus()
+//		{
+//		if( this.hasSubmenus() == false ) { return(0); }
+//		return(this.submenus.size());
+//		}
 
 	public void activateSelected()
 		{
@@ -472,5 +475,22 @@ public class VmenuConfirmPrompt implements Vmenu
 		this.vmiYes.setFrameThicknessPx(thick);
 		return;
 		}
+	
+	public void setParentID( Long id )
+		{
+		this.parentID = id;	
+		this.vmiYes.setParentID(id);
+		this.vmiNo.setParentID(id);
+		}
+	public void setChildID( Long id )
+		{
+		this.childID = id;
+		this.vmiYes.setChildID(id);
+		this.vmiNo.setChildID(id);
+		}
+	public Long getParentID()
+		{	return(this.parentID);	}
+	public Long getChildID()
+		{	return(this.childID);	}
 	
 	}

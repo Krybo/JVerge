@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import domain.VImage;
+ 
 
 /*
  * Vmenuitem:  intended to interface Classes for menu content
@@ -105,6 +106,19 @@ public interface Vmenuitem
 		return; 
 		}
 
-	
+	public void setParentID( Long id );
+	public void setChildID( Long id );
+	public Long getParentID();
+	public Long getId();
+	public Long getChildID();
 
+	public  void goParent();
+	public  void goChild();
+
+	public static Long getRandomID()
+		{
+		return( new Double(
+				Math.random() * Long.MAX_VALUE ).longValue());
+		}
+	
 	}

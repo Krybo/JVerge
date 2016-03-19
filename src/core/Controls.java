@@ -176,7 +176,9 @@ public class Controls implements
 	 *      behind MENU_FOCUS[] to hold the focusID of each operable
 	 *      Vmenu object.      For the initial implementation, all Vmenu's
 	 *      are confined to the JVCL (core.Script.jvclMenu) so this
-	 *      method knows where the menus are.
+	 *      method knows where the menus are.   Since, JVCL has
+	 *      been done away with in favor of the VMenuManager Class,
+	 *      which better handles inter-menus communicationss.
 	 *      
 	 *      The arg controls how frequently this function is allowed  
 	 *         to execute.   a value of  100 000 000 is ~ 10 x a second.
@@ -200,15 +202,31 @@ public class Controls implements
 //	System.out.println(Integer.toString(nstrokes)+" DEBUG new keystrokes VS "
 //			+Integer.toString( Controls.menusKeyStackSent ));
 			Controls.menusKeyStackSent++;
+				// If no menus have focus.. we have a problem to resolve.
+			boolean focusedMenuCheck = false;
 				// now send it to all menus with focus.
-			for( Long x : MENU_FOCUS )
-				{
-				if( x <= 0 )  { continue; }	// this one is not being used.
-				if(	jvclMenu.JVCmenuDoControls(x, 
+
+			if( VergeEngine.Vmm.delegateControl(
 					Controls.menusKeyStack.get(
-					Controls.menusKeyStackSent-1 ) ) )
-					{ Controls.menuKeyCount++; }
+						Controls.menusKeyStackSent-1 ),
+					true) > 0 )
+				{
+				Controls.menuKeyCount++;
+				focusedMenuCheck = true;
+				VergeEngine.Vmm.refreshGraphics();
 				}
+			
+			if( focusedMenuCheck == false )
+				{
+				System.err.println( "WARNING : ALL MENU FOCUS LOST."
+					+ ".- Re-focusing system menus. "
+					+ " Probable menu link problem" );
+				VergeEngine.Vmm.restoreSystemMenuFocus();
+//				MENU_FOCUS[0] = 
+//						VergeEngine.Vmm.getSystemMenuFocusID();
+
+				}
+			
 			}
 		
 		return;
@@ -368,7 +386,8 @@ public class Controls implements
 						MENU_OPEN = true;
 						// This ensures the menu redraws immediated
 						// The fake-keystroke of -1 does nothing
-						Controls.menusKeyStack.add(-1);
+
+						VergeEngine.Vmm.refreshGraphics();
 						log("           --< MENU MODE >--");
 						}
 					else { 
@@ -563,7 +582,7 @@ public class Controls implements
 		else 				
 			{
 			MENU_OPEN = true;
-			jvclMenu.JVCmenuPaintAll(false);
+			VergeEngine.Vmm.refreshGraphics();
 			}
 		Controls.menusKeyStack.add(-1);
 		return(MENU_OPEN);
@@ -571,7 +590,11 @@ public class Controls implements
 	public static boolean changeMenuMode(boolean onOff)
 		{
 		MENU_OPEN = onOff;
-		Controls.menusKeyStack.add(-1);
+		if( onOff = true )
+			{ 
+			VergeEngine.Vmm.refreshGraphics();
+			}
+//	Controls.menusKeyStack.add(-1);
 		return(MENU_OPEN);
 		}
 	

@@ -2,7 +2,9 @@ package core;
 
 import static core.VergeEngine.*;
 import static core.Controls.*;
+import static core.VergeEngine.Vmm;	// The Verge menu manager.
 import core.JVCL;
+
 
 
 
@@ -41,6 +43,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import menus.Vmenu;
 import menus.Vmenuitem;
 import audio.VMusic;
 import domain.MapVerge;
@@ -48,7 +51,7 @@ import domain.VSound;
 import domain.VImage;
 import domain.Entity;
 import domain.Map;
-import static core.Script.jvclMenu;
+
 //import static core.Script.log;
 //import static core.Script.screen;
 //import static core.Script.setlucent;
@@ -63,13 +66,7 @@ public class Script {
 	public static boolean TEST_SIMULATION = false;
 	public static int TEST_POS = 0;
 	public static int[] TEST_OPTIONS;
-	
-		// Menu system
-		// menus focus controllers, x24
-	public static Long[] MENU_FOCUS = new Long[]
-			{ 	new Long(0), new Long(0), new Long(0), new Long(0), 
-				new Long(0), new Long(0), new Long(0), new Long(0),
-				new Long(0), new Long(0), new Long(0), new Long(0) };
+
 
 
 		// Krybo (Feb.2016) : Some Global Fonts
@@ -108,7 +105,6 @@ public class Script {
 		//  		[Map] < [graphics & text] < [menu]
 	public static JVCL jvcl;
 	public static JVCL jvclText;
-	public static JVCL jvclMenu;
 
 	// VERGE ENGINE VARIABLES: Moved to Script for easy of use
 	/**
@@ -372,7 +368,8 @@ public class Script {
 	public static void menuOpen()
 		{ 
 		Controls.changeMenuMode(true);
-		jvclMenu.JVCmenuPaintAll(false);
+		Vmm.paintMenus();
+//		jvclMenu.JVCmenuPaintAll(false);
 		}
 	public static void menuClose()
 		{ Controls.changeMenuMode(false); }
@@ -1573,7 +1570,20 @@ public class Script {
 		systemclass = c;
 	}
 	
-
+	// Krybo (Mar.2016)  : menu related functions
+	// most of these are delegators to the VMM
+	
+	public static void addMenu( Vmenu thisVm )
+		{	Vmm.addVmenu( thisVm );	}
+	public static void addMenuWithFocus( Vmenu thisVm )
+		{	Vmm.addVmenuWithFocus( thisVm );	}
+	public static void addMenu( ArrayList<Vmenu> theVms )
+		{	Vmm.addVmenu( theVms );	}
+	public static boolean setMenuFocus(int slot, Long id )
+		{	return( Vmm.setFocus(id, slot ) );	}
+	public static void refreshMenu()
+		{ Vmm.refreshGraphics();   return; }
+	
 	// Krybo (2014-09-18)   map zooming functions
 	
 	public static BufferedImage scaleImage(
