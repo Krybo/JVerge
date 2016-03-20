@@ -339,6 +339,18 @@ public class VmenuVertical implements Vmenu
 		return this.content.get(index);
 		}
 
+	/**  Given a Long menu id , checks all menuItems for that ID
+	 * 	If so, Returns the menu item object.   ALWAYS check for null.
+	 */
+	public Vmenuitem getMenuItemByID( Long id )
+		{
+		for( Vmenuitem vmi : this.content )
+			{
+			if( vmi.getId() == id  ) 		{ return(vmi); }
+			}
+		return null;
+		}
+	
 	public Integer getSelectedIndex()
 		{	return this.selectedIndex;	}
 	public int getSelectedIndexAsInt()

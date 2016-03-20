@@ -114,6 +114,8 @@ public interface Vmenuitem
 
 	public  void goParent();
 	public  void goChild();
+	
+	public void processInput( String input );
 
 	public static Long getRandomID()
 		{

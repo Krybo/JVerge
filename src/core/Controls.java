@@ -16,10 +16,11 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.font.FontRenderContext;
-import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
 
 import menus.VMenuManager;
 import domain.VImage;
@@ -72,7 +73,7 @@ public class Controls implements
 		 k_right = SCAN_RIGHT;*/
 
 	byte j_b1=0, j_b2=1, j_b3=2, j_b4=3;
-	
+
 	/***************************** menu *****************************/
 	// Krybo (Feb.2016)  Adding a low level menu toggle variable.
 	public static boolean MENU_OPEN;
@@ -85,13 +86,14 @@ public class Controls implements
 	// A shameless counter of the number of pieces of keystrokes
 	//		sucessfully sent to menus.
 	public static long menuKeyCount = 0;
-	
+
 	/***************************** input ****************************/
 	private static boolean INPUT_MODE = false;
-	private static ArrayList<String> INPUT = new ArrayList<String>();
+	private static HashMap<Long,String> INPUT = new HashMap<Long,String>();
 	private static StringBuilder inputbuffer = new StringBuilder();
 	private static Integer inputCursor = 0;
 	private static String inputMsg = "Input:";
+	private static Long inputID = new Long( -1 );
 	private static int inputX = 10, inputY = 10;
 	private static boolean inputAcceptNumbers = true;
 	private static boolean inputAcceptDecimal = true;
@@ -100,6 +102,23 @@ public class Controls implements
 	private static boolean inputAcceptHighChar = true;
 	public static AffineTransform generic_AffTransf = 
 			new AffineTransform();
+
+		// 	Regular expressions for input filtering
+	public static final String regExpFilterInt = 
+			new String( "[0-9]" );
+	public static final String regExpFilterDec = 
+			new String( "[0-9.]" );
+	public static final String regExpFilterAlpha = 
+			new String( "[a-zA-Z]" );
+	public static final String regExpFilterAlphaNum = 
+			new String( "[a-zA-Z0-9]" );
+	public static final String regExpFilterSpecial = 
+			new String( "[\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)\\,\\_\\-\\\\\\/ ]" );
+	public static final String regExpFilterHighChar = 
+			new String( "[\\x7F-\\xFF]" );
+	public static final String regExpFilterLowChar = 
+			new String( "[\\x00-\\x20]" );
+
 
 	/***************************** code *****************************/
 	//int _input_killswitch;
@@ -484,16 +503,66 @@ public class Controls implements
 							Controls.inputCursor++;
 							break;
 						}
+
+					int b4 = Controls.inputbuffer.length();
+					
+					// Filtering
+					if( ! Controls.inputAcceptNumbers )
+						{
+						// numbers are not allowed.
+						Controls.inputbuffer = new StringBuilder(
+							Controls.inputbuffer.toString().replaceAll(
+								Controls.regExpFilterInt, "" )
+							);
+						}
+					if( ! Controls.inputAcceptDecimal )
+						{
+						// numbers & period are not allowed.
+						Controls.inputbuffer = new StringBuilder(
+							Controls.inputbuffer.toString().replaceAll(
+								Controls.regExpFilterDec, "" )
+							);
+						}
+					if( ! Controls.inputAcceptLetter )
+						{
+						// letters are not allowed.
+						Controls.inputbuffer = new StringBuilder(
+							Controls.inputbuffer.toString().replaceAll(
+								Controls.regExpFilterAlpha, "" )
+							);
+						}
+					if( ! Controls.inputAcceptSpecial  )
+						{
+						// numbers are not allowed.
+						Controls.inputbuffer = new StringBuilder(
+							Controls.inputbuffer.toString().replaceAll(
+								Controls.regExpFilterSpecial, "" )
+							);
+						}
+					if( ! Controls.inputAcceptHighChar )
+						{
+						// hgh ascii chars are not allowed.
+						Controls.inputbuffer = new StringBuilder(
+							Controls.inputbuffer.toString().replaceAll(
+								Controls.regExpFilterHighChar, "" )
+							);
+						}
+					
+					int b5 = Controls.inputbuffer.length();
 					
 					// Ensure cursor bounds.
 					if( Controls.inputCursor > Controls.inputbuffer.length() )
 						{
 						Controls.inputCursor = 
-								Controls.inputbuffer.length();
+							Controls.inputbuffer.length();
 						}
 
 					if( Controls.inputCursor < 0 )
 						{ Controls.inputCursor=0; }
+					
+					// If characters have been filters, adjust the cursor.
+					if( b4 != b5 )
+						{	Controls.inputCursor += (b5-b4);	}
 
 					}
 				
@@ -695,6 +764,7 @@ public class Controls implements
 			{ 
 			VergeEngine.Vmm.refreshGraphics();
 			}
+		
 //	Controls.menusKeyStack.add(-1);
 		return(MENU_OPEN);
 		}
@@ -702,7 +772,7 @@ public class Controls implements
 	/**  Switches engine controls into Input mode. 
 	 * Prepares variables for a new input.
 	 */
-	public static void begin_input( String theCaption, 
+	public static void begin_input( String theCaption, Long id,
 			int x, int y, boolean acceptNumbers,
 			boolean acceptDecimal ,	boolean acceptLetter, 
 			boolean acceptSpecial, boolean acceptHighChar )
@@ -710,6 +780,7 @@ public class Controls implements
 		if( Controls.INPUT_MODE == true )
 			{ return; }
 		Controls.INPUT_MODE = true;
+		Controls.inputID = id;
 		Controls.inputbuffer = new StringBuilder();
 		Controls.inputCursor = 0;
 		Controls.inputX = x;
@@ -723,18 +794,46 @@ public class Controls implements
 		return;
 		}
 	
-	private static void finish_input( boolean keep )
+	/**  This is called when an input dialog is finished and closed.
+	 * 
+	 * @param keep true to retain the input, false to throw it out (cancel)
+	 */
+	private synchronized static void finish_input( boolean keep )
 		{
 		if( Controls.INPUT_MODE == false )
 			{ return; }
 		Controls.INPUT_MODE = false;
 		if( keep )
 			{
-			System.out.println(" saved user INPUT : "+
+//			System.out.println(" saved user INPUT : "+
+//					Controls.inputbuffer.toString() );
+
+			Controls.INPUT.put( Controls.inputID,
 					Controls.inputbuffer.toString() );
-			Controls.INPUT.add(Controls.inputbuffer.toString() );
 			}
 		return;
+		}
+	
+		/**	This may be used to return String-type input back to 
+		 *     the originating menuitem.
+		 * @param menusId the menu id
+		 */
+	public synchronized static String obtain_input( Long menusId )
+		{
+		if( ! Controls.INPUT.containsKey( menusId )  )
+			{	return(new String(""));	}
+		return( Controls.INPUT.remove(menusId) );
+		}
+
+	/**	Export the Long id keyset from the input stash.
+	 *		null if there is no input. 
+	 * @return	Set<Long> of menu ids that initiated a furfilled input
+	 */
+	public synchronized static Set<Long> obtain_input_keys()
+		{
+		if( Controls.INPUT.isEmpty() ) 
+			{ return( null ); }
+		return( Controls.INPUT.keySet() );
 		}
 
 	public synchronized static BufferedImage getInputBImage(
@@ -818,5 +917,7 @@ public class Controls implements
 		{	return( Controls.INPUT_MODE );	}
 	public static boolean isInMenuMode()
 		{	return( Controls.MENU_OPEN );		}
+	public synchronized static boolean hasInput()
+		{ return( ! Controls.INPUT.isEmpty() ); }
 
 }

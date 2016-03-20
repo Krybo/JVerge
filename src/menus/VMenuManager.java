@@ -329,7 +329,7 @@ public class VMenuManager
 		return;
 		}
 
-	/**  Forces a redraw of menus to the containing JVCL stack.
+	/**  Forces a redraw of menus onto the containing JVCL stack.
 	 * 
 	 * @param reverseOrder	 false draws low layers first, 
 	 * false draws high layers first
@@ -504,4 +504,29 @@ public class VMenuManager
 	public static void setInFont(Font inFont)
 		{	VMenuManager.inFont = inFont;	return;	}
 	
+		/**  Reads Controls.INPUT and passes any new items to menus.
+		 * 
+		 * @return	true if there was input transfered.
+		 */
+	public boolean transferInput()
+		{
+		if( Controls.hasInput() == false ) 
+			{ return(false); }
+		for( Long myid : Controls.obtain_input_keys() )
+			{
+			for( Vmenu vm : this.menus )
+				{
+				Vmenuitem target = vm.getMenuItemByID( myid );
+				if( target != null )
+					{
+					target.processInput( Controls.obtain_input(myid) );
+					this.paintMenus();		// must redraw
+					return(true);
+					}
+				}
+			}
+
+		return(false);
+		}
+
 	}

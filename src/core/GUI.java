@@ -464,7 +464,19 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 				g.drawImage( 	Vmm.getInputImage(), 0, 0,
 					curwidth, curheight, null);				
 				}
-			
+			else
+				{
+				Long testT1 = System.nanoTime();
+			// This handles transfer of input from Controls to the menus 
+				Boolean xferInput = Vmm.transferInput();
+				Long testET = System.nanoTime() - testT1;
+				if( xferInput )  
+					{ 
+					System.out.println(" xfer input took "+
+							testET.toString()+" ns");
+					}	
+				}
+
 			/* Do this to rotate 180 
 			Graphics2D g2d = (Graphics2D) g;
 			g2d.rotate(Math.PI, curwidth/2, curheight/2);
@@ -479,8 +491,10 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 				g.drawString("FPS: " + Float.toString(frameInLastSecond), 10, 15);
 				if( GUIzoom != 1 )
 					{ g.drawString(Integer.toString(GUIzoom)+"x", 92, 15); }
-				if( Controls.MENU_OPEN )
+				if( Controls.isInMenuMode() )
 					{ g.drawString( " <MENU> ", 110, 15); }
+				if( Controls.isInInputMode() )
+					{ g.drawString( " <INPUT> ", 166, 15); }
 				if( ! playerIsSet()  )
 					{  g.drawString(" !!! UNSET PLAYER", 100, 35);  } 
 				}

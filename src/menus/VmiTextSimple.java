@@ -595,7 +595,9 @@ public class VmiTextSimple implements Vmenuitem
 		this.calcDims();
 		return(0);
 		}
-	
+
+	/**		transfers control to the menu that is linked by parentID
+	 */	
 	public void goParent()
 		{
 //		System.out.println("focusing parent menu # "+
@@ -604,6 +606,8 @@ public class VmiTextSimple implements Vmenuitem
 		setMenuFocus( 0, this.parentID );
 		return;
 		}
+	/**		transfers control to the menu that is linked by childID
+	 */
 	public void goChild()
 		{
 //		System.out.println("Switching to child menu # "+
@@ -616,6 +620,20 @@ public class VmiTextSimple implements Vmenuitem
 
 	public Long getId()
 		{ return(this.id); }
+
+	/**  Takes in an external string
+	 *   by default, replaces the current text with it.
+	 */
+	public void processInput( String input )
+		{
+		if( this.textItems.containsKey( this.mode ) )
+			{
+			String dat = this.textItems.get( this.mode );
+			this.textItems.put( this.mode * -1, dat );
+			}
+		this.textItems.put( this.mode, input );
+		return;
+		}
 	
 	}
 

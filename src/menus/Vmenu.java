@@ -81,6 +81,7 @@ public interface Vmenu
 	public void refresh();
 	
 	public Vmenuitem getMenuItem(int index);
+	public Vmenuitem getMenuItemByID( Long id );
 	public Integer getSelectedIndex();
 	public int getSelectedIndexPosX();
 	public int getSelectedIndexPosY();

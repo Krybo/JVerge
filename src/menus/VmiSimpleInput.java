@@ -27,7 +27,7 @@ public class VmiSimpleInput extends VmiTextSimple
 
 	public String doInput()
 		{
-		Controls.begin_input( this.caption, 
+		Controls.begin_input( this.caption,  super.getId(),
 			super.getX().intValue(), super.getY().intValue(),
 			true, true, true, false, false );
 		return(new String("TEST"));
