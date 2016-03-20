@@ -5,11 +5,14 @@ import static core.Script.log;
 import static core.Script.screen;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import menus.Vmenu.enumMenuEVENT;
+import core.Controls;
 import core.JVCL;
 import core.Script;
 import domain.VImage;
@@ -31,18 +34,24 @@ public class VMenuManager
 	private ArrayList<Vmenu> menus = null;
 	private ArrayList<Long> focus = null;
 	private VImage backdrop = null;
+	private VImage inputScreen = null;
+	private static Font inFont = core.Script.fntCONSOLE;
 	private Color backdropColor = new Color( 0.0f,0.0f,0.0f,0.5f );
 	private float backdropAlpha = 0.5f;
 	protected static HashMap<Long,Long> hmLinkList =
 			new HashMap<Long,Long>();
 	private JVCL targetLayerStack = null;
 	
-	
+
+
 	public VMenuManager(  )
 		{
 			// Make a new JVCL stack for the menus system.
 		this.targetLayerStack = 
-				new JVCL(24,screen.width,screen.height); 
+				new JVCL(24,screen.width,screen.height);
+		this.inputScreen = new VImage( screen.width,screen.height );
+		this.inputScreen.rectfill(0, 0, screen.width, screen.height,
+				core.Script.CF_INV	 );
 
 		this.backdropAlpha = 0.5f;
 		this.menus = new ArrayList<Vmenu>();
@@ -430,6 +439,10 @@ public class VMenuManager
 		vmix.setState(3);  //  Disabled
 		SYS_MENU.addItem( vmix );
 		
+		VmiSimpleInput vmiy = new VmiSimpleInput("DEBUG 1", "Talk to me! ",
+				200, 200 );
+		SYS_MENU.addItem( vmiy );
+		
 		vmix = new VmiTextSimple("END GAME");
 			// This is how you link menus.
 		vmix.setAction( core.Script.getFunction( 
@@ -455,9 +468,40 @@ public class VMenuManager
 		this.assignToLayers();
 
 			// Link the Quit button to a confirm prompt.
-		linkMenu(this.menus.get(0), 5, this.menus.get(1) );
+		linkMenu(this.menus.get(0), 6, this.menus.get(1) );
 			// Link the confirm prompt back to the system menu.
 		linkMenu( this.menus.get(1), 0, this.menus.get(0) );
 		}
 
+	/** Simply returns yes or no if the Controls are in INPUT mode.
+	 * 
+	 * @return  boolean true or false
+	 */
+	public static boolean isInInputMode()
+		{	return( Controls.isInInputMode() );	}
+	public static boolean isInMenuMode()
+		{	return( Controls.isInMenuMode() );	}	
+	
+	/**  Update the input screen and return its BufferedImage
+	 *    that is ready to be shown on screen (GUI).
+	 * 
+	 * @return	a BufferedImage object showing current input.
+	 */
+	public BufferedImage getInputImage()
+		{
+			// Renders the input screen to the VImage
+			// Then tosses back its BufferedImage for the GUI
+		return( Controls.getInputBImage( this.inputScreen ) );
+		}
+
+	public static Font getInputFont()
+		{	return inFont;		}
+
+	/** You can use this to change the Font object used to render
+	 *     the input displays   A cross-platform font is used by default.
+	 * @param inFont	any valid Font object.
+	 */
+	public static void setInFont(Font inFont)
+		{	VMenuManager.inFont = inFont;	return;	}
+	
 	}

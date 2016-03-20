@@ -2,6 +2,8 @@ package core;
 
 import static core.Script.*;
 
+import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -13,7 +15,14 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+
+import menus.VMenuManager;
+import domain.VImage;
 
 public class Controls implements 
 				MouseListener, MouseMotionListener, FocusListener, 
@@ -64,6 +73,7 @@ public class Controls implements
 
 	byte j_b1=0, j_b2=1, j_b3=2, j_b4=3;
 	
+	/***************************** menu *****************************/
 	// Krybo (Feb.2016)  Adding a low level menu toggle variable.
 	public static boolean MENU_OPEN;
 	public static Long MENU_TIMER = new Long(0);
@@ -75,6 +85,21 @@ public class Controls implements
 	// A shameless counter of the number of pieces of keystrokes
 	//		sucessfully sent to menus.
 	public static long menuKeyCount = 0;
+	
+	/***************************** input ****************************/
+	private static boolean INPUT_MODE = false;
+	private static ArrayList<String> INPUT = new ArrayList<String>();
+	private static StringBuilder inputbuffer = new StringBuilder();
+	private static Integer inputCursor = 0;
+	private static String inputMsg = "Input:";
+	private static int inputX = 10, inputY = 10;
+	private static boolean inputAcceptNumbers = true;
+	private static boolean inputAcceptDecimal = true;
+	private static boolean inputAcceptLetter = true;
+	private static boolean inputAcceptSpecial = true;
+	private static boolean inputAcceptHighChar = true;
+	public static AffineTransform generic_AffTransf = 
+			new AffineTransform();
 
 	/***************************** code *****************************/
 	//int _input_killswitch;
@@ -363,7 +388,8 @@ public class Controls implements
 				
 				// Krybo (Feb.2016)  menu mode toggle
 				
-				if( MENU_OPEN && keycode != MENU_MASTERKEY &&  
+				if( MENU_OPEN && keycode != MENU_MASTERKEY &&
+						INPUT_MODE != true &&
 						keycode != 16 && keycode != 17 && keycode != 18 )
 					{
 					
@@ -379,7 +405,8 @@ public class Controls implements
 
 				// Menu open <> close toggle.
 
-				if( e.getKeyCode() == MENU_MASTERKEY ) 
+				if( e.getKeyCode() == MENU_MASTERKEY 
+						&& INPUT_MODE == false )
 					{
 					if( MENU_OPEN == false )	
 						{ 
@@ -396,6 +423,80 @@ public class Controls implements
 						}
 					}
 
+				if( INPUT_MODE )
+					{
+					// This switch is to handle control characters only
+					switch( keycode )
+						{
+						case 10:		// Enter
+							Controls.finish_input(true);
+							break;
+						case 27:		// Esc - Discard
+							Controls.finish_input( false ); 
+							break;
+						case 32:		// left
+							Controls.inputbuffer.insert(
+								Controls.inputCursor.intValue(),
+								" " );
+							Controls.inputCursor++;
+							break;
+						case 36:		// END
+							Controls.inputCursor = 0;
+							break;
+						case 35:		// HOME
+							Controls.inputCursor = 
+								Controls.inputbuffer.length();
+							break;
+						case 37:		// left
+							Controls.inputCursor--;
+							break;
+						case 39:		// right
+							Controls.inputCursor++;
+							break;
+						case 127:		// Forward delete
+							if( Controls.inputCursor >= 
+									Controls.inputbuffer.length() )
+								{  break;  }
+							Controls.inputbuffer.delete(
+								Controls.inputCursor.intValue(),
+								Controls.inputCursor.intValue()+1 );							
+							break;
+						case 8:	// Backspace
+							if( Controls.inputbuffer.length() == 0 )   
+								{ break; }
+							Controls.inputbuffer.delete(
+								Controls.inputCursor.intValue() - 1,
+								Controls.inputCursor.intValue() );
+							Controls.inputCursor--;
+							break;
+						case 16:	// Kill Cntl Alt Shift
+						case 17:
+						case 18:
+							break;
+						default:
+
+							// Do fancy Filtering input here.
+//							log("INPUT MODE:  got : "+
+//									Integer.toString(keycode));	
+							Controls.inputbuffer.insert(
+								Controls.inputCursor.intValue(),
+								lastkeychar );
+							Controls.inputCursor++;
+							break;
+						}
+					
+					// Ensure cursor bounds.
+					if( Controls.inputCursor > Controls.inputbuffer.length() )
+						{
+						Controls.inputCursor = 
+								Controls.inputbuffer.length();
+						}
+
+					if( Controls.inputCursor < 0 )
+						{ Controls.inputCursor=0; }
+
+					}
+				
 				//System.out.println(e+" keychar"+e.getKeyChar());
 			}
 
@@ -598,4 +699,124 @@ public class Controls implements
 		return(MENU_OPEN);
 		}
 	
+	/**  Switches engine controls into Input mode. 
+	 * Prepares variables for a new input.
+	 */
+	public static void begin_input( String theCaption, 
+			int x, int y, boolean acceptNumbers,
+			boolean acceptDecimal ,	boolean acceptLetter, 
+			boolean acceptSpecial, boolean acceptHighChar )
+		{
+		if( Controls.INPUT_MODE == true )
+			{ return; }
+		Controls.INPUT_MODE = true;
+		Controls.inputbuffer = new StringBuilder();
+		Controls.inputCursor = 0;
+		Controls.inputX = x;
+		Controls.inputY = y;
+		Controls.inputAcceptNumbers = acceptNumbers;
+		Controls.inputAcceptDecimal = acceptDecimal;
+		Controls.inputAcceptLetter = acceptLetter;
+		Controls.inputAcceptSpecial = acceptSpecial;
+		Controls.inputAcceptHighChar = acceptHighChar;
+		Controls.inputMsg = theCaption;
+		return;
+		}
+	
+	private static void finish_input( boolean keep )
+		{
+		if( Controls.INPUT_MODE == false )
+			{ return; }
+		Controls.INPUT_MODE = false;
+		if( keep )
+			{
+			System.out.println(" saved user INPUT : "+
+					Controls.inputbuffer.toString() );
+			Controls.INPUT.add(Controls.inputbuffer.toString() );
+			}
+		return;
+		}
+
+	public synchronized static BufferedImage getInputBImage(
+			VImage screensizeImage )
+		{
+//		System.out.println("DEBUG: Input layer visual draw called.");
+		int myX = Controls.inputX;
+		int myY = Controls.inputY;
+		
+		FontMetrics fm =
+			screensizeImage.getImage().getGraphics().getFontMetrics(
+			VMenuManager.getInputFont() );
+
+		FontRenderContext frc = fm.getFontRenderContext();
+
+//		TextLayout layout = new TextLayout(
+//			Controls.inputbuffer.toString().substring(0, Controls.inputCursor) , 
+//			VMenuManager.getInputFont(), frc );
+
+		int sx0 = new Double( 
+			VMenuManager.getInputFont().getStringBounds(
+			Controls.inputbuffer.toString(), frc ).getWidth() ).intValue();
+
+		int sx1 = new Double( 
+			VMenuManager.getInputFont().getStringBounds(
+			Controls.inputbuffer.toString().substring(0, Controls.inputCursor), 
+			frc).getWidth() ).intValue();
+		
+		int sx2 = 2;
+		if( Controls.inputbuffer.toString().length() != 0 )
+			{ 
+			sx2 = (sx0 / Controls.inputbuffer.toString().length());
+			}
+		
+		int sy1 = Math.abs( new Double( VMenuManager.getInputFont().getStringBounds(
+			Controls.inputbuffer.toString(), frc).getMinY() ).intValue() );
+
+			// Nudge if too close to edge.
+		if( myX < (screensizeImage.width >> 4)  )		// 1-16th of screen
+			{ myX = (screensizeImage.width >> 4); }
+		if( myY < (screensizeImage.height >> 4)  )
+			{ myY = (screensizeImage.height >> 4); }
+		
+		if( myX > (screensizeImage.width - (screensizeImage.width >> 2))  )
+			{ myX = (screensizeImage.width - (screensizeImage.width >> 2)); }
+		if( myY > (screensizeImage.height - (screensizeImage.height >> 2))  )
+			{ myY = (screensizeImage.height - (screensizeImage.height >> 2)); }
+
+			// 	Input Carrot.
+		screensizeImage.rectfill( myX+sx1, myY+20, 
+				myX+sx1+sx2,  myY+20-sy1, 
+				Color.YELLOW );
+
+//		screensizeImage.line( myX+sx1, myY+20, 
+//				myX+sx1, myY+20-sy1, 
+//				Color.YELLOW );
+//		screensizeImage.line( myX+sx1+1, myY+20, 
+//				myX+sx1+1, myY+20-sy1, 
+//				Color.YELLOW );
+		
+		screensizeImage.rectfill( 0, 0, screensizeImage.width, 
+				screensizeImage.height, new Color( 0.0f,0.0f,0.0f,0.50f ) );
+		screensizeImage.printString( myX, myY, 
+				VMenuManager.getInputFont(), 
+				Controls.inputMsg );
+		screensizeImage.line(myX-10, myY+5, myX+100, myY+5, 
+				Color.WHITE );
+		screensizeImage.line(myX-10, myY+6, myX+100, myY+6, 
+				Color.WHITE );
+
+		screensizeImage.printString( myX, myY+20, 
+				VMenuManager.getInputFont(), 
+				Controls.inputbuffer.toString()  );
+		
+
+		
+		return( screensizeImage.getImage() );
+		}
+	
+	public static boolean isInInputMode()
+		{	return( Controls.INPUT_MODE );	}
+	public static boolean isInMenuMode()
+		{	return( Controls.MENU_OPEN );		}
+
 }

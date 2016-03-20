@@ -19,6 +19,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 //import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
+
 import static core.VergeEngine.*;
 //import core.JVCL;
 //import static core.Controls.KeyF6;
@@ -32,6 +33,9 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+
+import domain.VImage;
+import menus.VMenuManager;
 
 //import javax.swing.UIDefaults;
 //import domain.Map;
@@ -438,18 +442,28 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 					curwidth, curheight, null);				
 				}
 
-			if( Controls.MENU_OPEN && 
+			if( ( VMenuManager.isInMenuMode() == true )  && 
 					(Vmm == null || Vmm.getJVCL() == null )  )
 				{
 				Controls.MENU_OPEN = false;
 				log(" In menu mode .... but menu is null?!  so turning it off."); 
 				}
-			if( Controls.MENU_OPEN )
+			if( VMenuManager.isInMenuMode() == true  && 
+				VMenuManager.isInInputMode() == false )
 				{
 				g.drawImage( Vmm.getBufferedImage(), 0, 0, 
 					curwidth, curheight, null);
 				}
 
+			// Finally - any input prompts overtop all.
+			VImage bleh = new VImage(screen.width,screen.height);
+			bleh.rectfill(0, 0, screen.width, screen.height, Color.black );
+			
+			if( VMenuManager.isInInputMode() == true )
+				{
+				g.drawImage( 	Vmm.getInputImage(), 0, 0,
+					curwidth, curheight, null);				
+				}
 			
 			/* Do this to rotate 180 
 			Graphics2D g2d = (Graphics2D) g;
