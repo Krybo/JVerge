@@ -452,6 +452,24 @@ public class JVCL
 	
 	public void setLayerVisibility( boolean truefalse )
 		{	this.vcl.get(currentLayer).setVisible(truefalse);	}
+	
+	/** Attempts to directly scale any given Vimage directly to a layer.
+	 *   does not affect layer settings, and will not work if layer not writtable
+	 *   Any previous drawing on the target layer will be destroyed.
+	 * @param img	A VImage object
+	 * @param layerNum		the target stack layer number
+	 */
+	public void setFullLayerImage(VImage img, int layerNum )
+		{
+		if( layerNum <= 0 ) 					{ return;  }
+		if( layerNum >= this.vcl.size()  )  	{ return; }
+		if( ! this.vcl.get(layerNum).active )	{ return; }
+		this.vcl.get(layerNum).clear();
+		this.vcl.get(layerNum).scaleblit(  0, 0, 
+				this.vcl.get(layerNum).width, 
+				this.vcl.get(layerNum).height, img );
+		return;
+		}
 
 	public boolean toggleLayerVisible(int layerNumber ) 
 		{
@@ -1401,9 +1419,9 @@ public class JVCL
 
 			// Now, we can finally calculate the outline bounds of the box.
 		int x0 = x;    int y0 = y;
-		int w0 = longestLine + (paddingPx*2) + 4;
-		int h0 = (numLines * singleLineHeight ) + (paddingPx * 2) + 4;
 
+//		int w0 = longestLine + (paddingPx*2) + 4;
+//		int h0 = (numLines * singleLineHeight ) + (paddingPx * 2) + 4;
 //		this.JVCblitScaleBlendImage( targetLayer, x0,y0,w0,h0,
 //				imgBackground, alphaBackground );
 //		
@@ -1416,8 +1434,8 @@ public class JVCL
 //		g2.drawRect( x+1, y+1, w0-2, h0-2 );
 //		g2.dispose();
 		
-		boolean tester = this.JVCmenuImage(targetLayer, x, y, w0, h0, imgBackground, 
-			alphaBackground, paddingPx, outlineColor,true );
+//		boolean tester = this.JVCmenuImage(targetLayer, x, y, w0, h0, imgBackground, 
+//			alphaBackground, paddingPx, outlineColor,true );
 
 		x0 = x+2+paddingPx;
 		y0 = y+2+paddingPx;
@@ -1651,5 +1669,32 @@ public class JVCL
 		return;
 		}
 
+	/** Used only to stop frivolous compiler warnings
+	 * @deprecated
+	 */
+	protected void _warning_stopper_do_not_use()
+		{
+		this.dialogBoxes.get(0).getAlphaBackground();
+		this.dialogBoxes.get(0).getFadeTimeDurationInNanoSeconds();
+		this.dialogBoxes.get(0).getImgBackground();
+		this.vcl.get(0).getNum();
+		this.JVCtextImageBox(this.vcl.get(0), 0, 0, "dat", 
+				core.Script.fntCONSOLE, 
+				core.Script.Color_DEATH_MAGENTA, 
+				core.Script.Color_DEATH_MAGENTA,
+				1, this.vcl.get(0), 1.0f );
+		
+		this._warning_stopper_do_not_use_2();
+		return;
+		}
+	/**
+	 * @deprecated
+	 */
+	protected void _warning_stopper_do_not_use_2()
+		{
+		this._warning_stopper_do_not_use();
+		return;
+		}
+	
 	}
 	

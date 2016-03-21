@@ -1,22 +1,17 @@
 package menus;
 
-import static core.Script.load;
 import static core.Script.log;
 import static core.Script.screen;
-
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import menus.Vmenu.enumMenuEVENT;
 import core.Controls;
 import core.JVCL;
 import core.Script;
 import domain.VImage;
-import domain.VSound;
 
 /**  This Class is designed to manage inter-menus communications.
  *  As well as delegate controls and focus menus.
@@ -165,8 +160,15 @@ public class VMenuManager
 			Vmenu vmChild )
 		{
 		vmChild.setParentID( vmParent.getFocusId() );
+
+		try {
+		if( vmParent.getMenuItem( parentMenuItemNumber ) == null )
+			{ return(new Long(-1)); }
 		vmParent.getMenuItem( parentMenuItemNumber ).setChildID(
 				vmChild.getFocusId() );
+			}
+		catch( IndexOutOfBoundsException e )
+			{  return(new Long(-1)); }
 
 			// Store this away for easy/quick access later.
 		VMenuManager.hmLinkList.put(
@@ -292,7 +294,7 @@ public class VMenuManager
 			if( this.focus.get(x) == id )
 				{ return(x); }
 			}
-		return(-1);
+		return(rslt);
 		}
 
 	/**  This can be used if there are multiple focused menus
@@ -439,9 +441,12 @@ public class VMenuManager
 		vmix.setState(3);  //  Disabled
 		SYS_MENU.addItem( vmix );
 		
-		VmiSimpleInput vmiy = new VmiSimpleInput("DEBUG 1", "Talk to me! ",
-				200, 200 );
-		SYS_MENU.addItem( vmiy );
+		// Example of a Input field.
+
+//		VmiSimpleInput vmiy = new VmiSimpleInput("DEBUG 1", 
+//				"Talk to me! ",
+//				200, 200 );
+//		SYS_MENU.addItem( vmiy );
 		
 		vmix = new VmiTextSimple("END GAME");
 			// This is how you link menus.
@@ -468,7 +473,9 @@ public class VMenuManager
 		this.assignToLayers();
 
 			// Link the Quit button to a confirm prompt.
-		linkMenu(this.menus.get(0), 6, this.menus.get(1) );
+		linkMenu(this.menus.get(0), 
+			this.menus.get(0).countMenuItems()-1, 
+			this.menus.get(1) );
 			// Link the confirm prompt back to the system menu.
 		linkMenu( this.menus.get(1), 0, this.menus.get(0) );
 		}
@@ -527,6 +534,52 @@ public class VMenuManager
 			}
 
 		return(false);
+		}
+
+	/** Set the menu backdrop to a given VImage
+	 * 	The image is automatically scaled to fit the whole layer.
+	 * 	The backdrop layer appears below all menus... like a shader. 
+	 * @param theBackdrop  A VImage object.
+	 */
+	public void setBackdrop( VImage theBackdrop )
+		{
+		this.backdrop = theBackdrop;
+		if( this.enableBackdrop )
+			{
+			this.targetLayerStack.setLayerVisible(1);
+			this.targetLayerStack.setFullLayerImage(this.backdrop, 1 );
+			}
+		return;
+		}
+
+	/** Set the menu backdrop to a solid color with an alpha
+	 * 	The backdrop layer appears below all menus... like a shader.
+	 *   -untested- 
+	 * @param clr	The solid color, alpha is ignored.
+	 * @param theAlpha	The alpha to use.
+	 */
+	public void setBackdrop( Color clr, float theAlpha )
+		{
+		this.backdropAlpha = theAlpha;
+		this.backdropColor = clr;
+		
+		if( this.enableBackdrop )
+			{
+			int xx = this.targetLayerStack.getVImage().width;
+			int yy = this.targetLayerStack.getVImage().height;
+			VImage tmp = new VImage(xx,yy);
+
+			Color clrNewAlpha = new Color(
+					new Float( this.backdropColor.getRed()/256 ),
+					new Float( this.backdropColor.getGreen()/256 ),
+					new Float( this.backdropColor.getBlue()/256 ),
+					this.backdropAlpha );
+			
+			tmp.rectfill(0, 0, xx, yy, clrNewAlpha );
+			this.targetLayerStack.setLayerVisible(1);
+			this.targetLayerStack.setFullLayerImage( tmp, 1 );
+			}
+		return;
 		}
 
 	}

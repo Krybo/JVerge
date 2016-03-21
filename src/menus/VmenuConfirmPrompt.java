@@ -7,7 +7,6 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import menus.Vmenu.enumMenuEVENT;
 import menus.Vmenuitem.enumMenuItemSTATE;
 import core.Controls;
 import domain.VImage;
@@ -25,14 +24,13 @@ public class VmenuConfirmPrompt implements Vmenu
 	boolean isActive = false;
 	boolean isVisible = false;
 	private Font fnt = core.Script.fntMASTER;
-	private boolean enableCaption = false;
-	private VmiTextSimple caption;
+//	private boolean enableCaption = false;
+//	private VmiTextSimple caption;
 	private Color bkgColor;
 	private VImage bkgImage;
 	private ArrayList<String> multiLineDialog = new ArrayList<String>();
 	private VmiTextSimple vmiYes = new VmiTextSimple("YES");
 	private VmiTextSimple vmiNo = new VmiTextSimple("NO");
-	private ArrayList<Vmenu> submenus = new ArrayList<Vmenu>();
 	private HashMap<enumMenuEVENT,VSound> hmSounds;
 	private Long parentID = new Long(-1);
 	private Long childID = new Long(-1);
@@ -76,6 +74,10 @@ public class VmenuConfirmPrompt implements Vmenu
 		int by1 = this.y;
 		int by2 = by1 + (this.smargin*4) + 
 				this.sy+this.vmiNo.getDY().intValue();
+
+		// Save some cpu cycles if its requested to draw offscreen.....
+		if( bx1 > targetWidth )	{ return(false); }
+		if( by1 > targetHeight )	{ return(false); }
 
 			// Body
 		if( this.bkgImage != null )
@@ -123,7 +125,7 @@ public class VmenuConfirmPrompt implements Vmenu
 		
 //		this.content.get( this.selectedIndex )
 
-		return false;
+		return(true);
 		}
 
 	/**  Parses the desired dialog into multiple parts
@@ -214,10 +216,10 @@ public class VmenuConfirmPrompt implements Vmenu
 			}
 		
 		Integer basecode = Controls.extcodeGetBasecode( kc );
-		Integer extCode = Controls.extcodeGetExtention( kc );
+//		Integer extCode = Controls.extcodeGetExtention( kc );
 		boolean isShift = Controls.extcodeGetSHIFT( kc );
 		boolean isCntl = Controls.extcodeGetCNTL( kc );
-		boolean isAlt = Controls.extcodeGetALT( kc );
+//		boolean isAlt = Controls.extcodeGetALT( kc );
 		
 		switch ( basecode )
 			{

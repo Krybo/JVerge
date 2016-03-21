@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 import domain.VImage;
 import static core.Script.setMenuFocus;
-import static core.Script.Color_DEATH_MAGENTA;
+//import static core.Script.Color_DEATH_MAGENTA;
 
 /*
  * Colors:
@@ -441,11 +441,19 @@ public class VmiTextSimple implements Vmenuitem
 		return;
 		}
 
-	// Sets clipping plane.
+	/** Sets clipping bounds when drawing
+	 *  !! not yet implemented !!
+	 * @param xBound	full screen x integer pixel bound
+	 * @param yBound	full screen x integer pixel bound
+	 */
 	public void setClipping(int xBound, int yBound )
 		{
 		this.boundX = xBound;
 		this.boundY = yBound;
+		System.out.println(" Bound set to : "+
+				Integer.toString(this.boundX) + " / "+
+				Integer.toString(this.boundY) ); 
+		
 		if( xBound < 1 )
 			{ this.boundX = 1; }
 		if( yBound < 1 )

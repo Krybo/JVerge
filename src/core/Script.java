@@ -51,14 +51,8 @@ import domain.VSound;
 import domain.VImage;
 import domain.Entity;
 import domain.Map;
-
-//import static core.Script.log;
-//import static core.Script.screen;
-//import static core.Script.setlucent;
-//import static core.Script.showpage;
-//import static core.Script.timer;
 import static core.SinCos.*;
-import static java.awt.Font.PLAIN;
+
 
 public class Script {
 

@@ -248,7 +248,7 @@ log("Layer "+Integer.toString(i) + " , "+l.name+" , px " + Double.toString(l.par
 		Integer intRandom = new Integer( dblRandom.intValue() );
 		int xyIndex = (Xtiles * Ytiles) - 1;
 		// Map metadata
-		String mapSignature = domain.MapVerge.MAP_SIGNATURE;
+//		String mapSignature = domain.MapVerge.MAP_SIGNATURE;
 		int mapVersion = 3;
 		int vcOffset = 0;
 		this.filename = "BLANK_"+Integer.toString(intRandom)+".map";

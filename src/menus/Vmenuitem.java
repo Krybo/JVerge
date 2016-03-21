@@ -2,14 +2,13 @@ package menus;
 
 import java.awt.Color;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import domain.VImage;
  
 
-/*
- * Vmenuitem:  intended to interface Classes for menu content
+/**	Vmenuitem: 
+ * intended to interface Classes for menu content
  * E.x.  Simple text item, fill-statBar, Input box 
  * NOT intended for Classes the control overall menus mechanics.
  * 
@@ -21,6 +20,8 @@ import domain.VImage;
  * 
  * Setting and Getting various constituents can be highly unpredictable.
  * Hence this is left up to individual implementations to add them.l
+ * 
+ * @author Krybo
  */
 
 public interface Vmenuitem

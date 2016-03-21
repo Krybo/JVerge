@@ -4,19 +4,12 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import menus.Vmenu.enumMenuEVENT;
 import menus.Vmenuitem.enumMenuItemSTATE;
 import menus.VmiTextSimple.enumMenuStxtCOLORS;
 import core.Controls;
 import domain.VImage;
 import domain.VSound;
-import static core.Script.up;
-import static core.Script.down;
-import static core.Script.left;
-import static core.Script.right;
-import static core.Script.b1;
-import static core.Script.waitKeyUp;
-import static core.Script.unpress;
+
 
 
 // Arranges menuitems in a traditional vertical fashion.
@@ -77,7 +70,7 @@ public class VmenuVertical implements Vmenu
 		int counter = -1;
 		for( Vmenuitem myvmi : this.content )
 			{
-			counter++;
+			counter = counter + 1;
 			if( myvmi.isActive() == false ) 	{ continue; }
 			if( myvmi.isVisible() == false ) 	{ continue; }
 //			if( myvmi.getState() == 3 )		{ continue; }
@@ -107,10 +100,10 @@ public class VmenuVertical implements Vmenu
 			}
 		
 		Integer basecode = Controls.extcodeGetBasecode( kc );
-		Integer extCode = Controls.extcodeGetExtention( kc );
+//		Integer extCode = Controls.extcodeGetExtention( kc );
 		boolean isShift = Controls.extcodeGetSHIFT( kc );
 		boolean isCntl = Controls.extcodeGetCNTL( kc );
-		boolean isAlt = Controls.extcodeGetALT( kc );		
+//		boolean isAlt = Controls.extcodeGetALT( kc );		
 		
 		switch ( basecode )
 			{

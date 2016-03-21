@@ -5,8 +5,6 @@ import static core.Script.*;
 import static core.Sprite.RenderSpritesAboveEntity;
 import static core.Sprite.RenderSpritesBelowEntity;
 import static core.Sprite.sprites;
-import static core.VergeEngine.DefaultTimer;
-//import static core.VergeEngine.getGUI;
 import static domain.Entity.EAST;
 import core.JVCL;
 import static domain.Entity.NE;
@@ -30,30 +28,17 @@ import static domain.Entity.WEST;
 
 
 import java.awt.Color;
-import java.lang.reflect.Method;
-//import java.awt.Color;
-//import java.net.MalformedURLException;
-//import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-//import java.util.HashMap;
 import java.util.List;
 
 import menus.VMenuManager;
-import menus.Vmenu;
-import menus.VmenuConfirmPrompt;
-import menus.VmenuVertical;
-import menus.Vmenuitem;
-import menus.VmiTextSimple;
-import menus.Vmenu.enumMenuEVENT;
 import domain.Config;
 import domain.Entity;
-//import domain.Map;
 import domain.MapDynamic;
 import domain.MapVerge;
 import domain.VImage;
-import domain.VSound;
 
 public class VergeEngine extends Thread 
 	{
@@ -921,6 +906,8 @@ public class VergeEngine extends Thread
 		VergeEngine.Vmm = new VMenuManager(  );
 		VergeEngine.SYSTEM_MENU_FOCUS_ID = 
 				Vmm.getSystemMenuFocusID();
+		log("System menu init, ID = " + 
+				SYSTEM_MENU_FOCUS_ID.toString());
 		
 //		init_system_menus();
 		

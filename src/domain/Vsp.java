@@ -19,8 +19,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
-import javax.security.auth.Destroyable;
-
+//import javax.security.auth.Destroyable;
 import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
 import core.Script;
