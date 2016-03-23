@@ -121,6 +121,19 @@ public class VMenuManager
 
 	public Long getSystemMenuFocusID()
 		{	return(this.SYSTEM_MENU_FOCUS_ID);	}
+	public Vmenu getSystemMenu()
+		{
+		return(this.getMenuByID( this.getSystemMenuFocusID() ));
+		}
+	public Vmenu getMenuByID( Long id )
+		{
+		for( Vmenu vm : this.menus )
+			{
+			if( vm.getFocusId() == id )
+				{ return(vm);  }
+			}
+		return(null);
+		}
 
 	public boolean isEnableBackdrop()
 		{

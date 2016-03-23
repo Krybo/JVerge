@@ -34,7 +34,8 @@ public interface Vmenuitem
 		NORMAL (0),
 		SELECTED (1),
 		ACTIVATED (2),
-		DISABLED (3);
+		DISABLED (3),
+		STATELESS(4);
 		
 		private final Integer index;
 		enumMenuItemSTATE( Integer n )

@@ -71,11 +71,7 @@ public class VmenuVertical implements Vmenu
 		for( Vmenuitem myvmi : this.content )
 			{
 			counter = counter + 1;
-			if( myvmi.isActive() == false ) 	{ continue; }
 			if( myvmi.isVisible() == false ) 	{ continue; }
-//			if( myvmi.getState() == 3 )		{ continue; }
-			
-//			myvmi.debug_function(null);
 			myvmi.paint( target );
 			}
 //		System.out.println("-- uVERTICAL MENU PAINTED --");
@@ -207,6 +203,7 @@ public class VmenuVertical implements Vmenu
 			}
 		for( Vmenuitem vmi : this.content )
 			{ 	
+			if( vmi.isActive() == false )	{ continue; }
 			if( vmi.getDX().intValue() > maxw )    
 				{  maxw = vmi.getDX().intValue(); }	
 			}

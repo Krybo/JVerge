@@ -830,8 +830,22 @@ public class VergeEngine extends Thread
 		}
 	}
 
-	public void run() {
+	public void run() 
+		{
 
+			// Krybo (Mar.2016) : System menus are built once, here.
+			// needed to move this here so menus can be modified
+			// by users in the autoexec() function. before the map loads.
+
+		VergeEngine.Vmm = new VMenuManager(  );
+		VergeEngine.SYSTEM_MENU_FOCUS_ID = 
+				Vmm.getSystemMenuFocusID();
+		log("System menu init, ID = " + 
+			SYSTEM_MENU_FOCUS_ID.toString());
+
+		// Start with 4 user friendly graphics drawing layers.
+			core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
+	
 		callfunction("autoexec");
 		
 		while(mapname!=null && !mapname.isEmpty()) 
@@ -902,12 +916,13 @@ public class VergeEngine extends Thread
 		xwin = ywin = 0;
 		done = false;
 		die = false;
-			// Krybo (Mar.2016) : System menus are built once, here.
-		VergeEngine.Vmm = new VMenuManager(  );
-		VergeEngine.SYSTEM_MENU_FOCUS_ID = 
-				Vmm.getSystemMenuFocusID();
-		log("System menu init, ID = " + 
-				SYSTEM_MENU_FOCUS_ID.toString());
+
+//			// Krybo (Mar.2016) : System menus are built once, here.
+//		VergeEngine.Vmm = new VMenuManager(  );
+//		VergeEngine.SYSTEM_MENU_FOCUS_ID = 
+//				Vmm.getSystemMenuFocusID();
+//		log("System menu init, ID = " + 
+//				SYSTEM_MENU_FOCUS_ID.toString());
 		
 //		init_system_menus();
 		
@@ -971,6 +986,8 @@ public class VergeEngine extends Thread
 	
 	public static void initVergeEngine(String[] args) {
 
+		log("Hello JVerge");
+	
 		if (args !=null && args.length != 0) {
 			mapname = args[0];
 		}
@@ -1012,8 +1029,6 @@ public class VergeEngine extends Thread
 
 		getGUI().updateCanvasSize();
 
-			// Start with 4 user friendly graphics drawing layers.
-		core.Script.jvcl = 	new JVCL(4,screen.width,screen.height);
 	}
 
 	
