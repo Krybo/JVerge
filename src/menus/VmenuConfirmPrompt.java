@@ -14,15 +14,15 @@ import domain.VSound;
 
 public class VmenuConfirmPrompt implements Vmenu
 	{
-	HashMap<String,String> content = new HashMap<String,String>();
-	Long focusID = new Long(-1);
-	int x = 0,y = 0;
-	int sx = 0, sy = 0, sline = 1, smargin = 10;
-	int maxDialogWidthPx = 80;
-	int framewidth = 3;
-	Integer selectedIndex = -1;		// selected menuitem in the menu.
-	boolean isActive = false;
-	boolean isVisible = false;
+	private HashMap<String,String> content = new HashMap<String,String>();
+	private Long focusID = new Long(-1);
+	private int x = 0,y = 0;
+	private int sx = 0, sy = 0, sline = 1, smargin = 10;
+	private int maxDialogWidthPx = 80;
+	private int framewidth = 3;
+	private Integer selectedIndex = -1;	// selected menuitem in the menu.
+	private boolean isActive = false;
+	private boolean isVisible = false;
 	private Font fnt = core.Script.fntMASTER;
 //	private boolean enableCaption = false;
 //	private VmiTextSimple caption;

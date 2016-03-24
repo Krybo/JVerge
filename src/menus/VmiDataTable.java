@@ -4,9 +4,13 @@ import static core.Script.setMenuFocus;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.font.FontRenderContext;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
+import core.Controls;
 import domain.VImage;
 
 public class VmiDataTable implements Vmenuitem
@@ -71,7 +75,7 @@ public class VmiDataTable implements Vmenuitem
 
 
 	public VmiDataTable(int pinX, int pinY, int pixelWidth, int pixelHeight,
-			int numColumns, int numRows, HashMap<String,String> entries )
+			int numColumns, int numRows, LinkedHashMap<String,String> entries )
 		{
 		this.x = pinX;
 		this.y = pinY;
@@ -239,8 +243,6 @@ public class VmiDataTable implements Vmenuitem
 	 */
 	public void paint( VImage target )
 		{
-//		System.out.println(" DEBUG : entered VmiDT paint() ");
-
 		if( this.visible == false ) { return; }
 		// For convenience. - actual start of data area.
 		// calc the corners for box and its margin.
@@ -316,13 +318,63 @@ public class VmiDataTable implements Vmenuitem
 				}
 			}
 		
-		System.out.println( " Data # " + Integer.toString( this.theData.size() ) ); 
-		
+		System.out.println( " Data # " + Integer.toString( this.theData.size() ) );
+
+		FontMetrics fm =
+				target.getImage().getGraphics().getFontMetrics(
+				this.fnt );
+		FontRenderContext frc = fm.getFontRenderContext();
+
 		// Finally, print all the labels & values.
 		String label = new String("");
-		for( int s = 0; s < this.theData.size(); s++ )
+		String tmpLabel = new String("");
+		tmpLabel.trim();
+		String tmpData = new String("");
+		tmpData.trim();
+
+		for( Integer s = 0; s < this.theData.size(); s++ )
 			{
+			tmpData = this.theData.get(s);
+			tmpLabel = this.theLabels.get(s)+this.labelTerminator;
+
+			int dw0 = new Double( this.fnt.getStringBounds(
+					tmpData, frc ).getWidth() ).intValue();
+			int dy0 = new Double( this.fnt.getStringBounds(
+					tmpData, frc ).getMaxY() ).intValue();
+			int dy1 = new Double( this.fnt.getStringBounds(
+					tmpData, frc ).getMinY() ).intValue();
+			int dy2 = new Double( this.fnt.getStringBounds(
+					tmpData, frc ).getHeight() ).intValue();
+
+			int shorten = dw0;
+				// This thing is longer then the space allocated.
+				//   will need to truncate it.
+			while( (shorten > this.colMaxW) && ! tmpData.isEmpty() )
+				{
+				tmpData = tmpData.substring(0, tmpData.length()-2 );
+				shorten = new Double( this.fnt.getStringBounds(
+					tmpData, frc ).getWidth() ).intValue();
+				}
+
+			if( tmpData.isEmpty() )	{ continue; }
 			
+			// note: indentation is built into : this.theXpos.get(s) 			
+			int Xadj = x0 + this.theXpos.get(s).intValue() 
+					+ this.colMaxW.intValue() - shorten - 1;
+			int Yadj = y0 + this.theYpos.get(s).intValue()
+					+ (this.rowMaxH.intValue() / 2) + dy0;
+			
+			shorten = new Double( this.fnt.getStringBounds(
+					tmpLabel, frc ).getWidth() ).intValue();
+			while( (shorten > this.colMaxW) && ! tmpLabel.isEmpty() )
+				{
+				tmpLabel = tmpLabel.substring(0, tmpLabel.length()-2 );
+				shorten = new Double( this.fnt.getStringBounds(
+					tmpLabel, frc ).getWidth() ).intValue();
+				}			
+
+
+
 			if( this.useLabels == true )
 				{
 				if( s < this.theLabels.size() )
@@ -334,17 +386,22 @@ public class VmiDataTable implements Vmenuitem
 					// TODO  : implement icon-labels
 					}
 				}
-			
-			System.out.println( " string x/y " + 
-				Integer.toString( x1 + this.theXpos.get(s) ) + " / " +  
-				Integer.toString( y1 + this.theYpos.get(s) ) );
 
-			target.printString( x1 + this.theXpos.get(s), 
-				y1 + this.theYpos.get(s), 
+			System.out.println( " string x/y " + 
+				Integer.toString( Xadj ) + " / " +  
+				Integer.toString( Yadj ) );
+
+			target.printString( 1 + x0 + this.theXpos.get(s).intValue(),  
+				y0 - dy1 + this.theYpos.get(s).intValue(), 
 				this.fnt, this.clrSettings.get(
 					enumMenuDataTableCOLORS.TEXT_DATA.value() ),
-				label  + this.theData.get(s)
-				);
+				tmpLabel	);
+			
+			target.printString( Xadj, Yadj, 
+				this.fnt, this.clrSettings.get(
+					enumMenuDataTableCOLORS.TEXT_DATA.value() ),
+				tmpData	);
+			
 			}
 
 		return;
@@ -410,6 +467,13 @@ public class VmiDataTable implements Vmenuitem
 	/** VmiDataTable with no text is non-sense */
 	public void enableText(boolean enableText)
 		{	return;	}
+
+	/**   Turns displayed text labels on or off
+	 * 
+	 * @param enable true displays labels - false hides them.
+	 */
+	public void enableLabels( boolean enable )
+		{	this.useLabels = enable;	}
 
 	/** Toggles if icons are used instead of String labels */
 	public void enableIcons(boolean enable)
@@ -515,6 +579,40 @@ public class VmiDataTable implements Vmenuitem
 		{	return enableGrid;	}
 	public void setEnableGrid( boolean enableGrid )
 		{	this.enableGrid = enableGrid;		}
+	
+		/**  Customize a single specific color, see enumMenuDataTableCOLORS
+		 *       for potential keys.
+		 * @param e  an enumMenuDataTableCOLORS key
+		 * @param clr	Color object
+		 */
+	public void setColor( enumMenuDataTableCOLORS e, Color clr )
+		{
+		this.clrSettings.put(e.value(), clr );
+		return;
+		}
+	
+	/**  Retrieves a single color setting */
+	public Color getColor( enumMenuDataTableCOLORS e )
+		{
+		return( this.clrSettings.get(e.value()) );
+		}
+
+	/** Directly adds a value to the table in most direct form.  */
+	public void addEntry( String label, String data )
+		{
+		int newone = this.theData.size();
+		this.theLabels.put(newone, label );
+		this.theData.put(newone, data );
+		this.resolvePositions();
+		return;
+		}
+
+	public void setFont(Font newFnt )
+		{
+		this.fnt = newFnt;
+		this.resolvePositions();
+		return;
+		}
 	
 	}			// END class  VmiDataTable.
 

@@ -853,9 +853,9 @@ public class Controls implements
 //			Controls.inputbuffer.toString().substring(0, Controls.inputCursor) , 
 //			VMenuManager.getInputFont(), frc );
 
-		int sx0 = new Double( 
-			VMenuManager.getInputFont().getStringBounds(
-			Controls.inputbuffer.toString(), frc ).getWidth() ).intValue();
+			int sx0 = new Double( 
+				VMenuManager.getInputFont().getStringBounds(
+				Controls.inputbuffer.toString(), frc ).getWidth() ).intValue();
 
 		int sx1 = new Double( 
 			VMenuManager.getInputFont().getStringBounds(
