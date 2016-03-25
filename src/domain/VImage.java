@@ -576,6 +576,12 @@ public class VImage implements Transferable
 					sy1 = sy2;
 					sy2 = temp;				
 				}
+
+				if( src == null ) 
+					{
+					System.err.println("src image to VImage.grabRegion is null.");
+					return;
+					}
 				
 				Color color = null;
 				for(int j=0; j<sy2-sy1; j++)
@@ -1075,5 +1081,60 @@ public class VImage implements Transferable
 		return;
 		}
 	
+/**  Takes a larger VImage and splits it into multiple (array) VImages.
+ *   { Krybo adaptation of RafaelEsper's original }
+ * @param startx  Pixel-X within source to start cutting.
+ * @param starty  Pixel-Y within source to start cutting.
+ * @param cellW  The width of the cut for smaller cells.
+ * @param cellH   The height of the cut for smaller cells.
+ * @param skipx   ???
+ * @param skipy   ???
+ * @param columns   Number of columns to wrap cutting.
+ * @param totalframes	Max number of cells to cut , total.
+ * @param padding  Is there a one pixel padding around each cell?
+ * @param sourceImg  The larger source image.
+ * @return
+ */
+
+	public static VImage[] split(int startx, int starty, 
+			int cellW, int cellH, int skipx, int skipy, int columns, 
+			int totalframes, boolean padding, VImage sourceImg ) 
+		{
+		VImage[] images = new VImage[totalframes];
+		
+		int frames = 0, posx = 0, posy = 0, column = 0;
+
+		if( padding )		{ posy++; }
+
+		// First pixel is default transparent color
+		Color transC = core.Script.Color_DEATH_MAGENTA;
+		Color unused = transC;   transC = unused;   // kill warning
+		
+		while(frames < totalframes) 
+			{
+			if( padding )		{ posx++; }
+				 
+			images[frames] = new VImage(cellW, cellH );
+			images[frames].grabRegion(startx+posx, starty+posy, 
+				startx+posx+cellW, starty+posy+cellH, 0, 0, 
+				sourceImg.getImage() );
+
+			column++;
+			posx += cellW + skipx;
+			
+			if( column >= columns ) 
+				{
+				column = 0;
+				posx = 0;
+				posy+= cellH + skipy;
+				if(padding)
+					{ posy++; }
+				}
+			frames++;
+			}	
+		return( images );
+		}
+
+
 	}
 

@@ -189,7 +189,7 @@ public class VmiDataTable implements Vmenuitem
 			Double tdw = new Double( td - 1 ) * this.colMaxW;
 			Double trh = new Double( tr - 1 ) * this.rowMaxH;
 	
-			System.out.println("DEBUG  tdw = "+tdw.toString());
+//			System.out.println("DEBUG  tdw = "+tdw.toString());
 			
 			this.theXpos.put(n,  tdw.intValue() + indent );
 			this.theYpos.put(n, trh.intValue() + indent );
@@ -318,7 +318,7 @@ public class VmiDataTable implements Vmenuitem
 				}
 			}
 		
-		System.out.println( " Data # " + Integer.toString( this.theData.size() ) );
+//		System.out.println( " Data # " + Integer.toString( this.theData.size() ) );
 
 		FontMetrics fm =
 				target.getImage().getGraphics().getFontMetrics(
@@ -363,40 +363,48 @@ public class VmiDataTable implements Vmenuitem
 					+ this.colMaxW.intValue() - shorten - 1;
 			int Yadj = y0 + this.theYpos.get(s).intValue()
 					+ (this.rowMaxH.intValue() / 2) + dy0;
-			
-			shorten = new Double( this.fnt.getStringBounds(
-					tmpLabel, frc ).getWidth() ).intValue();
-			while( (shorten > this.colMaxW) && ! tmpLabel.isEmpty() )
-				{
-				tmpLabel = tmpLabel.substring(0, tmpLabel.length()-2 );
-				shorten = new Double( this.fnt.getStringBounds(
-					tmpLabel, frc ).getWidth() ).intValue();
-				}			
-
-
 
 			if( this.useLabels == true )
 				{
-				if( s < this.theLabels.size() )
-					{ label = this.theLabels.get(s) + this.labelTerminator; }
-				else	{ label = ""; }
-
-				if( this.useImagesAsLabels == true)
+				// Image icons used when turned on + the image
+				//  is present, and the cell hgt allowcated is > 6 pixels.
+				if( 		this.useImagesAsLabels == true &&  
+						this.imgLabels.get(s) != null && 
+						this.rowMaxH > 6.0d )
 					{
-					// TODO  : implement icon-labels
+					
+					// Scale to the height of the cell.
+					Double scFct = new Double(
+						this.imgLabels.get(s).height) / (this.rowMaxH-4.0d);
+					target.scaleblit( 2 + x0 + this.theXpos.get(s).intValue(), 
+							2 + y0 + this.theYpos.get(s).intValue(), 
+							new Double(this.imgLabels.get(s).width / scFct).intValue(), 
+							this.rowMaxH.intValue() - 4, 
+							this.imgLabels.get(s) );
+					}
+				else
+					{
+					shorten = new Double( this.fnt.getStringBounds(
+							tmpLabel, frc ).getWidth() ).intValue();
+					while( (shorten > this.colMaxW) && ! tmpLabel.isEmpty() )
+						{
+						tmpLabel = tmpLabel.substring(0, tmpLabel.length()-2 );
+						shorten = new Double( this.fnt.getStringBounds(
+							tmpLabel, frc ).getWidth() ).intValue();
+						}
+
+					target.printString( 1 + x0 + this.theXpos.get(s).intValue(),  
+						y0 - dy1 + this.theYpos.get(s).intValue(), 
+						this.fnt, this.clrSettings.get(
+							enumMenuDataTableCOLORS.TEXT_DATA.value() ),
+						tmpLabel	);
 					}
 				}
 
-			System.out.println( " string x/y " + 
-				Integer.toString( Xadj ) + " / " +  
-				Integer.toString( Yadj ) );
+//			System.out.println( " string x/y " + 
+//				Integer.toString( Xadj ) + " / " +  
+//				Integer.toString( Yadj ) );
 
-			target.printString( 1 + x0 + this.theXpos.get(s).intValue(),  
-				y0 - dy1 + this.theYpos.get(s).intValue(), 
-				this.fnt, this.clrSettings.get(
-					enumMenuDataTableCOLORS.TEXT_DATA.value() ),
-				tmpLabel	);
-			
 			target.printString( Xadj, Yadj, 
 				this.fnt, this.clrSettings.get(
 					enumMenuDataTableCOLORS.TEXT_DATA.value() ),
@@ -450,8 +458,28 @@ public class VmiDataTable implements Vmenuitem
 
 	/**  It is possible to use VImages (icons) as labels instead of text 
 	 */
-	public void setIconContent(HashMap<Integer, VImage> imageItems)
-		{	this.imgLabels = imageItems;	}
+	public void setIconContent(
+			HashMap<Integer, VImage> imageItems)
+		{	
+		this.imgLabels = imageItems;
+		return;
+		}
+	
+	/**  in array form, sends VImage icon data into the object.
+	 *    one per data cell.
+	 *    will ignore if more icons then there are data values. 
+	 * @param images  Array of Vimage, size is scaled to fit.
+	 */
+	public void setIconContent( VImage[] images )
+		{
+		int max = this.theData.size();
+		for( Integer x = 0; x < images.length; x++ )
+			{
+			if( x > max )	{ continue; }
+			this.imgLabels.put(x, images[x] );
+			}
+		return;
+		}
 
 	public void setColorContent(HashMap<Integer, Color> basicColors)
 		{	this.clrSettings = basicColors;	 }
@@ -613,6 +641,14 @@ public class VmiDataTable implements Vmenuitem
 		this.resolvePositions();
 		return;
 		}
+
+	public int getDataCellCount()
+		{	return( this.colnum * this.rownum );	}
+
+	// TODO:  Dynamic resizing of number # columns & rows
+	// TODO:  Captions.
+	// TODO : test image backgrounds
+	
 	
 	}			// END class  VmiDataTable.
 
