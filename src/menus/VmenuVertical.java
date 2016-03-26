@@ -17,13 +17,17 @@ import domain.VSound;
 public class VmenuVertical implements Vmenu
 	{
 	
-	int x = 0,y = 0;
-	Integer selectedIndex = -1;		// selected menuitem in the menu.
-	boolean isActive = false;
-	boolean isVisible = false;
+	private int x = 0,y = 0;
+	private int w = 0, h = 0;
+	private Integer selectedIndex = -1;		// selected menuitem in the menu.
+	private boolean isActive = false;
+	private boolean isVisible = false;
 	private boolean enableCaption = false;
+	private boolean enableImgBackground = false;
 	private VmiTextSimple caption;
-	private ArrayList<Vmenuitem> content = new ArrayList<Vmenuitem>();
+	private ArrayList<Vmenuitem> content = 
+			new ArrayList<Vmenuitem>();
+	private VImage bkgImg = null;
 //	private ArrayList<Vmenu> submenus = new ArrayList<Vmenu>();
 	private HashMap<Integer,Vmenu> hmSubmenus = 
 			new HashMap<Integer,Vmenu>();
@@ -46,6 +50,8 @@ public class VmenuVertical implements Vmenu
 		{
 		this.x = x;
 		this.y = y;
+		this.w = 0;
+		this.h = 0;
 		this.content.clear();
 		this.hmSubmenus.clear();
 		this.selectedIndex = -1;
@@ -53,10 +59,11 @@ public class VmenuVertical implements Vmenu
 		this.hmSounds = new HashMap<enumMenuEVENT,VSound>();
 		this.setCaption(" ");
 		this.enableCaption = false;
+		this.enableImgBackground = false;
 		return;
 		}
 
-	public boolean paint(VImage target)
+	public boolean paint( VImage target)
 		{
 //		System.out.println("VerticalMenu draw called.");
 		if( this.isVisible == false )	{ return(false);	}
@@ -64,6 +71,11 @@ public class VmenuVertical implements Vmenu
 
 		this.refresh();
 		
+		if( this.enableImgBackground == true && this.bkgImg != null )
+			{
+			target.scaleblit( this.x, this.y, this.w, this.h, this.bkgImg );
+			}
+
 		if( this.enableCaption )
 			{ this.caption.paint(target); }
 
@@ -217,6 +229,8 @@ public class VmenuVertical implements Vmenu
 			iY += hi;			
 			}
 		this.caption.setExtendX(maxw, false );
+		this.w = maxw;
+		this.h = iY;
 		return;
 		}
 	
@@ -531,6 +545,32 @@ public class VmenuVertical implements Vmenu
 		{	return(this.parentID);	}
 	public Long getChildID()
 		{	return(this.childID);	}
+	
+	/**  Sets a background image by passing a Vimage
+	 *   The Vimage will be Scaled to fit the width and height after
+	 *   at least one menuitem is added.
+	 *  
+	 * @param theBkg	A Vimage object containing the background
+	 * @param enable	Set all values needed to ensure the bkg is visible
+	 */
+	public void setBackgroundImage( VImage theBkg, boolean enable )
+		{
+		this.bkgImg = theBkg;
+		if( enable == true )
+			{
+			this.enableImgBackground = enable;
+				// To ensure visibility - turn OFF component bkgs
+			for( Vmenuitem vmi : this.content )
+				{	vmi.enableBackdrop(true);	}
+			}
+		else
+			{
+			this.enableImgBackground = enable;
+			for( Vmenuitem vmi : this.content )
+				{	vmi.enableBackdrop(false);	}
+			}
+		return;
+		}
 	
 //	
 //	private ArrayList<Long> getSubmenuFocusID()

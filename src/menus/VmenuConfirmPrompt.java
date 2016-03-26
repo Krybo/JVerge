@@ -27,13 +27,15 @@ public class VmenuConfirmPrompt implements Vmenu
 //	private boolean enableCaption = false;
 //	private VmiTextSimple caption;
 	private Color bkgColor;
-	private VImage bkgImage;
+
 	private ArrayList<String> multiLineDialog = new ArrayList<String>();
 	private VmiTextSimple vmiYes = new VmiTextSimple("YES");
 	private VmiTextSimple vmiNo = new VmiTextSimple("NO");
 	private HashMap<enumMenuEVENT,VSound> hmSounds;
 	private Long parentID = new Long(-1);
 	private Long childID = new Long(-1);
+	private boolean enableImgBackground;
+	private VImage bkgImage;
 
 	public VmenuConfirmPrompt( int x, int y, int width,
 			String myDialog, String positiveCaption, String negativeCaption )
@@ -80,7 +82,7 @@ public class VmenuConfirmPrompt implements Vmenu
 		if( by1 > targetHeight )	{ return(false); }
 
 			// Body
-		if( this.bkgImage != null )
+		if( this.enableImgBackground == true &&  this.bkgImage != null )
 			{
 			target.scaleblit(bx1, by1, bx2, by2, this.bkgImage );
 			}
@@ -504,5 +506,33 @@ public class VmenuConfirmPrompt implements Vmenu
 		{	return(this.parentID);	}
 	public Long getChildID()
 		{	return(this.childID);	}
+
+
+	/**  Sets a background image by passing a Vimage
+	 *   The Vimage will be Scaled to fit the width and height after
+	 *   at least one menuitem is added.
+	 *  
+	 * @param theBkg	A Vimage object containing the background
+	 * @param enable	Set all values needed to ensure the bkg is visible
+	 */
+	public void setBackgroundImage( VImage theBkg, boolean enable )
+		{
+		this.bkgImage = theBkg;
+		if( enable == true )
+			{
+			this.enableImgBackground = enable;
+				// To ensure visibility - turn OFF component bkgs
+			vmiNo.enableBackdrop(true);
+			vmiYes.enableBackdrop(true);
+			}
+		else
+			{
+			this.enableImgBackground = enable;
+			vmiNo.enableBackdrop(false);
+			vmiYes.enableBackdrop(false);
+			}
+		return;
+		}
+
 	
 	}

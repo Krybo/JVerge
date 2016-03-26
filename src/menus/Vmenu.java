@@ -93,6 +93,8 @@ public interface Vmenu
 	public void setActive( boolean active );
 	public void setVisible( boolean vis );
 	
+	public void setBackgroundImage( VImage bkg, boolean onOff );
+	
 	public boolean isActive();
 	public boolean isVisible();
 	

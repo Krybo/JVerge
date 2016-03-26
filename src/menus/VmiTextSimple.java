@@ -36,7 +36,7 @@ public class VmiTextSimple implements Vmenuitem
 	private Long id = new Long(-1);
 	private Long childID = new Long(-1);
 
-	private Color highlighter = new Color(1.0f, 1.0f, 1.0f, 0.28f );
+	private Color highlighter = new Color(1.0f, 1.0f, 1.0f, 0.36f );
 	private Color highlighter2 = new Color(1.0f, 1.0f, 0.2f, 0.50f );
 
 	private Integer state;
@@ -115,8 +115,10 @@ public class VmiTextSimple implements Vmenuitem
 
 		this.imageItems.put(enumMenuItemSTATE.ACTIVATED.value(), 
 				new VImage(this.w,this.h,Color.GREEN ) );
-		this.imageItems.put(enumMenuItemSTATE.NORMAL.value(), 
-				new VImage(this.w,this.h,Color.BLACK) );
+		this.imageItems.put(enumMenuItemSTATE.NORMAL.value(),
+				new VImage(this.w,this.h,
+				core.Script.Color_DEATH_MAGENTA ) );
+//				new VImage(this.w,this.h,Color.BLACK) );
 		this.imageItems.put(enumMenuItemSTATE.SELECTED.value(), 
 				new VImage(this.w,this.h,Color.BLACK ) );
 		this.imageItems.put(enumMenuItemSTATE.DISABLED.value(), 
@@ -294,7 +296,7 @@ public class VmiTextSimple implements Vmenuitem
 				break;
 			}
 		
-		if( this.showBG )
+		if( this.showBG == true && this.imageItems.get(state) != null )
 			{
 				// Scale desired image to fit the box.
 			target.scaleblit(x1, y1, x2-x1,y2-y1, 
@@ -306,7 +308,7 @@ public class VmiTextSimple implements Vmenuitem
 				{ bgFlatColor = new Color( 0.0f, 0.1f, 0.0f, 0.0f ); }
 			target.rectfill(x1, y1, x2-1, y2-1, bgFlatColor );
 			}
-		
+
 		if( this.showIcon )
 			{
 			tmpX1 = x1 + 3 + this.FrameThicknessPx;

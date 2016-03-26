@@ -261,7 +261,7 @@ public class VmiDataTable implements Vmenuitem
 		this.rowMaxH = new Double( yh - y1) / this.rownum;
 
 			// Background bounding box (or image)
-		if( this.enableImageBackdrop == true )
+		if( this.enableImageBackdrop == true && this.bkgImg != null )
 			{
 				// Scale desired image to fit the box.
 			target.scaleblit( x0, y0, this.w, this.h, this.bkgImg ); 
@@ -349,7 +349,7 @@ public class VmiDataTable implements Vmenuitem
 			int shorten = dw0;
 				// This thing is longer then the space allocated.
 				//   will need to truncate it.
-			while( (shorten > this.colMaxW) && ! tmpData.isEmpty() )
+			while( (shorten > this.colMaxW) && tmpData.length() > 2 )
 				{
 				tmpData = tmpData.substring(0, tmpData.length()-2 );
 				shorten = new Double( this.fnt.getStringBounds(
@@ -386,7 +386,7 @@ public class VmiDataTable implements Vmenuitem
 					{
 					shorten = new Double( this.fnt.getStringBounds(
 							tmpLabel, frc ).getWidth() ).intValue();
-					while( (shorten > this.colMaxW) && ! tmpLabel.isEmpty() )
+					while( (shorten > this.colMaxW) && tmpLabel.length() > 2 ) 
 						{
 						tmpLabel = tmpLabel.substring(0, tmpLabel.length()-2 );
 						shorten = new Double( this.fnt.getStringBounds(
@@ -644,10 +644,36 @@ public class VmiDataTable implements Vmenuitem
 
 	public int getDataCellCount()
 		{	return( this.colnum * this.rownum );	}
+	
+	public void setBackgroundImage( VImage img )
+		{	this.bkgImg = img;	}
+	public void setBackgroundImage( VImage img, boolean enable )
+		{	
+		this.bkgImg = img;
+		if( enable == true )
+			{  this.enableImageBackdrop = true; }
+		return;
+		}
+	
+	public boolean setNumColumns( int columns )
+		{
+		if( columns == this.colnum )	 { return(false); }
+		if( columns < 1 )	 { return(false); }
+		this.colnum = columns;
+		this.resolvePositions();
+		return(true);
+		}
 
-	// TODO:  Dynamic resizing of number # columns & rows
+	public boolean setNumRows( int rows )
+		{
+		if( rows == this.rownum )	 { return(false); }
+		if( rows < 1 )	 { return(false); }
+		this.rownum = rows;
+		this.resolvePositions();
+		return(true);
+		}
+
 	// TODO:  Captions.
-	// TODO : test image backgrounds
 	
 	
 	}			// END class  VmiDataTable.

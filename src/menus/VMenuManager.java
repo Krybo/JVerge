@@ -35,8 +35,8 @@ public class VMenuManager
 	private float backdropAlpha = 0.5f;
 	protected static HashMap<Long,Long> hmLinkList =
 			new HashMap<Long,Long>();
+	private static VImage MENU_BKG = null;
 	private JVCL targetLayerStack = null;
-	
 
 
 	public VMenuManager(  )
@@ -547,6 +547,24 @@ public class VMenuManager
 			}
 
 		return(false);
+		}
+	
+	/**  Sets a background image as the backdrop for all menus 
+	 * currently under management by this Vmm
+	 * 
+	 * @param img	The VImage object 
+	 * @param force	force the menus to use the backdrop immediately
+	 */
+	public void setUniversalMenuBackdrop( VImage img, 
+			boolean force )
+		{
+		if( img == null )	{ return; }
+		VMenuManager.MENU_BKG = img;
+		for( Vmenu m : this.menus )
+			{
+			m.setBackgroundImage( VMenuManager.MENU_BKG, force );
+			}
+		return;
 		}
 
 	/** Set the menu backdrop to a given VImage
