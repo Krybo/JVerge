@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.font.FontRenderContext;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -62,6 +63,7 @@ public class VmiDataTable implements Vmenuitem
 	private boolean enableCaption = false;
 	private String labelTerminator	= new String(":");
 	private String theCaption 		= new String("");
+	private String decimalFormatter = new String( "%.3f" );
 	private Font fnt = core.Script.fntMASTER;
 	private Font theCaptionFont = this.fnt;
 	
@@ -105,7 +107,100 @@ public class VmiDataTable implements Vmenuitem
 
 
 	public VmiDataTable(int pinX, int pinY, int pixelWidth, int pixelHeight,
-			int numColumns, int numRows, LinkedHashMap<String,String> entries )
+			int numColumns, int numRows, 
+			LinkedHashMap<String,String> entries )
+		{
+		this.init(pinX, pinY, pixelWidth, pixelHeight, numColumns, numRows);
+		this.resolvePositions( entries );
+		this.setDefaultColors();
+		return;
+		}
+
+	/**  This handles an arraylist of various types as Data input to build
+	 *      a verge menu item data table.
+	 * 
+	 * @param pinX	The absolute x pixel screen position.
+	 * @param pinY	The absolute y pixel screen position.
+	 * @param pixelWidth	Horizontal space (px) allocated to the table.
+	 * @param pixelHeight	Vertical space (px) allocated to the table.
+	 * @param numColumns	Horizontal Columns in the resulting table.
+	 * @param numRows		Vertical Rows in the resulting table.
+	 * @param dataEntries	An ArrayList of some type.
+	 * @throws Exception	throws if the arraylist<type> cannot be used
+	 */
+	public VmiDataTable(int pinX, int pinY, int pixelWidth, int pixelHeight,
+			int numColumns, int numRows, 
+			ArrayList<?> dataEntries ) throws Exception
+		{
+		this.init(pinX, pinY, pixelWidth, pixelHeight, numColumns, numRows);
+		this.setDefaultColors();
+
+		boolean keepgoing = false;
+
+		// Proceed with a empty table.
+		if( dataEntries == null || dataEntries.isEmpty() )
+			{	return;	}
+
+		// Parse differently depending on arraylist class.
+		if( dataEntries.get(0).getClass().equals( String.class ) ) 
+			{ 
+			for( int n = 0; n < dataEntries.size(); n++ )
+				{
+				String o = (String) dataEntries.get(n);
+				this.theData.put( n, o );
+				}
+			keepgoing = true;
+			}
+		
+		if( dataEntries.get(0).getClass().equals( Integer.class ) )
+			{ 
+			for( int n = 0; n < dataEntries.size(); n++ )
+				{
+				Integer o = (Integer) dataEntries.get(n);
+				this.theData.put( n, o.toString() );
+				}
+			keepgoing = true;
+			}
+
+		if( dataEntries.get(0).getClass().equals( Float.class ) )
+			{ 
+			for( int n = 0; n < dataEntries.size(); n++ )
+				{
+				Float o = (Float) dataEntries.get(n);
+				this.theData.put( n, String.format(	
+						this.decimalFormatter, o ) );
+				}
+			keepgoing = true;
+			}
+		
+		if( dataEntries.get(0).getClass().equals( Double.class ) )
+			{ 
+			for( int n = 0; n < dataEntries.size(); n++ )
+				{
+				Double o = (Double) dataEntries.get(n);
+				this.theData.put( n, String.format(	
+						this.decimalFormatter, o ) );
+				}
+			keepgoing = true;
+			}
+
+		//  ** Other ArrayList<> types can be added here as needed.
+		
+		if( keepgoing == false )
+			{
+			System.err.println(" VmiDataTable:  got Unworkable data.");
+			Exception e = new Exception("Incompatible arraylist type."+
+				"new Data Table will be empty.");
+			throw(e);
+			}
+
+		this.resolvePositions( );
+		return;
+		}
+	
+		// Sets only essentials. - simplifies constructors.
+	public void init( int pinX, int pinY, int pixelWidth, int pixelHeight,
+			int numColumns, int numRows )
 		{
 		this.x = pinX;
 		this.y = pinY;
@@ -129,38 +224,38 @@ public class VmiDataTable implements Vmenuitem
 		this.active = false;
 		this.visible = true;
 		this.enableImageBackdrop = false;
+		}
+	
 
-		this.resolvePositions( entries );
-			
+	private void setDefaultColors()
+		{
 			// Define Default colors.
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.BKG_CAPTION.value(), 
-				new Color(0.0f,0.33f,0.0f,1.0f) );
+			enumMenuDataTableCOLORS.BKG_CAPTION.value(), 
+			new Color(0.0f,0.33f,0.0f,1.0f) );
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.BKG_MAIN.value(), 
-				new Color(0.05f,0.05f,0.05f,1.0f) );
+			enumMenuDataTableCOLORS.BKG_MAIN.value(), 
+			new Color(0.05f,0.05f,0.05f,1.0f) );
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.FRAME_INNER.value(), 
-				new Color(0.5f,0.5f,0.5f,1.0f) );
+			enumMenuDataTableCOLORS.FRAME_INNER.value(), 
+			new Color(0.5f,0.5f,0.5f,1.0f) );
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.FRAME_OUTER.value(), 
-				new Color( 1.0f,1.0f,1.0f,1.0f) );
+			enumMenuDataTableCOLORS.FRAME_OUTER.value(), 
+			new Color( 1.0f,1.0f,1.0f,1.0f) );
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.GRIDLINES_X.value(), 
-				new Color( 0.8f,0.8f,0.8f,1.0f) );
+			enumMenuDataTableCOLORS.GRIDLINES_X.value(), 
+			new Color( 0.8f,0.8f,0.8f,1.0f) );
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.GRIDLINES_Y.value(), 
-				new Color( 0.8f,0.8f,0.8f,1.0f) );			
+			enumMenuDataTableCOLORS.GRIDLINES_Y.value(), 
+			new Color( 0.8f,0.8f,0.8f,1.0f) );			
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.TEXT_DATA.value(), 
-				new Color( 1.0f,1.0f,1.0f,1.0f) );
+			enumMenuDataTableCOLORS.TEXT_DATA.value(), 
+			new Color( 1.0f,1.0f,1.0f,1.0f) );
 		this.clrSettings.put( 
-				enumMenuDataTableCOLORS.TEXT_LABELS.value(), 
-				new Color( 1.0f,1.0f,0.77f,1.0f) );
-		
-		return;
+			enumMenuDataTableCOLORS.TEXT_LABELS.value(), 
+			new Color( 1.0f,1.0f,0.77f,1.0f) );
 		}
-
+	
 	private void resolvePositions( HashMap<String,String> entries )
 		{
 		int indent = this.borderPaddingPx+this.borderWidthPx;
@@ -212,6 +307,7 @@ public class VmiDataTable implements Vmenuitem
 	//  This one just resolves the positions of existing data and labels.
 	private void resolvePositions( )
 		{
+		if( this.theData.isEmpty() )   { return; }
 		int indent = this.borderPaddingPx+this.borderWidthPx; 
 			// Pixel space to allocate to each column
 		this.colMaxW = new Double( this.w - (2*indent)) / this.colnum;
@@ -261,9 +357,10 @@ public class VmiDataTable implements Vmenuitem
 	//  Factor is a Double that scales the height of the caption.
 	private void justifyCaption( Double factor )
 		{
-		if( ! this.enableCaption )  { return; }
 		this.rowMaxH = new Double( this.h - 
 			(2*this.borderPaddingPx+this.borderWidthPx)) / this.rownum;
+
+		if( ! this.enableCaption )  { return; }
 
 		if( this.enableCaption == true && ! this.theCaption.isEmpty() )
 			{
@@ -335,12 +432,15 @@ public class VmiDataTable implements Vmenuitem
 					target.getImage().getGraphics().getFontMetrics(
 					this.theCaptionFont );
 			FontRenderContext frc2 = fm2.getFontRenderContext();
+
 			
-			this.captionHeight =
-				Math.abs( (this.theCaptionFont.getStringBounds(
-						this.theCaption, frc2 ).getY() +
-				this.theCaptionFont.getStringBounds(
-						this.theCaption, frc2 ).getMinY() )  );
+//			this.theCaptionFont.getStringBounds( 
+//			this.theCaption, frc2 ).getMinY() -
+			this.captionHeight = new Double( 
+				(this.borderWidthPx * 2) + (this.borderPaddingPx * 2) ) + 
+				(-1.0d) * this.theCaptionFont.getStringBounds(
+				this.theCaption, frc2 ).getY();
+			this.captionHeight = this.captionHeight * 1.25d + 0.5d;
 
 				// Only do this if a change is detected.
 			if( this.captionHeight != this.captionHeightSave )
@@ -355,7 +455,8 @@ public class VmiDataTable implements Vmenuitem
 			captionStartX = (this.w - captionStartX ) / 2.0d;
 			captionStartY = new Double( y0 + this.borderWidthPx + 
 					this.borderPaddingPx) +
-					(this.captionHeight / 2.0d);
+					this.captionHeight / 2.0d;
+
 //					new Double( this.theCaptionFont.getStringBounds(
 //					this.theCaption, frc2 ).getHeight() ) / 2.0d ;
 //			captionStartX = ( (new Double(this.w) / 2.0d) - 
@@ -831,8 +932,16 @@ public class VmiDataTable implements Vmenuitem
 		}
 	
 
+	public boolean isEmpty()
+		{	return(this.theData.isEmpty());	}
+
+	public String getDecimalFormatter()
+		{	return decimalFormatter;	}
+
+	public void setDecimalFormatter(String decimalFormatter)
+		{	this.decimalFormatter = decimalFormatter;	}
+	
 	//  TODO : mop up handling of "inactive" menuitems in VmenuVertical
-	// TODO : add more versatile constructors to this class.
 	
 	}			// END class  VmiDataTable.
 
