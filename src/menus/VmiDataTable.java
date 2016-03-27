@@ -452,7 +452,8 @@ public class VmiDataTable implements Vmenuitem
 			captionStartX = 
 					new Double( this.theCaptionFont.getStringBounds(
 					this.theCaption, frc2 ).getWidth() );
-			captionStartX = (this.w - captionStartX ) / 2.0d;
+			captionStartX = new Double(this.x) + 
+					((new Double(this.w) - captionStartX ) / 2.0d);
 			captionStartY = new Double( y0 + this.borderWidthPx + 
 					this.borderPaddingPx) +
 					this.captionHeight / 2.0d;
@@ -558,6 +559,7 @@ public class VmiDataTable implements Vmenuitem
 
 		for( Integer s = 0; s < this.theData.size(); s++ )
 			{
+			if( s+1 > this.getDataCellCount() )		{ continue; }
 			tmpData = this.theData.get(s);
 			tmpLabel = this.theLabels.get(s)+this.labelTerminator;
 			
@@ -835,7 +837,6 @@ public class VmiDataTable implements Vmenuitem
 		}
 
 
-
 	/** ----------------------- non-interface methods ---------------------- **/	
 
 
@@ -941,7 +942,13 @@ public class VmiDataTable implements Vmenuitem
 	public void setDecimalFormatter(String decimalFormatter)
 		{	this.decimalFormatter = decimalFormatter;	}
 	
-	//  TODO : mop up handling of "inactive" menuitems in VmenuVertical
+		/** Assignes integer numeric labels to data */
+	public void autoNumericLabels( )
+		{
+		for( Integer x = 0; x < this.theData.size(); x++ )
+			{	this.theLabels.put(x, x.toString() );	}
+		return;
+		}
 	
 	}			// END class  VmiDataTable.
 

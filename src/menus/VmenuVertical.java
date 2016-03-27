@@ -147,9 +147,22 @@ public class VmenuVertical implements Vmenu
 
 //				this.content.get(this.selectedIndex).setState(
 //					enumMenuItemSTATE.NORMAL.value() );
-				this.selectedIndex--;				
+				
+				
+				this.selectedIndex--;
 				if( this.selectedIndex < 0 )
 					{ this.selectedIndex = this.content.size() - 1; }
+				
+				if( this.getActiveItemCount() == 0 )	// prevent Inf-loop 
+					{ break; }
+
+					// Ensure new selection is active.
+				while( this.content.get(selectedIndex).isActive() == false )
+					{
+					this.selectedIndex--;
+					if( this.selectedIndex < 0 )
+						{ this.selectedIndex = this.content.size() - 1; }
+					}
 				
 				this.playMenuSound(enumMenuEVENT.MOVE, 33 );
 				
@@ -183,10 +196,17 @@ public class VmenuVertical implements Vmenu
 				if( this.selectedIndex > this.content.size()-1 )
 					{ this.selectedIndex = 0; }
 				
+				if( this.getActiveItemCount() == 0 )	// prevent Inf-loop 
+					{ break; }
+				
+				while( this.content.get(selectedIndex).isActive() == false )
+					{
+					this.selectedIndex++;
+					if( this.selectedIndex > this.content.size()-1 )
+						{ this.selectedIndex = 0; }
+					}
+				
 				this.playMenuSound(enumMenuEVENT.MOVE, 33 );
-
-//				this.content.get(this.selectedIndex).setState(
-//					enumMenuItemSTATE.SELECTED.value() );
 
 //				System.out.print(this.selectedIndex.toString() );
 				break;
@@ -214,7 +234,7 @@ public class VmenuVertical implements Vmenu
 			this.caption.reposition(this.x, this.y, 0, 0);
 			}
 		for( Vmenuitem vmi : this.content )
-			{ 	
+			{ 
 			if( vmi.isActive() == false )	{ continue; }
 			if( vmi.getDX().intValue() > maxw )    
 				{  maxw = vmi.getDX().intValue(); }	
@@ -223,6 +243,7 @@ public class VmenuVertical implements Vmenu
 		// Keep x the same, add each items height to create vertical menu.
 		for( Vmenuitem vmi : this.content )
 			{
+			if( vmi.isActive() == false )	{ continue; }
 			hi = vmi.getDY().intValue();
 			vmi.setExtendX(maxw, true );
 			vmi.reposition(this.x, this.y, 0, iY);
@@ -570,6 +591,17 @@ public class VmenuVertical implements Vmenu
 				{	vmi.enableBackdrop(false);	}
 			}
 		return;
+		}
+	
+	private int getActiveItemCount()
+		{
+		int rslt = 0;
+		for( Vmenuitem vmi : this.content )
+			{
+			if( vmi.isActive() == true ) 	
+				{ rslt++; } 
+			}
+		return(rslt);
 		}
 	
 //	

@@ -41,7 +41,7 @@ public class VmiTextSimple implements Vmenuitem
 
 	private Integer state;
 	private Integer mode;
-	// Active means it is shown but the action is disabled, it is greyed out.
+	// Active means it is shown but interaction is disabled, it is greyed out.
 	//  visible sets drawing of the entire object on or off.
 	private boolean active, visible = false;
 		// Controls what is displayed.
