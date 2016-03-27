@@ -107,13 +107,13 @@ public class Controls implements
 	public static final String regExpFilterInt = 
 			new String( "[0-9]" );
 	public static final String regExpFilterDec = 
-			new String( "[0-9.]" );
+			new String( "[0-9\\.]" );
 	public static final String regExpFilterAlpha = 
 			new String( "[a-zA-Z]" );
 	public static final String regExpFilterAlphaNum = 
 			new String( "[a-zA-Z0-9]" );
 	public static final String regExpFilterSpecial = 
-			new String( "[\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)\\,\\_\\-\\\\\\/ ]" );
+			new String( "[\\!\\@\\#\\$\\`\\%\\=\\~\\|\\^\\&\\*\'\"\\(\\)\\,\\-\\_\\\\\\/ ]" );
 	public static final String regExpFilterHighChar = 
 			new String( "[\\x7F-\\xFF]" );
 	public static final String regExpFilterLowChar = 
@@ -489,58 +489,110 @@ public class Controls implements
 							Controls.inputCursor--;
 							break;
 						case 16:	// Kill Cntl Alt Shift
-						case 17:
-						case 18:
+						case 17:	// and F[X] keys
+						case 112: case 113: case 114: case 115: case 116:
+						case 117: case 118: case 119: case 120: case 121:
+						case 122: case 123: 
+						case 18: case 20:
 							break;
 						default:
 
 							// Do fancy Filtering input here.
-//							log("INPUT MODE:  got : "+
-//									Integer.toString(keycode));	
-							Controls.inputbuffer.insert(
-								Controls.inputCursor.intValue(),
-								lastkeychar );
+							log("INPUT MODE:  got : "+
+									Integer.toString(keycode));
+							
+							if( Controls.inputCursor > Controls.inputbuffer.length() )
+								{
+								Controls.inputCursor = 
+										Controls.inputbuffer.length(); 
+								}
+							if( Controls.inputbuffer.length() == 0 )
+								{
+								Controls.inputbuffer.append(lastkeychar);
+								}
+							else
+								{
+								Controls.inputbuffer.insert(
+									Controls.inputCursor.intValue(),
+									lastkeychar );
+								}
 							Controls.inputCursor++;
 							break;
 						}
 
 					int b4 = Controls.inputbuffer.length();
-					
-					// Filtering
-					if( ! Controls.inputAcceptNumbers )
+
+					/* Run filters - unless string has already been
+					 * but to nothing.   */
+
+					// Can't filter decimals without filtering numbers.
+					if( ! Controls.inputAcceptDecimal  && 
+						Controls.inputbuffer.length() > 0)
 						{
-						// numbers are not allowed.
-						Controls.inputbuffer = new StringBuilder(
-							Controls.inputbuffer.toString().replaceAll(
-								Controls.regExpFilterInt, "" )
-							);
-						}
-					if( ! Controls.inputAcceptDecimal )
-						{
-						// numbers & period are not allowed.
-						Controls.inputbuffer = new StringBuilder(
-							Controls.inputbuffer.toString().replaceAll(
+						// Decimals are off but integers are on -- conflict
+						if( Controls.inputAcceptNumbers ) 
+							{
+							// numbers are not allowed.
+							System.out.println("NUMBER FILTER");
+							Controls.inputbuffer = new StringBuilder(
+								Controls.inputbuffer.toString().replaceAll(
+								"\\.", "" )
+								);
+							}
+						else
+							{
+							System.out.println("DECIMAL FILTER");
+							// numbers & period are not allowed.
+							Controls.inputbuffer = new StringBuilder(
+								Controls.inputbuffer.toString().replaceAll(
 								Controls.regExpFilterDec, "" )
-							);
+								);
+							}
 						}
-					if( ! Controls.inputAcceptLetter )
+
+
+					if( ! Controls.inputAcceptLetter && 
+						Controls.inputbuffer.length() > 0	 )
 						{
 						// letters are not allowed.
+						System.out.println("LETTER FILTER");
 						Controls.inputbuffer = new StringBuilder(
 							Controls.inputbuffer.toString().replaceAll(
-								Controls.regExpFilterAlpha, "" )
+							Controls.regExpFilterAlpha, "" )
 							);
 						}
-					if( ! Controls.inputAcceptSpecial  )
+
+
+					if( ! Controls.inputAcceptSpecial  && 
+						Controls.inputbuffer.length() > 0 )
 						{
+						System.out.println("SPECIAL FILTER");
+						boolean isNegative = false;
+						if( Controls.inputAcceptNumbers || Controls.inputAcceptDecimal )
+							{
+							if( Controls.inputbuffer.toString().startsWith("-") )
+								{
+								isNegative = true;
+								Controls.inputbuffer.delete(0, 1);
+								}
+							}
 						// numbers are not allowed.
 						Controls.inputbuffer = new StringBuilder(
 							Controls.inputbuffer.toString().replaceAll(
 								Controls.regExpFilterSpecial, "" )
 							);
+						if( isNegative == true )
+							{
+							// Restore leading slash for negative numbers.
+							Controls.inputbuffer.insert(0, "-");
+							}
 						}
-					if( ! Controls.inputAcceptHighChar )
+
+
+					if( ! Controls.inputAcceptHighChar && 
+						Controls.inputbuffer.length() > 0 )
 						{
+						System.out.println("HC FILTER");
 						// hgh ascii chars are not allowed.
 						Controls.inputbuffer = new StringBuilder(
 							Controls.inputbuffer.toString().replaceAll(
@@ -554,7 +606,7 @@ public class Controls implements
 					if( Controls.inputCursor > Controls.inputbuffer.length() )
 						{
 						Controls.inputCursor = 
-							Controls.inputbuffer.length();
+							Controls.inputbuffer.length()+1;
 						}
 
 					if( Controls.inputCursor < 0 )
@@ -852,24 +904,27 @@ public class Controls implements
 //		TextLayout layout = new TextLayout(
 //			Controls.inputbuffer.toString().substring(0, Controls.inputCursor) , 
 //			VMenuManager.getInputFont(), frc );
-
-			int sx0 = new Double( 
+		
+		int sx0 = 0;
+		int sx1 = 0;
+		int sx2 = 2;
+		int sy1 = 10;
+		// since There will be exceptions if there is nothing to show.
+		if( Controls.inputbuffer.toString().length() != 0 )
+			{
+			sx0 = new Double( 
 				VMenuManager.getInputFont().getStringBounds(
 				Controls.inputbuffer.toString(), frc ).getWidth() ).intValue();
-
-		int sx1 = new Double( 
-			VMenuManager.getInputFont().getStringBounds(
-			Controls.inputbuffer.toString().substring(0, Controls.inputCursor), 
-			frc).getWidth() ).intValue();
-		
-		int sx2 = 2;
-		if( Controls.inputbuffer.toString().length() != 0 )
-			{ 
+			sx1 = new Double( 
+				VMenuManager.getInputFont().getStringBounds(
+				Controls.inputbuffer.toString().substring(0, Controls.inputCursor), 
+				frc).getWidth() ).intValue();
 			sx2 = (sx0 / Controls.inputbuffer.toString().length());
+			sy1 = Math.abs( new Double( VMenuManager.getInputFont().getStringBounds(
+					Controls.inputbuffer.toString(), frc).getMinY() ).intValue() );
 			}
 		
-		int sy1 = Math.abs( new Double( VMenuManager.getInputFont().getStringBounds(
-			Controls.inputbuffer.toString(), frc).getMinY() ).intValue() );
+
 
 			// Nudge if too close to edge.
 		if( myX < (screensizeImage.width >> 4)  )		// 1-16th of screen

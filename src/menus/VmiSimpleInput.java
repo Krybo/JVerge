@@ -4,7 +4,7 @@ import core.Controls;
 
 /** Class VmiSimpleInput is a Vmenuitem that is used for collecting
  *   user input.  It is just an extention of VmiTextSimple with input capability
- *   added in.
+ *   added in.  This base class accepts any input characters indescriminatnly.
  * @author Krybo
  *
  */
@@ -25,12 +25,12 @@ public class VmiSimpleInput extends VmiTextSimple
 		return;
 		}
 
-	public String doInput()
+	public Long doInput()
 		{
 		Controls.begin_input( this.caption,  super.getId(),
 			super.getX().intValue(), super.getY().intValue(),
-			true, true, true, false, false );
-		return(new String("TEST"));
+			true, true, true, true, true );
+		return( super.getId()  );
 		}
 
 	}
