@@ -542,11 +542,11 @@ public class Controls implements
 						else
 							{
 							System.out.println("DECIMAL FILTER");
-							// numbers & period are not allowed.
+								// numbers & period are not allowed.
 							Controls.inputbuffer = new StringBuilder(
 								Controls.inputbuffer.toString().replaceAll(
-								Controls.regExpFilterDec, "" )
-								);
+								Controls.regExpFilterDec, "" )	);
+
 							}
 						}
 
@@ -599,22 +599,45 @@ public class Controls implements
 								Controls.regExpFilterHighChar, "" )
 							);
 						}
+
 					
+					// Cleans multiple decimals and trail-zeros.
+//http://stackoverflow.com/questions/15019080/regular-expression-to-remove-leading-trailing-zeros-from-a-string
+// "\\.[0-9\\.]*$|(?<=\\.[0-9]{0,2147483646})\\.*$", "") );
+					if( Controls.inputAcceptDecimal && 
+							Controls.inputbuffer.length() > 0 )
+						{
+						
+//						Controls.inputbuffer = new StringBuilder(
+								
+						String[] tmpSplit = 
+								Controls.inputbuffer.toString().split("\\.");
+						if( tmpSplit.length >= 2 )
+							{ 
+							Controls.inputbuffer = new StringBuilder(
+								tmpSplit[0]+"."+tmpSplit[1]);
+							}
+						
+						System.out.println(" Cleaning decimal -- "+
+								Integer.toString( tmpSplit.length ) );
+						}
+
+					// b4 = String lenght before filtering.
+					// b5 = String lenght after filtering.
 					int b5 = Controls.inputbuffer.length();
 					
 					// Ensure cursor bounds.
-					if( Controls.inputCursor > Controls.inputbuffer.length() )
-						{
-						Controls.inputCursor = 
-							Controls.inputbuffer.length()+1;
-						}
 
+					// If characters have been filters, adjust the cursor.
+					if( b4 < b5 )
+						{	Controls.inputCursor += b5;	}
+					if( b4 > b5 )
+						{	Controls.inputCursor += b4;	}
+					
 					if( Controls.inputCursor < 0 )
 						{ Controls.inputCursor=0; }
-					
-					// If characters have been filters, adjust the cursor.
-					if( b4 != b5 )
-						{	Controls.inputCursor += (b5-b4);	}
+					if( Controls.inputCursor > b5 )
+						{ Controls.inputCursor = b5; }
 
 					}
 				
@@ -901,10 +924,9 @@ public class Controls implements
 
 		FontRenderContext frc = fm.getFontRenderContext();
 
-//		TextLayout layout = new TextLayout(
-//			Controls.inputbuffer.toString().substring(0, Controls.inputCursor) , 
-//			VMenuManager.getInputFont(), frc );
-		
+//		System.out.print( " + " + Integer.toString(  Controls.inputCursor) +
+//			"." + Integer.toString( Controls.inputbuffer.toString().length() ) );
+
 		int sx0 = 0;
 		int sx1 = 0;
 		int sx2 = 2;

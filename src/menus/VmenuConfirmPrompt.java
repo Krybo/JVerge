@@ -84,7 +84,7 @@ public class VmenuConfirmPrompt implements Vmenu
 			// Body
 		if( this.enableImgBackground == true &&  this.bkgImage != null )
 			{
-			target.scaleblit(bx1, by1, bx2, by2, this.bkgImage );
+			target.scaleblit(bx1, by1, bx2-bx1, by2-by1, this.bkgImage );
 			}
 		else
 			{
