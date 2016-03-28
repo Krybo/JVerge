@@ -113,7 +113,7 @@ public class Controls implements
 	public static final String regExpFilterAlphaNum = 
 			new String( "[a-zA-Z0-9]" );
 	public static final String regExpFilterSpecial = 
-			new String( "[\\!\\@\\#\\$\\`\\%\\=\\~\\|\\^\\&\\*\'\"\\(\\)\\,\\-\\_\\\\\\/ ]" );
+			new String( "[\\!\\@\\#\\$\\`\\%\\=\\+\\>\\<\\~\\|\\^\\;\\:\\&\\*\'\"\\(\\)\\,\\-\\_\\\\\\/ ]" );
 	public static final String regExpFilterHighChar = 
 			new String( "[\\x7F-\\xFF]" );
 	public static final String regExpFilterLowChar = 
@@ -442,205 +442,13 @@ public class Controls implements
 						}
 					}
 
-				if( INPUT_MODE )
-					{
-					// This switch is to handle control characters only
-					switch( keycode )
-						{
-						case 10:		// Enter
-							Controls.finish_input(true);
-							break;
-						case 27:		// Esc - Discard
-							Controls.finish_input( false ); 
-							break;
-						case 32:		// left
-							Controls.inputbuffer.insert(
-								Controls.inputCursor.intValue(),
-								" " );
-							Controls.inputCursor++;
-							break;
-						case 36:		// END
-							Controls.inputCursor = 0;
-							break;
-						case 35:		// HOME
-							Controls.inputCursor = 
-								Controls.inputbuffer.length();
-							break;
-						case 37:		// left
-							Controls.inputCursor--;
-							break;
-						case 39:		// right
-							Controls.inputCursor++;
-							break;
-						case 127:		// Forward delete
-							if( Controls.inputCursor >= 
-									Controls.inputbuffer.length() )
-								{  break;  }
-							Controls.inputbuffer.delete(
-								Controls.inputCursor.intValue(),
-								Controls.inputCursor.intValue()+1 );							
-							break;
-						case 8:	// Backspace
-							if( Controls.inputbuffer.length() == 0 )   
-								{ break; }
-							Controls.inputbuffer.delete(
-								Controls.inputCursor.intValue() - 1,
-								Controls.inputCursor.intValue() );
-							Controls.inputCursor--;
-							break;
-						case 16:	// Kill Cntl Alt Shift
-						case 17:	// and F[X] keys
-						case 112: case 113: case 114: case 115: case 116:
-						case 117: case 118: case 119: case 120: case 121:
-						case 122: case 123: 
-						case 18: case 20:
-							break;
-						default:
+				/* Krybo (Mar.2016) 
+				 * Krybo: This got too chunky- made it a privatre method
+				 * Do not pass in chars when cntl or alt is down.   */
 
-							// Do fancy Filtering input here.
-							log("INPUT MODE:  got : "+
-									Integer.toString(keycode));
-							
-							if( Controls.inputCursor > Controls.inputbuffer.length() )
-								{
-								Controls.inputCursor = 
-										Controls.inputbuffer.length(); 
-								}
-							if( Controls.inputbuffer.length() == 0 )
-								{
-								Controls.inputbuffer.append(lastkeychar);
-								}
-							else
-								{
-								Controls.inputbuffer.insert(
-									Controls.inputCursor.intValue(),
-									lastkeychar );
-								}
-							Controls.inputCursor++;
-							break;
-						}
+				if( INPUT_MODE && ! e.isControlDown() && ! e.isAltDown())
+					{	this.handle_input(keycode);	}
 
-					int b4 = Controls.inputbuffer.length();
-
-					/* Run filters - unless string has already been
-					 * but to nothing.   */
-
-					// Can't filter decimals without filtering numbers.
-					if( ! Controls.inputAcceptDecimal  && 
-						Controls.inputbuffer.length() > 0)
-						{
-						// Decimals are off but integers are on -- conflict
-						if( Controls.inputAcceptNumbers ) 
-							{
-							// numbers are not allowed.
-							System.out.println("NUMBER FILTER");
-							Controls.inputbuffer = new StringBuilder(
-								Controls.inputbuffer.toString().replaceAll(
-								"\\.", "" )
-								);
-							}
-						else
-							{
-							System.out.println("DECIMAL FILTER");
-								// numbers & period are not allowed.
-							Controls.inputbuffer = new StringBuilder(
-								Controls.inputbuffer.toString().replaceAll(
-								Controls.regExpFilterDec, "" )	);
-
-							}
-						}
-
-
-					if( ! Controls.inputAcceptLetter && 
-						Controls.inputbuffer.length() > 0	 )
-						{
-						// letters are not allowed.
-						System.out.println("LETTER FILTER");
-						Controls.inputbuffer = new StringBuilder(
-							Controls.inputbuffer.toString().replaceAll(
-							Controls.regExpFilterAlpha, "" )
-							);
-						}
-
-
-					if( ! Controls.inputAcceptSpecial  && 
-						Controls.inputbuffer.length() > 0 )
-						{
-						System.out.println("SPECIAL FILTER");
-						boolean isNegative = false;
-						if( Controls.inputAcceptNumbers || Controls.inputAcceptDecimal )
-							{
-							if( Controls.inputbuffer.toString().startsWith("-") )
-								{
-								isNegative = true;
-								Controls.inputbuffer.delete(0, 1);
-								}
-							}
-						// numbers are not allowed.
-						Controls.inputbuffer = new StringBuilder(
-							Controls.inputbuffer.toString().replaceAll(
-								Controls.regExpFilterSpecial, "" )
-							);
-						if( isNegative == true )
-							{
-							// Restore leading slash for negative numbers.
-							Controls.inputbuffer.insert(0, "-");
-							}
-						}
-
-
-					if( ! Controls.inputAcceptHighChar && 
-						Controls.inputbuffer.length() > 0 )
-						{
-						System.out.println("HC FILTER");
-						// hgh ascii chars are not allowed.
-						Controls.inputbuffer = new StringBuilder(
-							Controls.inputbuffer.toString().replaceAll(
-								Controls.regExpFilterHighChar, "" )
-							);
-						}
-
-					
-					// Cleans multiple decimals and trail-zeros.
-//http://stackoverflow.com/questions/15019080/regular-expression-to-remove-leading-trailing-zeros-from-a-string
-// "\\.[0-9\\.]*$|(?<=\\.[0-9]{0,2147483646})\\.*$", "") );
-					if( Controls.inputAcceptDecimal && 
-							Controls.inputbuffer.length() > 0 )
-						{
-						
-//						Controls.inputbuffer = new StringBuilder(
-								
-						String[] tmpSplit = 
-								Controls.inputbuffer.toString().split("\\.");
-						if( tmpSplit.length >= 2 )
-							{ 
-							Controls.inputbuffer = new StringBuilder(
-								tmpSplit[0]+"."+tmpSplit[1]);
-							}
-						
-						System.out.println(" Cleaning decimal -- "+
-								Integer.toString( tmpSplit.length ) );
-						}
-
-					// b4 = String lenght before filtering.
-					// b5 = String lenght after filtering.
-					int b5 = Controls.inputbuffer.length();
-					
-					// Ensure cursor bounds.
-
-					// If characters have been filters, adjust the cursor.
-					if( b4 < b5 )
-						{	Controls.inputCursor += b5;	}
-					if( b4 > b5 )
-						{	Controls.inputCursor += b4;	}
-					
-					if( Controls.inputCursor < 0 )
-						{ Controls.inputCursor=0; }
-					if( Controls.inputCursor > b5 )
-						{ Controls.inputCursor = b5; }
-
-					}
-				
 				//System.out.println(e+" keychar"+e.getKeyChar());
 			}
 
@@ -996,5 +804,260 @@ public class Controls implements
 		{	return( Controls.MENU_OPEN );		}
 	public synchronized static boolean hasInput()
 		{ return( ! Controls.INPUT.isEmpty() ); }
+	
+	private void handle_input( int keycode )
+		{
+		// This switch is to handle control characters only
+		switch( keycode )
+			{
+			case 10:		// Enter
+				Controls.finish_input(true);
+				break;
+			case 27:		// Esc - Discard
+				Controls.finish_input( false ); 
+				break;
+			case 32:		// left
+				Controls.inputbuffer.insert(
+					Controls.inputCursor.intValue(),
+					" " );
+				Controls.inputCursor++;
+				break;
+			case 36:		// END
+				Controls.inputCursor = 0;
+				break;
+			case 35:		// HOME
+				Controls.inputCursor = 
+					Controls.inputbuffer.length();
+				break;
+			case 37:		// left
+				Controls.inputCursor--;
+				break;
+			case 39:		// right
+				Controls.inputCursor++;
+				break;
+			case 127:		// Forward delete
+				if( Controls.inputCursor >= 
+						Controls.inputbuffer.length() )
+					{  break;  }
+				Controls.inputbuffer.delete(
+					Controls.inputCursor.intValue(),
+					Controls.inputCursor.intValue()+1 );							
+				break;
+			case 8:	// Backspace
+				if( Controls.inputbuffer.length() == 0 )   
+					{ break; }
+				Controls.inputbuffer.delete(
+					Controls.inputCursor.intValue() - 1,
+					Controls.inputCursor.intValue() );
+				Controls.inputCursor--;
+				break;
+			case 16:	// Kill Cntl Alt Shift
+			case 17:	// and F[X] keys
+			case 112: case 113: case 114: case 115: case 116:
+			case 117: case 118: case 119: case 120: case 121:
+			case 122: case 123: 
+			case 18: case 20:
+				break;
+			default:
+
+				// Do fancy Filtering input here.
+			
+//				log("INPUT MODE:  got : "+
+//						Integer.toString(keycode));
+				
+				if( Controls.inputCursor > Controls.inputbuffer.length() )
+					{
+					Controls.inputCursor = 
+							Controls.inputbuffer.length(); 
+					}
+				if( Controls.inputbuffer.length() == 0 )
+					{
+					Controls.inputbuffer.append(lastkeychar);
+					}
+				else
+					{
+					Controls.inputbuffer.insert(
+						Controls.inputCursor.intValue(),
+						lastkeychar );
+					}
+				Controls.inputCursor++;
+				break;
+			}
+
+		int b4 = Controls.inputbuffer.length();
+
+		/* RUN INPUT FILTERS - 
+		 * unless string has already been but to nothing.   
+		 * The filters that come first are most powerful, so should 
+		 * thus be very specific as to not interfere with others.  */
+
+		// Strict alphaNumeric case.
+		if( Controls.inputAcceptNumbers && 
+			! Controls.inputAcceptDecimal  && 
+			Controls.inputAcceptLetter  &&
+			! Controls.inputAcceptSpecial  &&
+			Controls.inputbuffer.length() > 0 )
+			{
+//			System.out.println("ALPHANUM FILTER");
+			Controls.inputbuffer = new StringBuilder(
+				Controls.inputbuffer.toString().replaceAll(
+				Controls.invert_regexp( 
+				Controls.regExpFilterAlphaNum), "" )	);							
+			}
+		
+		// Letters with no numbers, basically reduces to an INT filter.
+		if( ! Controls.inputAcceptNumbers && 
+			! Controls.inputAcceptDecimal  && 
+			Controls.inputAcceptLetter  &&
+			! Controls.inputAcceptSpecial  &&
+			Controls.inputbuffer.length() > 0)
+			{
+//			System.out.println("HYBRID INT FILTER");
+			Controls.inputbuffer = new StringBuilder(
+				Controls.inputbuffer.toString().replaceAll(
+				Controls.invert_regexp(Controls.regExpFilterAlpha), ""));
+			}
+
+
+		// Cannot filter decimals without filtering numbers.
+		if( ! Controls.inputAcceptDecimal  &&
+		    ! Controls.inputAcceptLetter  &&
+			Controls.inputbuffer.length() > 0)
+			{
+			// Decimals are off but integers are on -- conflict
+			if( Controls.inputAcceptNumbers ) 
+				{
+				// numbers are not allowed.
+//				System.out.println("NUMBER FILTER");
+				Controls.inputbuffer = new StringBuilder(
+					Controls.inputbuffer.toString().replaceAll(
+					"\\.", "" )
+					);
+				}
+			else
+				{
+//				System.out.println("DECIMAL FILTER");
+					// numbers & period are not allowed.
+				Controls.inputbuffer = new StringBuilder(
+					Controls.inputbuffer.toString().replaceAll(
+					Controls.regExpFilterDec, "" )	);
+
+				}
+			}
+
+
+		if( ! Controls.inputAcceptLetter && 
+			Controls.inputbuffer.length() > 0	 )
+			{
+			// letters are not allowed.
+//			System.out.println("LETTER FILTER");
+			Controls.inputbuffer = new StringBuilder(
+				Controls.inputbuffer.toString().replaceAll(
+				Controls.regExpFilterAlpha, "" )
+				);
+			}
+
+		if( ! Controls.inputAcceptNumbers &&
+			Controls.inputbuffer.length() > 0	  )
+			{
+//			System.out.println("INT FILTER");
+			Controls.inputbuffer = new StringBuilder(
+				Controls.inputbuffer.toString().replaceAll(
+				Controls.regExpFilterInt, "" )
+				);				
+			}
+		
+
+		if( ! Controls.inputAcceptSpecial  && 
+			Controls.inputbuffer.length() > 0 )
+			{
+//			System.out.println("SPECIAL FILTER");
+			boolean isNegative = false;
+			// We must TLC a heading slash for negative numbers
+			//   when numbers mode is on concurrently.
+			if( Controls.inputAcceptNumbers || Controls.inputAcceptDecimal )
+				{
+				if( Controls.inputbuffer.toString().startsWith("-") )
+					{
+					isNegative = true;
+					Controls.inputbuffer.delete(0, 1);
+					}
+				}
+			// numbers are not allowed.
+			Controls.inputbuffer = new StringBuilder(
+				Controls.inputbuffer.toString().replaceAll(
+				Controls.regExpFilterSpecial, "" )
+				);
+			if( isNegative == true )
+				{
+				// Restore leading slash for negative numbers.
+				Controls.inputbuffer.insert(0, "-");
+				}
+			}
+
+		// Currently this is useless b/c high characters cannot reach it.
+		if( ! Controls.inputAcceptHighChar && 
+			Controls.inputbuffer.length() > 0 )
+			{
+//			System.out.println("HC FILTER");
+			// hgh ascii chars are not allowed.
+			Controls.inputbuffer = new StringBuilder(
+				Controls.inputbuffer.toString().replaceAll(
+					Controls.regExpFilterHighChar, "" )
+				);
+			}
+
+		
+		// Cleans multiple decimals and trail-zeros.
+		if( Controls.inputAcceptDecimal && 
+				Controls.inputbuffer.length() > 0 )
+			{
+			
+			String[] tmpSplit = 
+					Controls.inputbuffer.toString().split("\\.");
+			if( tmpSplit.length >= 2 )
+				{ 
+				Controls.inputbuffer = new StringBuilder(
+					tmpSplit[0]+"."+tmpSplit[1]);
+				}
+//			System.out.println(" Cleaning decimal -- "+
+//					Integer.toString( tmpSplit.length ) );
+			}
+
+		// b4 = String lenght before filtering.
+		// b5 = String lenght after filtering.
+		int b5 = Controls.inputbuffer.length();
+		
+		// Ensure cursor bounds.
+
+		// If characters have been filters, adjust the cursor.
+		if( b4 < b5 )
+			{	Controls.inputCursor += b5;	}
+		if( b4 > b5 )
+			{	Controls.inputCursor += b4;	}
+		
+		if( Controls.inputCursor < 0 )
+			{ Controls.inputCursor=0; }
+		if( Controls.inputCursor > b5 )
+			{ Controls.inputCursor = b5; }
+
+		return;
+		}
+	
+	
+	/** Krybo (Mar.2016)  used for inverting regExp for input filtering. */
+	private static String invert_regexp( String rx )
+		{
+		String rslt = new String(rx);
+		if( rx.startsWith("\\[\\^") == true )
+			{  return(rslt); }
+		if( rx.startsWith("[") == true )
+			{	rslt = rslt.replaceAll("^\\[", "\\[\\^");	}
+		else
+			{	rslt = new String("[^" + rslt + "]");	}
+		
+		return(rslt);
+		}
+	
 
 }

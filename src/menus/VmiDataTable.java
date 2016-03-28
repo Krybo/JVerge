@@ -28,8 +28,9 @@ import domain.VImage;
  * 		Custom (translucent) colors when images are not used.
  * 		Smart cell clipping and scaling.
  * 
- * TODO features:
+ * TODO low-pri features:
  * 		inter-cellular padding.
+ * 		translucent image backgrounds
  * 
  * @author Krybo
  *
