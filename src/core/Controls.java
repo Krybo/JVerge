@@ -835,6 +835,11 @@ public class Controls implements
 			case 39:		// right
 				Controls.inputCursor++;
 				break;
+			// TODO:  Implement history browsing with up/down.
+			case 38:
+				break;
+			case 40:
+				break;
 			case 127:		// Forward delete
 				if( Controls.inputCursor >= 
 						Controls.inputbuffer.length() )
