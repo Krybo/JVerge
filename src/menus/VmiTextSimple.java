@@ -194,7 +194,7 @@ public class VmiTextSimple implements Vmenuitem
 		return;
 		}
 	
-	private void calcTextArea()
+	protected void calcTextArea()
 		{
 	// Thank you : http://stackoverflow.com/questions/258486/calculate-the-display-width-of-a-string-in-java
 		String text = this.textItems.get(this.mode);
@@ -213,7 +213,7 @@ public class VmiTextSimple implements Vmenuitem
 		this.sy = Math.abs( (int) this.fnt.getStringBounds(text, frc).getMinY() );
 		}
 	
-	private void calcDims()
+	protected void calcDims()
 		{
 		this.calcTextArea();
 		int iconX = 0 ,iconY = 0;
@@ -260,9 +260,18 @@ public class VmiTextSimple implements Vmenuitem
 		if( this.extX > this.w )		{ x2 = x1 + this.extX; }
 		int y2 = y1 + this.h;
 		if( this.extY > this.h )		{ y2 = y1 + this.extY; }
-
+		
 //		System.out.println("Paint menu item state : "+state.toString()+
-//				" this ("+Integer.toString(this.state)+" )" );
+//			" this ("+Integer.toString(this.state)+" )  @ "+
+//			Integer.toString(x1)+" . "+
+//			Integer.toString(y1)+" . "+
+//			Integer.toString(x2)+" . "+
+//			Integer.toString(y2)+" :: "+ 
+//			Integer.toString(this.w)+" - "+
+//			Integer.toString(this.extX)+" | "+
+//			Integer.toString(this.h)+" - "+
+//			Integer.toString(this.extY)
+//			);
 
 		int tmpX1, tmpY1, tmpX2, tmpY2;
 
@@ -576,6 +585,10 @@ public class VmiTextSimple implements Vmenuitem
 		return;
 		}
 
+	public int getExtendX()
+		{ return(this.extX); }
+	public int getExtendY()
+		{ return(this.extY); }
 
 	private String getStateString()
 		{

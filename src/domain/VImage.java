@@ -948,7 +948,76 @@ public class VImage implements Transferable
 			return;
 			}
 
-		
+		/**  This does true rotation of a non-square object.
+		 *     Since the dimensions of the rotated non-square image will
+		 *     be different.   This will return a VImage of not-so obvious
+		 *     x and y sizes.   Keep this in mind when using.
+		 *     Consequently, the new image will likely contain empty space.
+		 *     Not useful for all rotation applications, 
+		 *     try instead:  rotateScaleBlendWithImageSubsection(...)
+		 *     Krybo (Apr.2016)
+		 * @param src  The source image to rotate.  It will not be altered.
+		 * @param rotationRads  Rotation angle in cartesean radians.
+		 * @return  A new VImage with rotation.  
+		 */
+	public static VImage rotateRadiansIntoNewImage(VImage src, 
+			Double rotationRads )
+		{
+//		src.line(0, 5, 25, 5, Color.RED );
+		int ox = src.getWidth();
+		int oy = src.getHeight();
+		Double OX = new Double( ox );		// original x );
+		Double OY = new Double( oy );	// original y );
+
+		// This was a brain-teasing nasty geometric derivation...
+		// the 0.5d round to the nearest pixel.
+		Double cos = Math.abs( Math.cos(rotationRads) );
+		Double sin = Math.abs( Math.sin(rotationRads) );
+		int newX = new Double( (OX * cos) + (OY * sin) + 0.5d ).intValue();
+		int newY = new Double( (OX * sin) + (OY * cos ) + 0.5d ).intValue();
+				
+//		Double conv = rotationRads * 57.2958d;
+//		System.out.println(" DEBUG Rotation :: "+ conv.toString() +
+//			" deg :: Original : "+
+//		    Integer.toString(ox) + " / " + 
+//		    Integer.toString(oy) + "   ==>  New : " +
+//		    Integer.toString(newX) + " / " + Integer.toString(newY) );
+
+		VImage rtn = new VImage( newX,newY,
+				core.Script.Color_DEATH_MAGENTA);
+
+		AffineTransform at = new AffineTransform();
+		at.translate(  newX/2,  newY/2 );
+		at.rotate( -1.0d*rotationRads );
+		at.translate( ox/-2, oy/-2 );
+
+		Graphics2D g2d = (Graphics2D) rtn.getImage().getGraphics();
+		g2d.drawImage( src.getImage(), at, null );
+		g2d.dispose();
+
+		return(rtn);
+		}
+
+	/**  This does true rotation of a non-square object.
+	 *     Since the dimensions of the rotated non-square image will
+	 *     be different.   This will return a VImage of not-so obvious
+	 *     x and y sizes.   Keep this in mind when using.
+	 *     Consequently, the new image will likely contain empty space.
+	 *     Not useful for all rotation applications, 
+	 *     try instead:  rotateScaleBlendWithImageSubsection(...)
+	 *     Krybo (Apr.2016)
+	 * @param src  The source image to rotate.  It will not be altered.
+	 * @param rotationRads  Rotation angle in cartesean degrees.  
+	 * @return  A new VImage with rotation.  
+	 */
+	public static VImage rotateDegreesIntoNewImage(VImage src, 
+			Double rotationDegs )
+			{
+			return( VImage.rotateRadiansIntoNewImage(src, 
+				Math.toRadians(rotationDegs) ) );
+			}
+
+
 		// Krybo (2014-09-30)  zoom-like function.  now used for map zoom.
 	public void rotateScaleBlendWithImageSubsection( VImage src, 
 			int ssX1, int ssY1,
@@ -961,7 +1030,8 @@ public class VImage implements Transferable
 		at.scale( xFactor,  yFactor );
 		if( rotationRadians != 0.0f )		// Save a few calcs when no rotation.
 			{
-			at.rotate(rotationRadians, Math.floorDiv(ssW , 2) , Math.floorDiv(ssH , 2) );
+			at.rotate(rotationRadians, Math.floorDiv(ssW , 2) , 
+				Math.floorDiv(ssH , 2) );
 			}
 
 		this.paintBlack();
@@ -1135,6 +1205,39 @@ public class VImage implements Transferable
 		return( images );
 		}
 
+	/**	Returns a new Vimage that is a fractional truncation
+	 *  of the source on the X-axis.  Truncates TO fraction, not BY it.
+	 * @param src	The source image
+	 * @param fraction  fraction of which to truncate to.
+	 * @return	a new VImage of different width 
+	 *          retaining non-scaled content.
+	 */
+	public static VImage truncateX( VImage src, Double fraction )
+		{
+		if( fraction <= 0.0f || fraction > 1.0f )
+			{ return(src);  }
+		Double newX = new Double(src.getWidth()) * fraction;
+		VImage rtn = new VImage(newX.intValue(),src.getHeight());
+		rtn.blit( 0, 0, src );
+		return(rtn);
+		}
 
+	/**	Returns a new Vimage that is a fractional truncation
+	 *  of the source on the Y-axis.  Truncates TO fraction, not BY it.
+	 * @param src	The source image
+	 * @param fraction  fraction of which to truncate to.
+	 * @return	a new VImage of different height 
+	 *          retaining non-scaled content.
+	 */
+	public static VImage truncateY( VImage src, Double fraction )
+		{
+		if( fraction <= 0.0f || fraction > 1.0f )
+			{ return(src);  }
+		Double newY = new Double(src.getHeight()) * fraction;
+		VImage rtn = new VImage( src.getWidth(), newY.intValue() );
+		rtn.blit( 0, 0, src );
+		return(rtn);
+		}
+	
 	}
 

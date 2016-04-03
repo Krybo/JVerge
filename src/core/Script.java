@@ -91,6 +91,8 @@ public class Script {
 	public static final int CF_CUSTOM = 7;
 	public static final Color Color_DEATH_MAGENTA = 
 			new Color( 1.0f , 0.0f , 1.0f , 0.0f );
+	public static final Color Color_CLEAR = 
+			new Color( 0.0f , 0.0f , 0.0f , 0.0f );
 
 		// The java vergeC graphics layers are to be controlled using 
 		//		core.Script functions and a few rendering engine ties.
