@@ -6,8 +6,9 @@ import java.util.HashMap;
 import domain.VImage;
 import domain.VImageGradient;
 
-/**  Integer Guage
- * Holds a current / Maximum / Minimum value of Integer type
+/**  Decimal Guage
+ * Holds a current / Maximum / Minimum value of Double type.
+ * Can be constructed using Float or Double, but will use Double internally.
  * A fixed width and Height are allocated.  Orientation automatically
  * changes from horizontal to Vertical depending on how much width/height
  * is allowed.     Images and Gradients may be optionally used to 
@@ -17,20 +18,20 @@ import domain.VImageGradient;
  *
  */
 
-public class VmiGuageInt extends VmiTextSimple 
+public class VmiGuageDecimal extends VmiTextSimple 
 		implements Vmenuitem
 	{
 
 	private int myWidth = 0;
 	private int myHgt = 0;
-	private Integer currentValue = 0;
 	private Double capacity = 0.0d;
-	private Integer maxValue = 0;
-	private Integer minValue = 0;
+	private Double currentValue = 0.0d;
+	private Double maxValue = 0.0d;
+	private Double minValue = 0.0d;
 
 	private Color coreColor;
 	private Color edgeColor;
-
+	
 	private VImage gradientBody;
 	private VImage guageHeart;
 		// heart is essentially the same as gradientbody with a truncation
@@ -55,8 +56,8 @@ public class VmiGuageInt extends VmiTextSimple
 	 * @param clrCore		Color in the core of the guage fill
 	 * @param clrEdge		Edge color the core grades into.
 	 */
-	public VmiGuageInt( int relX, int relY, int width, int hgt,
-			Integer startValue, Integer valMax, Integer valMin,
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+			Double startValue, Double valMax, Double valMin,
 			Color clrCore, Color clrEdge )
 		{
 		super( ".", relX, relY);
@@ -75,7 +76,7 @@ public class VmiGuageInt extends VmiTextSimple
 		if( valMin == valMax )
 			{
 			this.minValue = valMin;
-			this.maxValue = valMin+1;
+			this.maxValue = valMin+1.0d;
 			}
 		
 		this.imageBorder = null;
@@ -86,7 +87,7 @@ public class VmiGuageInt extends VmiTextSimple
 		this.myWidth = width;
 		this.myHgt = hgt;
 
-//		super.enableActivation();
+//			super.enableActivation();
 		super.enableBackdrop(false);
 		super.enableIcons(false);
 		super.enableText(false);
@@ -104,14 +105,51 @@ public class VmiGuageInt extends VmiTextSimple
 			}
 		else
 			{	this.setTwoColorGradient(clrCore,clrEdge);	}
-
 		this.recalculate();
 
 		return;
 		}
 
-	public VmiGuageInt( int relX, int relY, int width, int hgt,
-			Integer startValue, Integer valMax, Integer valMin )
+
+	/** Resets the colors used to draw the heart (bar) of the guage.
+	*    this will overwrite any previous appearance set. 
+	*    
+	 * @param coreColor  Color in the center of the bar.
+	 * @param edgeColor  Color core grades into near the edges.
+	 */
+	public void setBarColors( Color coreColor, Color edgeColor )
+		{
+		this.setTwoColorGradient( coreColor,  edgeColor );
+		this.recalculate();
+		return;
+		}
+	
+	private void setTwoColorGradient(Color coreColor, Color edgeColor )
+		{
+		this.coreColor = coreColor;
+		this.edgeColor = edgeColor;
+		HashMap<Double,Color> hmTmp = 
+				new HashMap<Double,Color>();	
+		hmTmp.put( 0.00d, this.edgeColor );
+		hmTmp.put( 0.40d, this.coreColor );
+		hmTmp.put( 0.60d, this.coreColor );
+		hmTmp.put( 1.00d, this.edgeColor );
+		this.gradientBody = new VImageGradient( 300, hmTmp, null);
+		}
+
+	/** Up-scales Float to Double and delegates that constructor */
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+		Float startValue, Float valMax, Float valMin,
+		Color clrCore, Color clrEdge )
+			{
+			this( relX, relY, width, hgt, startValue.doubleValue(), 
+				valMax.doubleValue(), valMin.doubleValue(),
+				clrCore, clrEdge );
+			return;
+			}
+	
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+			Double startValue, Double valMax, Double valMin )
 		{
 		this( relX , relY, width, hgt, startValue, valMax, valMin, 
 				new Color(1.0f,0.0f,0.0f), new Color(0.0f,0.0f,0.0f) );
@@ -119,9 +157,17 @@ public class VmiGuageInt extends VmiTextSimple
 		this.recalculate();
 		return;
 		}
+
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+			Float startValue, Float valMax, Float valMin )
+			{
+			this( relX, relY, width, hgt,startValue.doubleValue(), 
+				valMax.doubleValue(), valMin.doubleValue() );
+			return;
+			}
 	
-	public VmiGuageInt( int relX, int relY, int width, int hgt,
-			Integer startValue, Integer valMax, Integer valMin, 
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+			Double startValue, Double valMax, Double valMin, 
 			VImageGradient colors )
 		{
 		this( relX , relY, width, hgt, startValue, valMax, valMin );
@@ -130,8 +176,17 @@ public class VmiGuageInt extends VmiTextSimple
 		return;
 		}
 
-	public VmiGuageInt( int relX, int relY, int width, int hgt,
-			Integer startValue, Integer valMax, Integer valMin, 
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+		Float startValue, Float valMax, Float valMin, 
+		VImageGradient colors )
+			{
+			this( relX, relY, width, hgt, startValue.doubleValue(), 
+				valMax.doubleValue(), valMin.doubleValue(), 	colors );
+			return;
+			}
+	
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+			Double startValue, Double valMax, Double valMin, 
 			VImageGradient colors, VImage borderImage )
 		{
 		this( relX , relY, width, hgt, startValue, valMax, valMin );
@@ -140,6 +195,16 @@ public class VmiGuageInt extends VmiTextSimple
 		this.imageBorder = borderImage;
 		return;
 		}
+	
+	public VmiGuageDecimal( int relX, int relY, int width, int hgt,
+			Float startValue, Float valMax, Float valMin, 
+			VImageGradient colors, VImage borderImage )
+			{
+			this( relX, relY, width, hgt, startValue.doubleValue(), 
+				valMax.doubleValue(), valMin.doubleValue(), 
+				colors, borderImage );
+			return;
+			}
 
 	// add constructor that has min/max/cur value.
 	
@@ -149,7 +214,7 @@ public class VmiGuageInt extends VmiTextSimple
 		super.setExtendX( this.myWidth, false);
 		super.setExtendY( this.myHgt, false);
 		super.enableText(false);
-//		super.paint(target, state );
+//			super.paint(target, state );
 
 		int padding = super.getFrameThicknessPx();
 		int x1 = super.getX().intValue();
@@ -161,8 +226,7 @@ public class VmiGuageInt extends VmiTextSimple
 		int barThickness = this.myHgt - (padding*2);
 		if( this.orientation == false )
 			{ barThickness = this.myWidth - (padding*2); }
-		
-			// Find fractal of value - how full is it?
+
 		int fillX = barThickness;
 		int fillY = barThickness;
 		int baseX = x1+padding;
@@ -174,17 +238,17 @@ public class VmiGuageInt extends VmiTextSimple
 		if( this.orientation == true )
 			{
 			// 	Draw filler
-//			fillX = new Double( fill * widthAdj + 1.0d ).intValue();
+//				fillX = new Double( fill * widthAdj + 1.0d ).intValue();
 			fillX = new Double(widthAdj).intValue() + 1;
 			}
 		else			// VERTICAL
 			{
-//			fillY = new Double((-1.0d * fill * hgtAdj) - 1.0d ).intValue();
-			fillY = new Double(hgtAdj * -1.0d - 1.0d).intValue();
+//				fillY = new Double((-1.0d * fill * hgtAdj) - 1.0d ).intValue();
+			fillY = new Double( (hgtAdj * -1.0d) - 1.0d).intValue();
 			baseY = y1+this.myHgt-1;
 			}
 
-		// Do not draw heart at all if value is below the scale.
+			// skip the heart completely if value is below the scale.
 		if( this.currentValue > this.minValue )
 			{
 			target.scaleblit( baseX, baseY, fillX, fillY, 
@@ -205,22 +269,22 @@ public class VmiGuageInt extends VmiTextSimple
 			for( int bx = 0; bx < this.getBorderObscure(); bx++ )
 				{		// Clip the edges if so desired.
 			// This seemed to be doing more harm then good. disabled it
-//				target.rect(x1+bx, y1+bx,
-//					x2-bx, y2-bx,  Color.TRANSLUCENT );
+//					target.rect(x1+bx, y1+bx,
+//						x2-bx, y2-bx,  Color.TRANSLUCENT );
 				}
 			target.scaleblit( x1, y1, x2-x1, y2-y1,	this.guageShell );
-//			target.blit( x1+50, y1+50, this.guageShell );
+//				target.blit( x1+50, y1+50, this.guageShell );
 			}
 
-//		System.out.println("DEBUG :: "+ Integer.toString(fillX)+ " / " + 
-//				Integer.toString(fillY)+ "  :: " + 
-//				Integer.toString(this.myWidth)+ " / " + 
-//				Integer.toString( this.myHgt)		);
+//			System.out.println("DEBUG :: "+ Integer.toString(fillX)+ " / " + 
+//					Integer.toString(fillY)+ "  :: " + 
+//					Integer.toString(this.myWidth)+ " / " + 
+//					Integer.toString( this.myHgt)		);
 		
 		return;
 		}
 
-	/* Justifys values and sets image-to-value 
+	/** Justifies values and sets image-to-value 
 	* use whenever a current/max/min value changes.
 	* This assumes that current/max/min values are set to desired values.
 	*/
@@ -238,12 +302,9 @@ public class VmiGuageInt extends VmiTextSimple
 			}
 		else
 			{
-			this.capacity = new Double( 
-				new Double( this.currentValue - this.minValue) /
-				new Double(this.maxValue - this.minValue) );
+			this.capacity =  ( this.currentValue - this.minValue) /
+				(this.maxValue - this.minValue);
 			}
-		
-	
 		if( this.capacity < 0.0d )	{ this.capacity = 0.0d; }
 		if( this.capacity > 1.0d )	{ this.capacity = 1.0d; }
 
@@ -274,30 +335,50 @@ public class VmiGuageInt extends VmiTextSimple
 		return;
 		}
 
-
-	public void setValue( int x )
-		{ 
+	/* overloaded for convieniance */
+	
+	public void setValue( Double x )
+		{
 		this.currentValue = x;
 		this.recalculate();
 		return; 
 		}
-	public void setValueMax( int x )
+	public void setValue( Float x )
+		{ 
+		this.currentValue = x.doubleValue();
+		this.recalculate();
+		return; 
+		}
+	public void setValue( double x )
+		{ 
+		this.currentValue = new Double(x);
+		this.recalculate();
+		return; 
+		}
+	public void setValue( float x )
+		{ 
+		this.currentValue = new Double(x);
+		this.recalculate();
+		return; 
+		}
+
+	public void setValueMax( Double x )
 		{ 
 		this.maxValue = x; 
 		this.recalculate();
 		return;
 		}
-	public void setValueMin( int x )
+	public void setValueMin( Double x )
 		{ 
 		this.minValue = x;
 		this.recalculate();
 		return; 
 		}
-	public int getValue()
+	public Double getValue()
 		{ return(this.currentValue); }
-	public int getValueMin()
+	public Double getValueMin()
 		{ return(this.minValue); }
-	public int getValueMax()
+	public Double getValueMax()
 		{ return(this.maxValue); }
 
 	// Characteristic of this class... cannot change width or height
@@ -380,31 +461,6 @@ public class VmiGuageInt extends VmiTextSimple
 	public void setBorderObscure(int borderObscure)
 		{	this.borderObscure = borderObscure;	}
 	
-	
-	/** Resets the colors used to draw the heart (bar) of the guage.
-	*    this will overwrite any previous appearance set. 
-	*    
-	 * @param coreColor  Color in the center of the bar.
-	 * @param edgeColor  Color core grades into near the edges.
-	 */
-	public void setBarColors( Color coreColor, Color edgeColor )
-		{
-		this.setTwoColorGradient( coreColor,  edgeColor );
-		this.recalculate();
-		return;
-		}
-	
-	private void setTwoColorGradient(Color coreColor, Color edgeColor )
-		{
-		this.coreColor = coreColor;
-		this.edgeColor = edgeColor;
-		HashMap<Double,Color> hmTmp = 
-				new HashMap<Double,Color>();	
-		hmTmp.put( 0.00d, this.edgeColor );
-		hmTmp.put( 0.40d, this.coreColor );
-		hmTmp.put( 0.60d, this.coreColor );
-		hmTmp.put( 1.00d, this.edgeColor );
-		this.gradientBody = new VImageGradient( 300, hmTmp, null);
-		}
-	
 	}
+
+

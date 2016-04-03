@@ -1,11 +1,8 @@
 package domain;
 
 import java.awt.Color;
-import java.awt.image.ColorModel;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 
 public class VImageGradient extends VImage
 	{
@@ -19,7 +16,11 @@ public class VImageGradient extends VImage
 	 * @param c2		End Color at bottom.
 	 */
 	public VImageGradient( Color c1, Color c2 )
-		{	this( 100, c1, c2 );	}
+		{	
+		this( 100, c1, c2 );
+		boundDouble(0.5d, 1.0d, 0.0d );	// stop unused method warning.
+		return;
+		}
 
 /** Constructs a square VImage with a smooth 2-Color Vertical gradient set.
  * 
@@ -64,7 +65,6 @@ public class VImageGradient extends VImage
 
 		return;
 		}
-	
 	
 	/**  Advanced, infinite-sequence constructor using a hashmap to define.
 	 * TODO: This is vulnerable to failure if given two or more hashmap 
@@ -295,19 +295,15 @@ public class VImageGradient extends VImage
 		}
 
 
-
-
-
-
 	/**  Instead of a black empty cell, starts with a pre-existing image 
 	 *    resource and blends a gradient over top it.
 	 * 
 	 * @param url
 	 */
-	public VImageGradient(URL url)
+	public VImageGradient( VImage img )
 		{
-		super(url);
-		// TODO Auto-generated constructor stub
+		super(img);
+		return;
 		}
 
 	private static Double boundDouble(Double val, Double max, Double min)
