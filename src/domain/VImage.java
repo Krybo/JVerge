@@ -2,6 +2,7 @@ package domain;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Font;
 //import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -467,6 +468,25 @@ public class VImage implements Transferable
 			this.g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), currentLucent));
 			this.g.drawLine(x1, y1, x2, y2);
 		}
+		
+		
+		/**  Same as line()  - but uses the alpha of the given Color.
+		 * 
+		 * @param x1	screen pixel location   (top left X)
+		 * @param y1	screen pixel location   (top left Y)
+		 * @param x2	screen pixel location   (bottom right X)
+		 * @param y2	screen pixel location   (bottom right Y)
+		 * @param c		Color object
+		 */
+		public void lineTrans( int x1, int y1, int x2, int y2, Color c) 
+			{
+			Composite save = this.g.getComposite();
+			this.g.setComposite( AlphaComposite.getInstance(
+				AlphaComposite.SRC_OVER )  );
+			this.g.setColor( c );
+			this.g.drawLine(x1, y1, x2, y2);
+			this.g.setComposite(save);
+			}
 	
 		/*static void Mosaic(int xgran, int ygran, int dst) {
 			image *dest = ImageForHandle(dst);
@@ -750,6 +770,23 @@ public class VImage implements Transferable
 			if(y1>y2) {	int temp = y1;	y1 = y2;	y2 = temp;	} // swap y1,y2
 			this.g.drawRect(x1, y1, x2-x1, y2-y1);
 		}
+		
+		/** same as rect() - but uses the translucency of the given color 
+		 * Krybo(Apr.2016) */
+		public void rectTrans(int x1, int y1, int x2, int y2, Color c) 
+			{ 
+			if( c == null ) 	{ c = Color_DEATH_MAGENTA; }
+			Composite save = this.g.getComposite();
+			this.g.setComposite( AlphaComposite.getInstance(
+				AlphaComposite.SRC_OVER )  );
+			this.g.setColor( c );
+			if(x1>x2) {	int temp = x1;	x1 = x2;	x2 = temp;	} // swap x1,x2
+			if(y1>y2) {	int temp = y1;	y1 = y2;	y2 = temp;	} // swap y1,y2
+			this.g.drawRect(x1, y1, x2-x1, y2-y1);
+			this.g.setComposite(save);
+			}
+		
+
 
 		public void rectfill(int x1, int y1, int x2, int y2, int c) {
 			if(c==transcolor) {

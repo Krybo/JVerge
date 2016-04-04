@@ -43,10 +43,14 @@ public class VmiTextSimple implements Vmenuitem
 	private Integer mode;
 	// Active means it is shown but interaction is disabled, it is greyed out.
 	//  visible sets drawing of the entire object on or off.
-	private boolean active, visible = false;
+	private boolean active  = false; 
+	private boolean visible = false;
 		// Controls what is displayed.
-	private boolean showText, showBG, showIcon, showColorful, showFrame = true;
-	
+	private boolean showText 			= true; 
+	private boolean showBG 			= false;
+	private boolean showIcon  			= false;
+	private boolean showColorful  		= true; 
+	private boolean showFrame 		= true;
 	
 		// Holds text according to mode #
 	private HashMap<Integer, String> textItems = 
