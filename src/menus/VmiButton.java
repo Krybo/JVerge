@@ -47,6 +47,9 @@ public class VmiButton implements Vmenuitem
 	private Long id = new Long(-1);
 	private Long childID = new Long(-1);
 	
+	private String tip = new String("");
+	private String desc = new String("");
+	
 	private Color highlighter = new Color(1.0f, 1.0f, 1.0f, 0.36f );
 	private Color highlighter2 = new Color(1.0f, 1.0f, 0.2f, 0.50f );
 	
@@ -128,9 +131,9 @@ public class VmiButton implements Vmenuitem
 		this.circleMaskUpdateRequired = isCircular;
 
 		this.isImage = useImages;
-		this.circular = isCircular;
+		this.setCircular(isCircular);
 		this.visible = visibility;
-		this.centered = anchoredCenter;
+		this.setCentered(anchoredCenter);
 		this.shadow = isShadowed;
 		
 		this.active = true;
@@ -234,7 +237,7 @@ public class VmiButton implements Vmenuitem
 		int x2 = x1 + this.w;
 		int y2 = y1 + this.h;			
 
-		if( this.centered == false ) 
+		if( this.isCentered() == false ) 
 			{
 			x1 = this.ax + this.rx;
 			y1 = this.ay + this.ry;
@@ -242,9 +245,9 @@ public class VmiButton implements Vmenuitem
 			y2 = y1 + this.h;
 			}
 
-		if( x1 < 0 ) { x1 = 0; }
-		if( y1 < 0 ) { y1 = 0; }
-		
+		if( x1 < 0 ) { x1 = 0; x2 = this.w; }
+		if( y1 < 0 ) { y1 = 0; y2 = this.h; }
+
 			// Allocate room for shadows.
 		if( this.shadow == true )
 			{
@@ -252,6 +255,24 @@ public class VmiButton implements Vmenuitem
 			y1 += 1;
 			x2 -= this.shadowThicknessPx;
 			y2 -= this.shadowThicknessPx;
+			}
+
+			// We're drawing a circle/oval, not a square.
+		int radX = 0;
+		int radY = 0;
+		int xC = x1 - 1 + (this.w / 2);
+		int yC = y1 - 1 + (this.h / 2);
+		if( this.isCircular() == true )
+			{
+			radX = ((x2 - x1) / 2) - 2;
+			radY = ((y2 - y1) / 2) - 2;
+			if( this.shadow == true && this.shadowThicknessPx > 0 )
+				{
+				xC -= this.shadowThicknessPx ;
+				yC -= this.shadowThicknessPx ;
+				radX = ((x2 - x1 - this.shadowThicknessPx) / 2) - 2;
+				radY = ((y2 - y1- this.shadowThicknessPx) / 2) - 2;
+				}
 			}
 		
 		Color bodyColor;
@@ -292,23 +313,58 @@ public class VmiButton implements Vmenuitem
 			{
 			shadowColor = this.hmColorItems.get(
 					enumMenuButtonCOLORS.FRAME_SHADOW.value() );
+
+			// need to draw a circle-mode shadow here before other parts.
+			if( this.circular == true )
+				{
+				for( int fsn = 0; fsn < this.shadowThicknessPx; fsn++ )
+					{
+					target.circleTrans( xC+1+fsn, yC+1+fsn, 
+							radX, radY, shadowColor,  target );
+					}
+				}
 			}
 		
 		if( this.isImage == true )
 			{
-			target.scaleblit(x1, y1, this.w, this.h, 
-				this.hmImageItems.get( state ) );
+			// Circular Image body
+			if( this.isCircular() == true )
+				{ }
+			else		// Square Image body
+				{
+				target.scaleblit( x1, y1, this.w, this.h, 
+						this.hmImageItems.get( state ) );
+				}
 			}
-		else
+		else			// Draw shapes, not images.
 			{
-			target.rectfill(x1, y1, x2-1, y2-1, bodyColor );
+			if( this.isCircular() == true )
+				{
+				target.circlefill( xC, yC, radX-1, radY-1, bodyColor );
+				}
+			else
+				{
+				target.rectfill(x1, y1, x2-1, y2-1, bodyColor );
+				}
 			}
 		
-		if( this.circular == true && this.FrameThicknessPx > 0 )
+		if( this.isCircular() == true && this.FrameThicknessPx > 0 )
 			{
-			
+			if( this.shadow == true )
+				{
+				target.circleTrans( xC, yC, radX+1, radY+1, 
+						shadowColor, target );
+				target.circleTrans( xC+1, yC, radX+1, radY+1, 
+						shadowColor, target );
+				}
+			for( int fn = 0; fn < this.FrameThicknessPx; fn++ )
+				{
+			// need to draw two of these or sparse pixeling will ruin appearance
+				target.circle( xC, yC, radX-fn, radY-fn, shellColor, target );
+				target.circle( xC+1, yC, radX-fn, radY-fn, shellColor, target );
+				}
 			}
-		if( this.circular == false && this.FrameThicknessPx > 0 )
+		if( this.isCircular() == false && this.FrameThicknessPx > 0 )
 			{
 			for( int fn = 0; fn < this.FrameThicknessPx; fn++ )
 				{
@@ -472,6 +528,25 @@ public class VmiButton implements Vmenuitem
 		return;
 		}
 
+	
+	public String[] getTip()
+		{
+		String[] rtn = new String[2];
+		rtn[0] = this.tip;
+		rtn[1] = this.desc;
+		return(rtn);
+		}
+
+	public void setTip( String[] descriptions )
+		{
+		if( descriptions == null )	
+			{ return; }
+		if( descriptions.length >= 1 )	
+			{ this.tip  = descriptions[0]; }
+		if( descriptions.length >= 2 )	
+			{ this.desc  = descriptions[1]; }
+		return;
+		}
 
 /**  ------------- Non-interfaced special methods --------------------------- */
 	
@@ -534,6 +609,26 @@ public class VmiButton implements Vmenuitem
 		// DO stuff
 		
 		return;
+		}
+
+	public boolean isCentered()
+		{	return(this.centered);	}
+	public void setCentered(boolean centered)
+		{
+		this.centered = centered;
+		return;
+		}
+
+	public boolean isCircular()
+		{	return( this.circular);	}
+
+	/**  Set up this button to draw a circular shape instead of a square.
+	 * @param circular  true to draw circlular button.
+	 */
+
+	public void setCircular( boolean circular )
+		{
+		this.circular = circular;
 		}
 	
 	

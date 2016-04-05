@@ -125,4 +125,7 @@ public interface Vmenuitem
 				Math.random() * Long.MAX_VALUE ).longValue());
 		}
 	
+	public String[] getTip();
+	public void setTip( String[] descriptions );
+
 	}

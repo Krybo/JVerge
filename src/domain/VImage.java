@@ -818,6 +818,29 @@ public class VImage implements Transferable
 			dst.g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), currentLucent));
 			dst.g.drawOval(x1-xr, y1-yr, xr*2, yr*2);
 		}
+		
+		/**  Draws a circle using the translucency of the argument color.
+		 *     ignoring the lucent of the VImage.
+		 *   (Krybo Apr.2016)
+		 * @param x1	The X pixel center point
+		 * @param y1	The Y pixel center point
+		 * @param xr		X radius of the circle.
+		 * @param yr		Y Radius of the circle.
+		 * @param c		Color object, include alpha here.
+		 * @param dst	A target VImage (?)
+		 */
+		public void circleTrans(int x1, int y1, int xr, int yr, 
+				Color c, VImage dst) 
+			{
+			Composite save = this.g.getComposite();
+			this.g.setComposite( AlphaComposite.getInstance(
+				AlphaComposite.SRC_OVER )  );
+			dst.g.setColor( c );
+			dst.g.drawOval(x1-xr, y1-yr, xr*2, yr*2);
+			dst.g.setComposite(save);
+			}
+
+		
 
 		public void circlefill(int x1, int y1, int xr, int yr, int c) {
 			if(c==transcolor) {

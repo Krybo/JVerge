@@ -67,6 +67,8 @@ public class VmiTextSimple implements Vmenuitem
 	
 	private Font fnt = core.Script.fntMASTER;
 	private Method myAction = null;
+	private String desc;
+	private String tip;
 	
 	public static enum enumMenuStxtCOLORS
 		{
@@ -659,6 +661,26 @@ public class VmiTextSimple implements Vmenuitem
 			this.textItems.put( this.mode * -1, dat );
 			}
 		this.textItems.put( this.mode, input );
+		return;
+		}
+	
+	
+	public String[] getTip()
+		{
+		String[] rtn = new String[2];
+		rtn[0] = this.tip;
+		rtn[1] = this.desc;
+		return(rtn);
+		}
+	
+	public void setTip( String[] descriptions )
+		{
+		if( descriptions == null )	
+			{ return; }
+		if( descriptions.length >= 1 )	
+			{ this.tip  = descriptions[0]; }
+		if( descriptions.length >= 2 )	
+			{ this.desc  = descriptions[1]; }
 		return;
 		}
 	

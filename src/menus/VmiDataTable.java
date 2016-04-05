@@ -82,6 +82,8 @@ public class VmiDataTable implements Vmenuitem
 	private HashMap<Integer,Integer> theXpos;
 	private HashMap<Integer,Integer> theYpos;
 	private HashMap<Integer,Color> clrSettings;
+	private String desc;
+	private String tip;
 
 	public static enum enumMenuDataTableCOLORS
 		{
@@ -838,6 +840,26 @@ public class VmiDataTable implements Vmenuitem
 		}
 
 
+	public String[] getTip()
+		{
+		String[] rtn = new String[2];
+		rtn[0] = this.tip;
+		rtn[1] = this.desc;
+		return(rtn);
+		}
+	
+	public void setTip( String[] descriptions )
+		{
+		if( descriptions == null )	
+			{ return; }
+		if( descriptions.length >= 1 )	
+			{ this.tip  = descriptions[0]; }
+		if( descriptions.length >= 2 )	
+			{ this.desc  = descriptions[1]; }
+		return;
+		}
+	
+	
 	/** ----------------------- non-interface methods ---------------------- **/	
 
 
