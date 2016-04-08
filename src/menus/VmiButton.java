@@ -7,8 +7,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 
-import menus.Vmenuitem.enumMenuItemSTATE;
-import menus.VmiTextSimple.enumMenuStxtCOLORS;
 import domain.VImage;
 
 /** A button that can execute a function.  Features:
@@ -273,6 +271,29 @@ public class VmiButton implements Vmenuitem
 				radX = ((x2 - x1 - this.shadowThicknessPx) / 2) - 2;
 				radY = ((y2 - y1- this.shadowThicknessPx) / 2) - 2;
 				}
+			if( this.circleMaskUpdateRequired == true )
+				{
+				this.circleMask = 
+						new VImage( this.hmImageItems.get(this.state) );
+				int nix = (radX+radY)/2*3;
+				for( Integer clearer = 1; clearer < nix; clearer++ )
+					{
+//					this.circleMask.line(0, clearer, 20, clearer, Color.WHITE );
+					int tmpXc = (this.circleMask.width / 2) - 1;
+					int tmpYc = (this.circleMask.height / 2) - 1;
+					this.circleMask.circleTrans( tmpXc, tmpYc, 
+							tmpXc+clearer, tmpYc+clearer, 
+							core.Script.Color_CLEAR,
+//							new Color(255,0,255),
+							this.circleMask );
+					this.circleMask.circleTrans( tmpXc+1, tmpYc, 
+							tmpXc+clearer, tmpYc+clearer, 
+							core.Script.Color_CLEAR,
+							this.circleMask );
+					}
+
+				this.circleMaskUpdateRequired = false;
+				}
 			}
 		
 		Color bodyColor;
@@ -329,11 +350,15 @@ public class VmiButton implements Vmenuitem
 			{
 			// Circular Image body
 			if( this.isCircular() == true )
-				{ }
+				{
+				target.scaleblit( x1, y1, x2-x1, y2-y1, 
+					 this.circleMask );
+				}
 			else		// Square Image body
 				{
-				target.scaleblit( x1, y1, this.w, this.h, 
-						this.hmImageItems.get( state ) );
+				target.scaleblit( x1+1, y1+1,
+					x2-x1, 	y2-y1, 
+					this.hmImageItems.get( state ) );
 				}
 			}
 		else			// Draw shapes, not images.
@@ -344,7 +369,7 @@ public class VmiButton implements Vmenuitem
 				}
 			else
 				{
-				target.rectfill(x1, y1, x2-1, y2-1, bodyColor );
+				target.rectfill( x1, y1, x2-1, y2-1, bodyColor );
 				}
 			}
 		
@@ -390,9 +415,11 @@ public class VmiButton implements Vmenuitem
 			}
 		
 		// If its selected, highlight the background
-		if( this.state == enumMenuItemSTATE.SELECTED.value() )
+		if( this.state == enumMenuItemSTATE.SELECTED.value() && 
+				this.isImage == false )
 			{	target.rectfill(x1, y1, x2-1, y2-1, this.highlighter );	}
-		if( this.state == enumMenuItemSTATE.ACTIVATED.value() )
+		if( this.state == enumMenuItemSTATE.ACTIVATED.value() && 
+				this.isImage == false  )
 			{	target.rectfill(x1, y1, x2-1, y2-1, this.highlighter2 );	}
 		
 		return;
@@ -438,6 +465,7 @@ public class VmiButton implements Vmenuitem
 		{
 		this.hmImageItems = imageItems;
 		this.isImage = true;
+		this.circleMaskUpdateRequired = true;
 		return;
 		}
 
@@ -462,7 +490,9 @@ public class VmiButton implements Vmenuitem
 		{	return;	}
 
 	public void setState(Integer itemState)
-		{	
+		{
+		if( this.state != itemState )
+			{ this.circleMaskUpdateRequired = true; }
 		this.state = itemState;
 		return;
 		}
@@ -488,6 +518,8 @@ public class VmiButton implements Vmenuitem
 	public void setFrameThicknessPx(int thick)
 		{
 		this.FrameThicknessPx = thick;
+		if( this.FrameThicknessPx < 0  )
+			{ this.FrameThicknessPx = 0; }
 		return;
 		}
 
@@ -550,10 +582,20 @@ public class VmiButton implements Vmenuitem
 
 /**  ------------- Non-interfaced special methods --------------------------- */
 	
+	/**  Sets the image for one state of the button.
+	 * The image sent should be relatively high resolution to avoid odd
+	 * looking artifacts around the border-shadow-image area.  Especially
+	 * when the button is in circular mode.   The corners of the image will
+	 * also be clipped away in circular mode.
+	 * 
+	 * @param e	The state, use {@link enumMenuButtonCOLORS}
+	 * @param img The image to use when button is in this state.
+	 */
 	public void setImageComponent( enumMenuItemSTATE e, 
 			VImage img )
 		{	
 		this.hmImageItems.put( e.value(), img);
+		this.circleMaskUpdateRequired = true;
 		return;
 		}
 
@@ -567,6 +609,8 @@ public class VmiButton implements Vmenuitem
 	public void setUseImages( boolean setting )
 		{
 		this.isImage = setting;
+		if( setting == true )
+			{ this.circleMaskUpdateRequired = true; }
 		return;
 		}
 
@@ -599,18 +643,6 @@ public class VmiButton implements Vmenuitem
 		return;
 		}
 
-	// Eliminates the edges using a separate internal image.
-	private void updateCircleMask()
-		{
-		if( this.circleMaskUpdateRequired == false )	 
-			{ return; }
-		this.circleMaskUpdateRequired = false;
-		
-		// DO stuff
-		
-		return;
-		}
-
 	public boolean isCentered()
 		{	return(this.centered);	}
 	public void setCentered(boolean centered)
@@ -631,5 +663,38 @@ public class VmiButton implements Vmenuitem
 		this.circular = circular;
 		}
 	
+	/**  Resizes the buttons width/height.
+	 * 
+	 * @param newWidth	new width in pixels
+	 * @param newHeight	new height in pixels
+	 * @return	true if resize was 100% successful, else false
+	 */
+	public boolean resize( int newWidth, int newHeight )
+		{
+		if( this.w == newWidth  && this.h == newHeight )
+			{ return(false); }
+
+		boolean rtn = true;
+		this.w = newWidth;
+		this.h = newHeight;
+		
+		if( this.w < this.MIN_DIMENSION_PX )	
+			{
+			System.err.println(
+				"VmiButton : resize WTH smaller then allowed.");
+			this.w = this.MIN_DIMENSION_PX;
+			rtn = false;
+			}
+		if( this.h < this.MIN_DIMENSION_PX )	
+			{
+			System.err.println(
+				"VmiButton : resize HGT smaller then allowed.");
+			this.h = this.MIN_DIMENSION_PX;
+			rtn = false;
+			}
+
+		this.circleMaskUpdateRequired = true;
+		return( rtn );
+		}
 	
 	}

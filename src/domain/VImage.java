@@ -834,7 +834,7 @@ public class VImage implements Transferable
 			{
 			Composite save = this.g.getComposite();
 			this.g.setComposite( AlphaComposite.getInstance(
-				AlphaComposite.SRC_OVER )  );
+				AlphaComposite.DST_ATOP )  );
 			dst.g.setColor( c );
 			dst.g.drawOval(x1-xr, y1-yr, xr*2, yr*2);
 			dst.g.setComposite(save);
