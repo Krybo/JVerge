@@ -73,6 +73,13 @@ public interface Vmenu
 	public void moveAbs(int x, int y);
 	public void moveRel(int x, int y);
 	public Integer countMenuItems();
+	/**  Adds (appends) any implementation of Vmenuitem into the menu.
+	 * Returns the menu item number of the new addition.   This can be 
+	 * later used to link menus together.
+	 * 
+	 * @param vmi	Any object that implements Vmenuitem interface.
+	 * @return		An base-one ordinal menu item number.
+	 */
 	public Integer addItem(Vmenuitem vmi );
 	public Vmenuitem popItem();
 	public Vmenuitem removeItem(int index);
@@ -128,8 +135,8 @@ public interface Vmenu
 	 * value to all content members.
 	 * @param 	id	the menus unique ID
 	 */
-	public void setParentID( Long id );
-	public void setChildID( Long id );
+	public void setParentID( Long id, boolean recursive );
+	public void setChildID( Long id, boolean recursive );
 
 //	public static Long focusSubmenus( Vmenu me, Integer FocusSlot )
 //		{

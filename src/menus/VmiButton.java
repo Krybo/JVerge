@@ -24,7 +24,7 @@ import domain.VImage;
 
 public class VmiButton implements Vmenuitem
 	{
-	private final int MIN_DIMENSION_PX = 10;
+	private final static int MIN_DIMENSION_PX = 10;
 	private int ax,ay = 0;		// Anchor points
 	private int rx,ry;				// relative x/y.
 	private int w,h = 1;			// Total allocated space.
@@ -87,6 +87,14 @@ public class VmiButton implements Vmenuitem
 	
 /** --------------------- Constructs ------------------------------------------- */
 
+	/** Null constructor : 
+	 * makes a default-o button with the smallest size possible
+	 * */
+	public VmiButton( )
+		{
+		this( getMinDimensionPx(), getMinDimensionPx() );
+		}
+	
 	/**  Defaultor constructor	 */
 	public VmiButton( int width, int height )
 		{
@@ -111,17 +119,17 @@ public class VmiButton implements Vmenuitem
 		this.FrameThicknessPx = frameThickness;
 		
 		// Enforce minimum dimensions.
-		if( this.w < this.MIN_DIMENSION_PX )	
+		if( this.w < this.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : constructor WTH smaller then allowed.");
-			this.w = this.MIN_DIMENSION_PX; 
+			this.w = this.getMinDimensionPx(); 
 			}
-		if( this.h < this.MIN_DIMENSION_PX )	
+		if( this.h < this.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : constructor HGT smaller then allowed.");
-			this.h = this.MIN_DIMENSION_PX; 
+			this.h = this.getMinDimensionPx(); 
 			}
 
 		this.circleMask = new VImage(this.w,this.h,
@@ -232,8 +240,8 @@ public class VmiButton implements Vmenuitem
 
 		int x1 = (this.ax + this.rx) - (this.w / 2);
 		int y1 = (this.ay + this.ry)  - (this.h / 2);
-		int x2 = x1 + this.w;
-		int y2 = y1 + this.h;			
+		int x2 = x1 + this.w - 1;
+		int y2 = y1 + this.h - 1;
 
 		if( this.isCentered() == false ) 
 			{
@@ -245,6 +253,12 @@ public class VmiButton implements Vmenuitem
 
 		if( x1 < 0 ) { x1 = 0; x2 = this.w; }
 		if( y1 < 0 ) { y1 = 0; y2 = this.h; }
+		
+//		System.out.println("Paint button @ "+
+//				Integer.toString(x1)+" / "+
+//				Integer.toString(y1)+" :: "+
+//				Integer.toString(this.rx)+" / "+
+//				Integer.toString(this.ry)	);
 
 			// Allocate room for shadows.
 		if( this.shadow == true )
@@ -678,23 +692,26 @@ public class VmiButton implements Vmenuitem
 		this.w = newWidth;
 		this.h = newHeight;
 		
-		if( this.w < this.MIN_DIMENSION_PX )	
+		if( this.w < this.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : resize WTH smaller then allowed.");
-			this.w = this.MIN_DIMENSION_PX;
+			this.w = this.getMinDimensionPx();
 			rtn = false;
 			}
-		if( this.h < this.MIN_DIMENSION_PX )	
+		if( this.h < this.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : resize HGT smaller then allowed.");
-			this.h = this.MIN_DIMENSION_PX;
+			this.h = this.getMinDimensionPx();
 			rtn = false;
 			}
 
 		this.circleMaskUpdateRequired = true;
 		return( rtn );
 		}
-	
+
+	public static int getMinDimensionPx()
+		{	return MIN_DIMENSION_PX;	}
+
 	}

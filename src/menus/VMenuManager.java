@@ -172,13 +172,19 @@ public class VMenuManager
 	public static Long linkMenu(Vmenu vmParent, int parentMenuItemNumber,
 			Vmenu vmChild )
 		{
-		vmChild.setParentID( vmParent.getFocusId() );
+// Set the child menus parent Id to the originating menu so one may return
+		vmChild.setParentID( vmParent.getFocusId(), true );
 
 		try {
-		if( vmParent.getMenuItem( parentMenuItemNumber ) == null )
-			{ return(new Long(-1)); }
-		vmParent.getMenuItem( parentMenuItemNumber ).setChildID(
+			if( vmParent.getMenuItem( parentMenuItemNumber ) == null )
+				{ return(new Long(-1)); }
+			// Set the destination id into the target item.
+			vmParent.getMenuItem( parentMenuItemNumber ).setChildID(
 				vmChild.getFocusId() );
+			// Set the action of target so it goes to the child.
+			vmParent.getMenuItem( parentMenuItemNumber ).setAction(
+				 core.Script.getFunction( 	Vmenuitem.class, "goChild" ) );
+
 			}
 		catch( IndexOutOfBoundsException e )
 			{  return(new Long(-1)); }

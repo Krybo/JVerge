@@ -490,17 +490,25 @@ public class VmenuConfirmPrompt implements Vmenu
 		return;
 		}
 	
-	public void setParentID( Long id )
+	public void setParentID( Long id, boolean recurse  )
 		{
 		this.parentID = id;	
-		this.vmiYes.setParentID(id);
-		this.vmiNo.setParentID(id);
+		if( recurse == true )
+			{
+			this.vmiYes.setParentID(id);
+			this.vmiNo.setParentID(id);
+			}
+		return;
 		}
-	public void setChildID( Long id )
+	public void setChildID( Long id, boolean recurse )
 		{
 		this.childID = id;
-		this.vmiYes.setChildID(id);
-		this.vmiNo.setChildID(id);
+		if( recurse == true )
+			{
+			this.vmiYes.setChildID(id);
+			this.vmiNo.setChildID(id);
+			}
+		return;
 		}
 	public Long getParentID()
 		{	return(this.parentID);	}
