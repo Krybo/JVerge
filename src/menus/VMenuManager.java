@@ -225,6 +225,44 @@ public class VMenuManager
 		return(rslt);
 		}
 	
+	
+	/**  Check the focus id's versus the data in the stored menus
+	 * 
+	 * @return	returns true if at least one focus is a real menu.
+	 */
+	public synchronized boolean checkFocus()
+		{
+		boolean rtn = false;
+		for( Long xid : this.focus )
+			{
+			for( Vmenu vm : this.menus )	
+				{
+				if( vm.getFocusId() == xid )
+					{ rtn = true; }
+				}
+			}
+		return(rtn);
+		}
+	
+	/**  With a given focus tracker number, check if a menu with that 
+	 * cooresponding focus ID exists within the manager.
+	 * 
+	 * @param trackerID  The focus tracker ID
+	 * @return	returns true if target focus has a menu.in this manager.
+	 */
+	public synchronized boolean checkFocus( int trackerID )
+		{
+		if( this.focus.get(trackerID) == null )
+			{ return(false); }
+		Long xid = this.focus.get(trackerID);
+		for( Vmenu vm : this.menus )	
+			{
+			if( vm.getFocusId() == xid )
+				{ return( true ); }
+			}
+		return( false );
+		}
+	
 	/**  Delegates a keystroke to  Vmenu managed by this object
 	 * 
 	 * @param ext_keycode	Extended keycode (see core.Controls)

@@ -246,8 +246,7 @@ public class Controls implements
 //	System.out.println(Integer.toString(nstrokes)+" DEBUG new keystrokes VS "
 //			+Integer.toString( Controls.menusKeyStackSent ));
 			Controls.menusKeyStackSent++;
-				// If no menus have focus.. we have a problem to resolve.
-			boolean focusedMenuCheck = false;
+
 				// now send it to all menus with focus.
 
 			if( VergeEngine.Vmm.delegateControl(
@@ -256,21 +255,17 @@ public class Controls implements
 					true) > 0 )
 				{
 				Controls.menuKeyCount++;
-				focusedMenuCheck = true;
 				VergeEngine.Vmm.refreshGraphics();
 				}
 			
-			if( focusedMenuCheck == false )
+			// If no menus have focus.. we have a problem to resolve.
+			if( VergeEngine.Vmm.checkFocus() == false )
 				{
 				System.err.println( "WARNING : ALL MENU FOCUS LOST."
 					+ ".- Re-focusing system menus. "
 					+ " Probable menu link problem" );
 				VergeEngine.Vmm.restoreSystemMenuFocus();
-//				MENU_FOCUS[0] = 
-//						VergeEngine.Vmm.getSystemMenuFocusID();
-
-				}
-			
+				}			
 			}
 		
 		return;

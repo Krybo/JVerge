@@ -6,10 +6,10 @@ import java.awt.Color;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
-import core.Controls;
-import menus.Vmenu.enumMenuEVENT;
 import menus.Vmenuitem.enumMenuItemSTATE;
+import menus.VmiButton.enumMenuButtonCOLORS;
 import menus.VmiTextSimple.enumMenuStxtCOLORS;
+import core.Controls;
 import domain.VImage;
 import domain.VSound;
 
@@ -26,7 +26,7 @@ public class VmenuButtonPalette implements Vmenu
 	private boolean enableHelpBar = false;
 	private boolean isImgBackground = false;
 	private boolean isCircularButtons = false;
-	private boolean allowWrap = true;
+	private boolean enableWrap = true;
 	private boolean autoCenter = true;
 	
 
@@ -105,8 +105,8 @@ public class VmenuButtonPalette implements Vmenu
 		this.selectedIndex = -1;
 		this.focusID = Vmenu.getRandomID();
 		
-		this.caption = null;
-		this.helpBar = null;
+		this.caption = new VmiTextSimple(" Button Palette ");
+		this.helpBar = new VmiTextSimple(" ");
 		
 		this.isSolidPadding = true;
 		this.paddingClr = core.Script.Color_DEATH_MAGENTA;
@@ -162,9 +162,9 @@ public class VmenuButtonPalette implements Vmenu
 		this.selectedIndex = -1;
 		this.focusID = Vmenu.getRandomID();
 		
-		this.caption = null;
-		this.helpBar = null;
-		
+		this.caption = new VmiTextSimple(" Button Palette ");
+		this.helpBar = new VmiTextSimple(" ");
+
 		this.isSolidPadding = true;
 		this.paddingClr = core.Script.Color_DEATH_MAGENTA;
 		
@@ -180,6 +180,7 @@ public class VmenuButtonPalette implements Vmenu
 
 		this.recalculate();
 		this.selectCenter();
+		this.makeCenterGoParent();
 		return;
 		}
 
@@ -199,6 +200,29 @@ public class VmenuButtonPalette implements Vmenu
 		if (this.isImgBackground == true && this.bkgImg != null)
 			{
 			target.scaleblit(this.x, this.y, this.w, this.h, this.bkgImg);
+			this.helpBar.enableIcons( false );
+			this.helpBar.enableFrame( false );
+			this.helpBar.enableBackdrop( false );
+			this.caption.enableIcons( false );
+			this.caption.enableFrame( false );
+			this.caption.enableBackdrop( false );
+			this.caption.setColor(enumMenuStxtCOLORS.BKG_ACTIVE, 
+					core.Script.Color_DEATH_MAGENTA);
+			this.helpBar.setColor(enumMenuStxtCOLORS.BKG_ACTIVE, 
+					core.Script.Color_DEATH_MAGENTA);
+			}
+		else
+			{
+			this.helpBar.enableIcons( false );
+			this.helpBar.enableFrame( true );
+			this.helpBar.enableBackdrop( true );
+			this.caption.enableIcons( false );
+			this.caption.enableFrame( true );
+			this.caption.enableBackdrop( true );
+			this.caption.setColor(enumMenuStxtCOLORS.BKG_ACTIVE, 
+					Color.BLACK );
+			this.helpBar.setColor(enumMenuStxtCOLORS.BKG_ACTIVE, 
+					Color.BLACK );
 			}
 		
 		if( this.enableCaption )
@@ -243,7 +267,7 @@ public class VmenuButtonPalette implements Vmenu
 					tmp = new Double(c) * this.xCellDiff + 0.5d +
 							new Double(c * this.pad);
 
-					target.line( this.x+tmp.intValue()+t, yI, 
+					target.lineTrans( this.x+tmp.intValue()+t, yI, 
 						this.x+tmp.intValue()+t, yH-1, 
 						this.paddingClr );
 					}
@@ -252,7 +276,7 @@ public class VmenuButtonPalette implements Vmenu
 					tmp = new Double(r) * this.yCellDiff + 0.5d + 
 							new Double(r * this.pad);
 
-					target.line( this.x, yI+tmp.intValue()+t,  
+					target.lineTrans( this.x, yI+tmp.intValue()+t,  
 						this.x+this.w-1, yI+tmp.intValue()+t, 
 						this.paddingClr );	
 					}
@@ -289,14 +313,14 @@ public class VmenuButtonPalette implements Vmenu
 		int ySpace = this.h;		// pixel space actually available
 		int x0 = this.x;
 		int y0 = this.y;
-		if( this.enableCaption )
+		if( this.enableCaption == true )
 			{ 
 			ySpace -= this.caption.getDY();
 			y0 += this.caption.getDY();
 			this.caption.reposition(this.x, this.y, 0, 0);
 			this.caption.setExtendX(this.w, true);
 			}
-		if( this.isEnableHelpBar() )
+		if( this.isEnableHelpBar() == true )
 			{ 
 			ySpace -= this.helpBar.getDY();
 			this.helpBar.reposition(this.x, 
@@ -348,14 +372,16 @@ public class VmenuButtonPalette implements Vmenu
 				}
 			}
 
+		if( this.isEnableHelpBar() == true )
+			{
+			this.helpBar.setText( 
+					this.hmButtons.get(this.selectedIndex).getTip()[0] );
+			}
+		
 		return;
 		}
 
 
-
-
-
-	@Override
 	public boolean doControls(Integer kc )
 		{
 		boolean redraw = false;
@@ -379,46 +405,59 @@ public class VmenuButtonPalette implements Vmenu
 				this.playMenuSound(enumMenuEVENT.CANCEL, 33);
 				redraw = true;
 				this.returnToParent();
-				return(true);
+				return( true );
 			case 10: // ENTER KEY <CONFIRM>
 			case 32: // SPACE BAR
 				if( isCntl == true )   { break; } 
 				this.funcActivate();
+				if( this.autoCenter == true )
+					{	this.selectCenter();	}
 				redraw = true;
 				break;
-			case 37: // ARROW-LEFT, move minus horizontal
+			case 33: 		// Page UP
+				this.selectedIndex = this.col-1;
+				redraw = true;
+				break;
+			case 34:		//home/end
+				this.selectedIndex = this.capacity - 1;
+				redraw = true;
+				break;
+			case 35:		// page Down
+				this.selectedIndex = (this.row-1)*this.col;
+				redraw = true;
+				break;
+			case 36:
+				this.selectedIndex = 0;
+				redraw = true;
+				break;
+			case 127:	// Delete
+				this.selectCenter();
+				redraw = true;
+				break;
+			case 37: 		// ARROW-LEFT, move minus horizontal
 				if( isCntl == true || isShift == true  )   
-					{ break; }
-				this.selectedIndex -= 1;
-				if( this.selectedIndex < 0 )
-					{ this.selectedIndex = this.capacity-1; }
+					{ break; }				
+				this.moveCol( -1 );
 				redraw = true;
 				break;
 			case 38: // ARROW-UP
 				if( isCntl == true || isShift == true  )   
 					{ break; }
 				redraw = true;
-				this.selectedIndex -= this.col;
-				if( this.selectedIndex < 0 )
-					{	this.selectedIndex += this.capacity;	  }
-				this.playMenuSound(enumMenuEVENT.MOVE, 33);
-				
+				this.moveRow( -1 );
+				this.playMenuSound(enumMenuEVENT.MOVE, 33);				
 				break;
 			case 39: // ARROW-RIGHT
 				if( isCntl == true || isShift == true  )   
 					{ break; }
-				this.selectedIndex += 1;
-				if( this.selectedIndex >= this.capacity )
-					{ this.selectedIndex = 0; }
+				this.moveCol( 1 );
 				redraw = true;
 				break;
 			case 40: // ARROW-DOWN
 				if( isCntl == true || isShift == true  )   
 					{ break; }
-				redraw = true;
-				this.selectedIndex += this.col;
-				if( this.selectedIndex >= this.capacity )
-					{	this.selectedIndex -= this.capacity;	  }
+				redraw = true;				
+				this.moveRow( 1 );
 				this.playMenuSound(enumMenuEVENT.MOVE, 33);
 				break;
 			default:
@@ -540,7 +579,6 @@ public class VmenuButtonPalette implements Vmenu
 		if( this.selectedIndex == -1 )
 			{ return; }
 		
-		int counter = -1;
 		for( Integer n : this.hmButtons.keySet() )
 			{
 			Vmenuitem myvmi = this.hmButtons.get(n);
@@ -786,6 +824,16 @@ public class VmenuButtonPalette implements Vmenu
 		this.caption = newCaption;
 		return;
 		}
+	
+	/**  Directly replaces the caption box. 
+	 * Dimensions will be overridden.
+	 * */
+	public void setCaption( VmiTextSimple theCaption )
+		{
+		this.caption = theCaption;
+		this.recalculate();
+		return;
+		}
 
 	public void setCaptionVisible(boolean show)
 		{
@@ -819,6 +867,7 @@ public class VmenuButtonPalette implements Vmenu
 
 	private void returnToParent()
 		{
+		System.out.println(" -- returning to parent -- ");
 		if( this.parentID < 0 ) { return; }
 		setMenuFocus( 0, this.parentID );
 		return;
@@ -832,11 +881,29 @@ public class VmenuButtonPalette implements Vmenu
 		this.selectedIndex = (rowC*this.col) + colC;
 		}
 
+	/** Sets the action of the "center" button to return to the 
+	 * parent menu object.  Commonly desired behavior. */
+	public void makeCenterGoParent()
+		{
+		if( this.parentID == -1 )
+			{ return; }
+		int rowC = this.row / 2;
+		int colC = this.col / 2;
+		Method m = core.Script.getFunction( Vmenuitem.class, 
+				"goParent");
+		this.hmButtons.get( (rowC*this.col) + colC ).setParentID(
+				this.parentID );
+		this.hmButtons.get( (rowC*this.col) + colC ).setAction(m);
+		System.out.println( " Center Parent ID : " +  
+			this.hmButtons.get( (rowC*this.col) + colC ).getParentID().toString() );
+		return;
+		}
+
 	public boolean isAllowWrap()
-		{	return allowWrap;	}
+		{	return enableWrap;	}
 	/** When true, cursor can wrap around the edges of the palette */
 	public void setAllowWrap(boolean allowWrap)
-		{	this.allowWrap = allowWrap;	}
+		{	this.enableWrap = allowWrap;	}
 
 	public boolean isAutoCenter()
 		{	return autoCenter;	}
@@ -844,5 +911,137 @@ public class VmenuButtonPalette implements Vmenu
 	 * upon activation of any item in the palette */
 	public void setAutoCenter(boolean autoCenter)
 		{	this.autoCenter = autoCenter;	}
+	
+	/** Set a color component of all buttons in the palette  */
+	public void setColorComponentAll(enumMenuButtonCOLORS e, Color clr)
+		{
+		for( Integer n : this.hmButtons.keySet() )
+			{
+			VmiButton vmi = (VmiButton) this.hmButtons.get(n);
+			vmi.setColorComponent(e, clr);
+			}
+		return;
+		}
+	
+	/** Set complete color definition of all buttons in the palette  */
+	public void setColorAll( HashMap<Integer,Color> hm )
+		{
+		for( Integer n : this.hmButtons.keySet() )
+			{	this.hmButtons.get(n).setColorContent(hm);	}
+		return;
+		}
+
+	public void setAction(int cellX, int cellY, Method function )
+		{
+		this.hmButtons.get( cellY*this.col + cellX ).setAction(function);
+		return;
+		}
+	public void setAction(int index, Method function )
+		{
+		this.hmButtons.get( index ).setAction(function);
+		return;
+		}
+
+	public Long getParentID()
+		{	return( this.parentID );   }
+	public void setParentID(Long pID)
+		{	this.parentID = pID;	  }
+	public Long getChildID()
+		{	return( this.childID );   }
+	public void setChildID(Long childID)
+		{	this.childID = childID;	  }
+	
+	/**  Directly replaces the caption box. 
+	 * Dimensions will be overridden.
+	 * */
+	public void setTip( VmiTextSimple theTip )
+		{
+		this.helpBar = theTip;
+		this.recalculate();
+		return;
+		}
+	public void setTip( int index, String buttonTip )
+		{
+		String[] s0 = new String[1];
+		s0[0] = buttonTip;
+		this.hmButtons.get( index ).setTip( s0 );
+		this.recalculate();
+		return;
+		}
+	public void setTip( int index, String[] buttonTip )
+		{
+		this.hmButtons.get( index ).setTip( buttonTip );
+		this.recalculate();
+		return;
+		}
+	public void setTip( int cellX, int cellY, String buttonTip )
+		{
+		String[] s0 = new String[1];
+		s0[0] = buttonTip;
+		if( cellX >= this.col )		{ cellX = this.col - 1; }
+		if( cellY >= this.row )		{ cellY = this.row - 1; }
+		this.hmButtons.get( cellY*this.col + cellX ).setTip( s0 );
+		this.recalculate();
+		return;
+		}
+	public void setTip( int cellX, int cellY, String[] buttonTip )
+		{
+		if( cellX >= this.col )		{ cellX = this.col - 1; }
+		if( cellY >= this.row )		{ cellY = this.row - 1; }
+		this.hmButtons.get( cellY*this.col + cellX ).setTip( buttonTip );
+		this.recalculate();
+		return;
+		}
+	
+	
+	//  These two are used to move the cursor around the palette.
+	private void moveCol( int move )
+		{
+		int current = this.selectedIndex % this.col;
+		int base = this.selectedIndex - current;
+		current += move;
+		if( this.enableWrap == true )
+			{  
+			while( current >= this.col )
+				{	current -= this.col; 	}
+			if( current < 0 )
+				{ current +=  this.col;  }
+			}
+		else		// un-wrapped. 
+			{
+			if( current >= this.col )
+				{  current = this.col - 1; }
+			if( current < 0 )
+				{  current = 0; }
+			}
+		this.selectedIndex = base + current;
+		return;
+		}
+	
+	private void moveRow( int move )
+		{
+		int current = this.selectedIndex / this.col;
+		int mycol = this.selectedIndex % this.col;
+		current += move;
+		if( this.enableWrap == true )
+			{  
+			while( current >= this.row )
+				{	current -= this.row; 	}
+			if( current < 0 )
+				{ current +=  this.row;  }
+			}
+		else		// un-wrapped. 
+			{
+			if( current >= this.row )
+				{  current = this.row - 1; }
+			if( current < 0 )
+				{  current = 0; }
+			}
+		this.selectedIndex =  (current * this.col) + mycol;
+		return;
+		}
+
+
+
 	
 	}

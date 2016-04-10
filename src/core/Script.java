@@ -1330,6 +1330,7 @@ public class Script {
 		
 		for( Method m : theClass.getMethods() )
 			{
+//			System.out.println( " DEBUG >> " + m.getName() );
 			if( m.getName().equals(methodName) == true )
 				{ rslt = m; }
 			}

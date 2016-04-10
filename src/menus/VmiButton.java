@@ -119,17 +119,17 @@ public class VmiButton implements Vmenuitem
 		this.FrameThicknessPx = frameThickness;
 		
 		// Enforce minimum dimensions.
-		if( this.w < this.getMinDimensionPx() )	
+		if( this.w < VmiButton.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : constructor WTH smaller then allowed.");
-			this.w = this.getMinDimensionPx(); 
+			this.w = VmiButton.getMinDimensionPx(); 
 			}
-		if( this.h < this.getMinDimensionPx() )	
+		if( this.h < VmiButton.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : constructor HGT smaller then allowed.");
-			this.h = this.getMinDimensionPx(); 
+			this.h = VmiButton.getMinDimensionPx(); 
 			}
 
 		this.circleMask = new VImage(this.w,this.h,
@@ -692,18 +692,18 @@ public class VmiButton implements Vmenuitem
 		this.w = newWidth;
 		this.h = newHeight;
 		
-		if( this.w < this.getMinDimensionPx() )	
+		if( this.w < VmiButton.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : resize WTH smaller then allowed.");
-			this.w = this.getMinDimensionPx();
+			this.w = VmiButton.getMinDimensionPx();
 			rtn = false;
 			}
-		if( this.h < this.getMinDimensionPx() )	
+		if( this.h < VmiButton.getMinDimensionPx() )	
 			{
 			System.err.println(
 				"VmiButton : resize HGT smaller then allowed.");
-			this.h = this.getMinDimensionPx();
+			this.h = VmiButton.getMinDimensionPx();
 			rtn = false;
 			}
 
