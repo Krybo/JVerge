@@ -896,8 +896,8 @@ public class VmenuButtonPalette implements Vmenu
 				this.parentID );
 		this.hmButtons.get( center ).setAction(m);
 		this.hmButtons.get( center ).setTip("Return");
-		System.out.println( " Center Parent ID : " +  
-			this.hmButtons.get( (rowC*this.col) + colC ).getParentID().toString() );
+//		System.out.println( " Center Parent ID : " +  
+//			this.hmButtons.get( (rowC*this.col) + colC ).getParentID().toString() );
 		return;
 		}
 

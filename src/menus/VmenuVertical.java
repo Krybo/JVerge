@@ -1,6 +1,5 @@
 package menus;
 
-
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +10,17 @@ import core.Controls;
 import domain.VImage;
 import domain.VSound;
 
-// Arranges menuitems in a traditional vertical fashion.
+/** This Vmenu implementation will arrange 
+ * Vmenuitem's (any implemented Classes) into a Vertical layout.   
+ * Good short height items such as text bars and guages.
+ *   And the controls are delegated through the component items.
+ *  Make sure you create a way to return to the originating menus,
+ * if there is one -- Either in doControls or a doAction() of one of the items.
+ * (Mar.2016)
+ * 
+ * @author Krybo
+ *
+ */
 
 public class VmenuVertical implements Vmenu
 	{
@@ -57,13 +66,13 @@ public class VmenuVertical implements Vmenu
 		this.hmSounds = new HashMap<enumMenuEVENT, VSound>();
 		this.setCaption(" ");
 
-		this.enableCaption = false;
-		this.enableImgBackground = false;
+		this.setEnableCaption(false);
+		this.setEnableImgBackground(false);
 
 		this.isActive = true;
 		this.isVisible = true;
-		this.enableCaption = false;
-		this.enableImgBackground = false;
+		this.setEnableCaption(false);
+		this.setEnableImgBackground(false);
 
 		return;
 		}
@@ -82,12 +91,12 @@ public class VmenuVertical implements Vmenu
 
 		this.refresh();
 
-		if (this.enableImgBackground == true && this.bkgImg != null)
+		if (this.isEnableImgBackground() == true && this.bkgImg != null)
 			{
 			target.scaleblit(this.x, this.y, this.w, this.h, this.bkgImg);
 			}
 
-		if (this.enableCaption)
+		if (this.isEnableCaption())
 			{
 			this.caption.paint(target);
 			}
@@ -143,8 +152,18 @@ public class VmenuVertical implements Vmenu
 				this.funcActivate();
 				redraw = true;
 				break;
-			case 32: // SPACE BAR
+			case 35:		// home/end
+			case 36:
+			case 32: 		// SPACE BAR
 				break;
+			case 33: 		// Page UP
+				redraw=true;
+				this.moveSelection( this.countMenuItems()*-1, false );
+				break;
+			case 34:		// page Down
+				redraw=true;
+				this.moveSelection( this.countMenuItems(), false );
+				break;				
 			case 37: // ARROW-LEFT
 				if (isCntl)
 					{
@@ -265,13 +284,13 @@ public class VmenuVertical implements Vmenu
 		return (redraw);
 		}
 
-	private void resolvePositions()
+	protected void resolvePositions()
 		{
 		int maxw = 0;
 		int iY = 0;
 		int hi;
 
-		if (this.enableCaption == true)
+		if (this.isEnableCaption() == true)
 			{
 			iY = this.caption.getDY().intValue();
 			maxw = this.caption.getDX().intValue();
@@ -595,7 +614,7 @@ public class VmenuVertical implements Vmenu
 	/**
 	 * This is run when the ENTER Key is used. Invokes selected menuitem
 	 */
-	private void funcActivate()
+	protected void funcActivate()
 		{
 		if (this.content.get(this.selectedIndex).getState() == 
 				enumMenuItemSTATE.DISABLED.value())
@@ -631,16 +650,6 @@ public class VmenuVertical implements Vmenu
 		return;
 		}
 
-	public void setCaptionVisible(boolean show)
-		{
-		this.enableCaption = show;
-		return;
-		}
-
-	public boolean isCaptionEnabled()
-		{
-		return (this.enableCaption);
-		}
 
 	public void setIconsAll(boolean onOff)
 		{
@@ -711,7 +720,7 @@ public class VmenuVertical implements Vmenu
 		this.bkgImg = theBkg;
 		if (enable == true)
 			{
-			this.enableImgBackground = enable;
+			this.setEnableImgBackground(enable);
 			// To ensure visibility - turn OFF component bkgs
 			for (Vmenuitem vmi : this.content)
 				{
@@ -720,7 +729,7 @@ public class VmenuVertical implements Vmenu
 			}
 		else
 			{
-			this.enableImgBackground = enable;
+			this.setEnableImgBackground(enable);
 			for (Vmenuitem vmi : this.content)
 				{
 				vmi.enableBackdrop(false);
@@ -729,7 +738,7 @@ public class VmenuVertical implements Vmenu
 		return;
 		}
 
-	private int getActiveItemCount()
+	protected int getActiveItemCount()
 		{
 		int rslt = 0;
 		for (Vmenuitem vmi : this.content)
@@ -740,6 +749,81 @@ public class VmenuVertical implements Vmenu
 				}
 			}
 		return (rslt);
+		}
+
+
+	/** ---- These are were needed to extend the class ---- */
+	
+	public boolean isEnableCaption()
+		{	return( this.enableCaption );	}
+	public void setEnableCaption( boolean enableCaption )
+		{	this.enableCaption = enableCaption;	}
+	public Vmenuitem getCaptionObject()
+		{	return( this.caption );	}
+	public int getX()
+		{ return(this.x); }
+	public int getY()
+		{ return(this.y); }
+	public ArrayList<Vmenuitem> getContent()
+		{ return(this.content); }
+	public void setWidth( int newWidth )
+		{ this.w = newWidth; }
+	public void setHeight( int newHgt )
+		{ this.h = newHgt; }
+	public int getWidth()
+		{ return(this.w); }
+	public int getHeight()
+		{ return(this.h); }
+
+	public boolean isEnableImgBackground()
+		{
+		if( this.bkgImg == null )	
+			{ return(false); }
+		return( this.enableImgBackground );	
+		}
+	public void setEnableImgBackground( boolean enableImgBackground )
+		{	this.enableImgBackground = enableImgBackground;	}
+
+	public VImage getBkgImage()
+		{	return( this.bkgImg );	}
+
+
+	/** Facilitates the Increment/Decrement the selectedIndex,
+	 *  with an optional wrap.  Use in doControls.
+	 * 
+	 * @param delta    integer amount to move the selectedIndex.
+	 * @param wrap    true to wrap the new value, false to bound it. 
+	 * @return	The resulting selectedIndex value
+	 */
+	protected int moveSelection(int delta, boolean wrap )
+		{
+		int max = this.content.size();
+		this.selectedIndex += delta;
+		if( wrap == true )
+			{
+			while( this.selectedIndex < 0 )
+				{ this.selectedIndex += max;  }
+			while( this.selectedIndex > max-1 )
+				{ this.selectedIndex -= max;  }			
+			}
+		else
+			{
+			if( this.selectedIndex < 0 )
+				{ this.selectedIndex = 0;  }
+			if( this.selectedIndex > max-1 )
+				{ this.selectedIndex = (max - 1);  }			
+			}
+		return(this.selectedIndex);
+		}
+
+	protected boolean isSelectionActive()
+		{
+		return( this.content.get(this.selectedIndex).isActive() );
+		}
+	
+	public Vmenuitem getSelectedMenuItem()
+		{
+		return( this.content.get(this.selectedIndex) );
 		}
 
 	//

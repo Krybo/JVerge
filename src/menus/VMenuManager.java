@@ -514,7 +514,7 @@ public class VMenuManager
 		SYS_MENU.setVisible(true);
 		SYS_MENU.setActive(true);
 		SYS_MENU.setCaption("  JVERGE  ");
-		SYS_MENU.setCaptionVisible(true);
+		SYS_MENU.setEnableCaption(true);
 		
 			// Start by using a single focus slot with the system menu in it.
 		this.focus = new ArrayList<Long>();
