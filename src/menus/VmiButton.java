@@ -714,4 +714,11 @@ public class VmiButton implements Vmenuitem
 	public static int getMinDimensionPx()
 		{	return MIN_DIMENSION_PX;	}
 
+	public void setTip( String helpCaption )
+		{
+		this.tip = helpCaption;
+		this.desc = helpCaption;
+		return;
+		}
+
 	}

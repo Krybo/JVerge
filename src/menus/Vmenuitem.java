@@ -127,5 +127,6 @@ public interface Vmenuitem
 	
 	public String[] getTip();
 	public void setTip( String[] descriptions );
+	public void setTip( String helpCaption );
 
 	}

@@ -889,11 +889,13 @@ public class VmenuButtonPalette implements Vmenu
 			{ return; }
 		int rowC = this.row / 2;
 		int colC = this.col / 2;
+		int center = (rowC*this.col) + colC;
 		Method m = core.Script.getFunction( Vmenuitem.class, 
 				"goParent");
-		this.hmButtons.get( (rowC*this.col) + colC ).setParentID(
+		this.hmButtons.get( center ).setParentID(
 				this.parentID );
-		this.hmButtons.get( (rowC*this.col) + colC ).setAction(m);
+		this.hmButtons.get( center ).setAction(m);
+		this.hmButtons.get( center ).setTip("Return");
 		System.out.println( " Center Parent ID : " +  
 			this.hmButtons.get( (rowC*this.col) + colC ).getParentID().toString() );
 		return;
@@ -936,10 +938,37 @@ public class VmenuButtonPalette implements Vmenu
 		this.hmButtons.get( cellY*this.col + cellX ).setAction(function);
 		return;
 		}
+	public void setAction(int cellX, int cellY, Method function, 
+			String helpCaption )
+		{
+		this.hmButtons.get( cellY*this.col + cellX ).setAction(function);
+		this.hmButtons.get( cellY*this.col + cellX ).setTip(helpCaption);
+		return;
+		}
+	public void setAction(int cellX, int cellY, Method function, 
+			String helpCaption, String longDescription )
+		{
+		String[] tmp = new String[2];
+		tmp[0] = helpCaption;
+		tmp[1] = longDescription;
+		this.hmButtons.get( cellY*this.col + cellX ).setAction(function);
+		this.hmButtons.get( cellY*this.col + cellX ).setTip( tmp );
+		return;
+		}
 	public void setAction(int index, Method function )
 		{
 		this.hmButtons.get( index ).setAction(function);
 		return;
+		}
+	public void setAction(int index, Method function,
+		String helpCaption, String longDescription )
+		{
+		String[] tmp = new String[2];
+		tmp[0] = helpCaption;
+		tmp[1] = longDescription;
+		this.hmButtons.get( index ).setAction(function);
+		this.hmButtons.get( index ).setTip( tmp );
+		return;		
 		}
 
 	public Long getParentID()

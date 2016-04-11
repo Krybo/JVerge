@@ -684,5 +684,12 @@ public class VmiTextSimple implements Vmenuitem
 		return;
 		}
 	
+	public void setTip( String helpCaption )
+		{
+		this.tip = helpCaption;
+		this.desc = helpCaption;
+		return;
+		}
+	
 	}
 

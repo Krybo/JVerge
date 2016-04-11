@@ -848,6 +848,13 @@ public class VmiDataTable implements Vmenuitem
 		return(rtn);
 		}
 	
+	public void setTip( String helpCaption )
+		{
+		this.tip = helpCaption;
+		this.desc = helpCaption;
+		return;
+		}
+	
 	public void setTip( String[] descriptions )
 		{
 		if( descriptions == null )	
