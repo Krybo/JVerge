@@ -249,6 +249,22 @@ public class VmiTextSimple implements Vmenuitem
 		this.ry = relPosY;
 		return true;
 		}
+	
+	public boolean repositionDelta( 
+			int deltaX, int deltaY, int drelPosX, int drelPosY )
+		{
+			// refuse to send the item off the upper left of the screen.
+		if( (this.ulx + deltaX) < 0 || (this.uly + deltaY) < 0 )
+			{ return(false); }
+		if( 	(this.ulx + deltaX + drelPosX) < 0 || 
+			(this.uly + deltaY + drelPosY ) < 0 )
+			{ return(false); }
+		this.ulx += deltaX;
+		this.uly += deltaY;
+		this.rx += drelPosX;
+		this.ry += drelPosY;
+		return true;
+		}
 
 	public void setAction(Method action)
 		{	this.myAction = action;	}

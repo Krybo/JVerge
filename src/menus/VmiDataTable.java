@@ -392,6 +392,19 @@ public class VmiDataTable implements Vmenuitem
 		return true;
 		}
 
+	/** DataTable implementation will ignore relative deltas
+	 * it is there simply to satisfy interface..  */
+	public boolean repositionDelta( 
+			int deltaX, int deltaY, int drelPosX, int drelPosY )
+		{
+			// refuse to send the item off the upper left of the screen.
+		if( (this.x + deltaX) < 0 || (this.y + deltaY) < 0 )
+			{ return(false); }
+		this.x += deltaX;
+		this.y += deltaY;
+		return true;
+		}
+
 	/**  This Vmenutem is for display only.   No actions attached.	 */
 	public void setAction(Method action)
 		{	return;	}

@@ -48,8 +48,11 @@ public interface Vmenuitem
 			{ return(this.index.intValue()); }
 		}
 
-	// Change the position of the menuitem within the parent.
+	/** Directly Change the position of the menuitem within the parent. */
 	public boolean reposition( int posX, int posY, int relPosX, int relPosY );
+	/** Nudge existing position(s) of the menuitem within the parent. */
+	public boolean repositionDelta( 
+			int deltaX, int deltaY, int drelPosX, int drelPosY );
 	// Sets the method called when the thing is used.
 	public void setAction( Method action );
 	public boolean doAction();

@@ -207,6 +207,22 @@ public class VmiButton implements Vmenuitem
 		return true;
 		}
 
+	public boolean repositionDelta( 
+			int deltaX, int deltaY, int drelPosX, int drelPosY )
+		{
+			// refuse to send the item off the upper left of the screen.
+		if( (this.ax + deltaX) < 0 || (this.ay + deltaY) < 0 )
+			{ return(false); }
+		if( 		(this.ax + deltaX + drelPosX) < 0 || 
+				(this.ay + deltaY + drelPosY ) < 0 )
+			{ return(false); }
+		this.ax += deltaX;
+		this.ay += deltaY;
+		this.rx += drelPosX;
+		this.ry += drelPosY;
+		return true;
+		}
+
 	public void setAction(Method action)
 		{	this.myAction = action;	}
 
