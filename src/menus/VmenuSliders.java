@@ -1,28 +1,49 @@
 package menus;
 
+import static core.Script.setMenuFocus;
+
 import java.awt.Color;
 import java.util.HashMap;
 
 import menus.Vmenu.enumMenuEVENT;
+import menus.Vmenuitem.enumMenuItemSTATE;
 import domain.VImage;
 import domain.VSound;
+
+/**  A Vmenu Class that contains a series of manipulatable guages.
+ *   Use when you need to take multiple bounded numbers for input.
+ *   Can add both Integer and Decimal VmiGuage* objects.
+ *   It can also be used only for show by disabling input.
+ *   A status bar displays the graphical information in text form.
+ *   Various buttons can be used to adjust the guage in various ways.
+ *   It is bounded to a fixed width, as are the component guages. 
+ *   Component input boxes are not drawn and solely functional.
+ * (Apr.2016)
+ * 
+ * @author Krybo
+ *
+ */
 
 public class VmenuSliders implements Vmenu
 	{
 	private int x;		// X anchor
 	private int y;		// Y anchor
 	private int w;		// Pixel Width allocation
+	
+	private int calcH;
 
 	private Integer selectedIndex;
 	private Integer items;
 	private Integer guageHeight = 10;
 	private Integer borderWidth = 2;
+	private Integer paddingWidthPx = 2;
 	private Integer iconPaddingPx = 16;
 	private Double magnifier = 1.0d;
-	
-	private boolean useDirectInputs = false;
-	private boolean useIcons = false;
+	// Displays string representation of the selected guage.
+	private String statusBar = new String("");
+
 	private boolean isEnableInput = false;
+	private boolean useIcons = false;
 	private boolean isBkgImg = false;
 	private boolean isVisible = true;
 	private boolean isActive = true;
@@ -50,6 +71,7 @@ public class VmenuSliders implements Vmenu
 	private VImage bkgImg;
 	private Color clrBack;
 	private Color clrFore;
+	private Color highlighter = new Color(1.0f, 1.0f, 1.0f, 0.36f );
 
 	public VmenuSliders(int anchorX, int anchorY, int widthPx, 
 			int guageCount, boolean isDecimalGuage, boolean useInputs )
@@ -64,11 +86,14 @@ public class VmenuSliders implements Vmenu
 		
 		this.selectedIndex = -1;
 		this.setIconPaddingPx(16);
-		this.items = new Integer(0);
-		this.useDirectInputs = false;
+		this.items = new Integer(-1);
+		this.isEnableInput = false;
 		this.useIcons = false;
 		this.guageHeight = new Integer(10);
 		this.borderWidth = new Integer(2);
+		this.focusID = Vmenu.getRandomID();
+		this.clrFore = Color.WHITE;
+		this.clrBack  = Color.BLACK;
 
 		for( int n = 0; n < guageCount; n++ )
 			{
@@ -77,7 +102,8 @@ public class VmenuSliders implements Vmenu
 			else
 				{	this.addIntegerGuage( useInputs );	}
 			}
-		
+
+		this.isEnableInput = useInputs;
 		this.isEnableInput = useInputs;
 		this.refresh();
 		return;
@@ -88,14 +114,15 @@ public class VmenuSliders implements Vmenu
 		{
 		// Width of guages cannot be changed, so get it right here.
 		Double tWidth = new Double(this.w);
-		if( this.useDirectInputs == true )
-			{ tWidth = new Double(this.w) * 0.8d; }
+		tWidth = tWidth - (this.paddingWidthPx*3) - this.iconPaddingPx -
+				(this.borderWidth*2);
 		VmiGuageInt vmi = new VmiGuageInt( 0, 0, 
 			tWidth.intValue(), this.guageHeight, 0, 100, 0 );
 		this.hmGInt.put( this.items, vmi );
 
 		if( hasInput == true )
 			{
+			System.out.println("VMS: Added int input");
 			VmiInputInteger vi = new VmiInputInteger("X", 
 					"Change Integer Value", 0, 0 );
 			this.hmInInt.put( this.items, vi );
@@ -112,14 +139,15 @@ public class VmenuSliders implements Vmenu
 		{
 		// Width of guages cannot be changed, so get it right here.
 		Double tWidth = new Double( this.w );
-		if( this.useDirectInputs == true )
-			{ tWidth = new Double(this.w) * 0.8d; }
+		tWidth = tWidth - (this.paddingWidthPx*3) - this.iconPaddingPx - 
+				(this.borderWidth*2);;
 		VmiGuageDecimal vmi = new VmiGuageDecimal( 0, 0, 
 			tWidth.intValue(), this.guageHeight, 0.0d, 100.0d, 0.0d );
 		this.hmGDec.put( this.items, vmi );
 
 		if( hasInput == true )
 			{
+			System.out.println("VMS: Added decimal input");
 			VmiInputDecimal vd = new VmiInputDecimal("X", 
 					"Change Integer Value", 0, 0 );
 			this.hmInDec.put( this.items, vd );
@@ -132,19 +160,75 @@ public class VmenuSliders implements Vmenu
 		}
 
 
-	@Override
-	public boolean paint(VImage target)
+	public boolean paint( VImage target )
 		{
-		// TODO Auto-generated method stub
+		if( target == null )			{ return(false); }
+		if( this.isVisible == false )	{ return(false); }
+		this.refresh();
+
+		// The background.
+		if( this.isBkgImg == true   &&   this.bkgImg != null )
+			{
+			target.scaleblit(this.x, this.y, this.w, this.calcH, this.bkgImg);
+			}
+		else
+			{
+			target.rectfill(this.x, this.y, this.x+this.w, 
+					this.y+this.calcH, clrBack);			
+			}
+
+		int c = -1;
+		for( Integer n : this.hmType.keySet() )
+			{
+			c++;
+			int tmpX = this.paddingWidthPx + this.borderWidth; 
+			int tmpY = tmpX + (c*this.guageHeight+this.paddingWidthPx);
+			// The main guage body.
+			if( this.hmType.get(n) == true )
+				{	
+				this.hmGDec.get(n).paint(target);
+				}
+			else
+				{
+				this.hmGInt.get(n).paint( target );
+				}
+			// The icon. -- if needed.
+			if( this.useIcons == true && this.hmIcons.get(n) != null )
+				{
+				target.scaleblit( tmpX, tmpY, 
+						this.iconPaddingPx, this.iconPaddingPx, 
+						this.hmIcons.get(n) );
+				}
+			// Selection highlighter
+			if( c == this.selectedIndex )
+				{
+				target.rectfill(this.x, tmpY, this.x+this.w, 
+						tmpY+this.guageHeight+this.paddingWidthPx, 
+						this.highlighter);
+				}
+			}
+
+		// The border.
+		for( int a = 0; a < this.borderWidth; a++ )
+			{
+			target.rect( this.x, this.y, this.x+this.w-a-1, 
+					this.y+this.calcH-1-a, 	clrFore );
+			}
+		
 		return false;
 		}
 
-	@Override
 	public boolean doControls(Integer ext_keycode)
 		{
-		// TODO Auto-generated method stub
-		return false;
+		boolean redraw = false;
+//		sltd.setState(enumMenuItemSTATE.NORMAL.value() );
+		this.playMenuSound(enumMenuEVENT.CANCEL, 33);
+		
+		this.returnToParent();
+
+		return( redraw );
 		}
+	
 
 	public void moveAbs(int x, int y)
 		{
@@ -495,7 +579,49 @@ public class VmenuSliders implements Vmenu
 	 *    confusion.   If you alter the menu as a whole.. do call this.  */
 	private void resolvePositions()
 		{
-		// TODO Auto-generated method stub
+		int num = this.hmType.size();
+		this.calcH  = num * (this.guageHeight + this.paddingWidthPx ) +
+			this.paddingWidthPx + (this.borderWidth*2);
+//		int gWidth = this.w - (this.paddingWidthPx*2) - this.iconPaddingPx;
+//		if( this.useDirectInputs == true ) 
+//			{  gWidth -= (this.w * 0.8); }
+
+		int c = -1;
+		for( Integer n : this.hmType.keySet() )
+			{
+			c++;
+			int baseline = c * (this.guageHeight + this.paddingWidthPx); 
+			if( this.hmType.get(n) == true )
+				{
+				this.hmGDec.get(n).reposition( this.x, this.y, 
+					(this.paddingWidthPx*2) + this.borderWidth +
+						this.iconPaddingPx, 
+					baseline + this.paddingWidthPx+this.borderWidth );
+				if( this.isEnableInput == true ) 
+					{
+					this.hmInDec.get(n).reposition( this.x, this.y, 
+						(this.paddingWidthPx*3) + this.borderWidth +
+						this.iconPaddingPx + 
+						this.hmGDec.get(n).getDX().intValue(), 
+						baseline + this.paddingWidthPx+this.borderWidth );
+					}
+				}
+			else
+				{
+				this.hmGInt.get(n).reposition( this.x, this.y, 
+					(this.paddingWidthPx*2)+this.borderWidth + 
+						this.iconPaddingPx, 
+					baseline + this.paddingWidthPx+this.borderWidth );
+				if( this.isEnableInput == true )
+					{
+					this.hmInInt.get(n).reposition( this.x, this.y, 
+						(this.paddingWidthPx*3) + this.borderWidth +
+						this.iconPaddingPx + 
+						this.hmGInt.get(n).getDX().intValue(), 
+						baseline + this.paddingWidthPx+this.borderWidth );
+					}
+				}
+			}
 		return;
 		}
 
@@ -519,7 +645,30 @@ public class VmenuSliders implements Vmenu
 
 	public void setIconPaddingPx(Integer iconPaddingPx)
 		{	this.iconPaddingPx = iconPaddingPx;	}
-			
+
+	public Integer getPaddingWidthPx()
+		{	return paddingWidthPx;	}
+	public void setPaddingWidthPx(Integer paddingWidthPx)
+		{	this.paddingWidthPx = paddingWidthPx;	}
+
+	public Color getColorBackground()
+		{	return clrBack;	}
+	public void setColorBackground(Color clrBack)
+		{	this.clrBack = clrBack;	}
+
+	public Color getHighlighterColor()
+		{	return highlighter;	}
+	public void setHighlighterColor(Color highlighter)
+		{	this.highlighter = highlighter;	}
+
+	private void returnToParent()
+		{
+		if( this.parentID < 0 ) { return; }
+		setMenuFocus( 0, this.parentID );
+		return;
+		}
+	
+
 	}
 
 

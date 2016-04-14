@@ -867,7 +867,7 @@ public class VmenuButtonPalette implements Vmenu
 
 	private void returnToParent()
 		{
-		System.out.println(" -- returning to parent -- ");
+//		System.out.println(" -- returning to parent -- ");
 		if( this.parentID < 0 ) { return; }
 		setMenuFocus( 0, this.parentID );
 		return;
