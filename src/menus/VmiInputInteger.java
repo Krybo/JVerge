@@ -1,5 +1,6 @@
 package menus;
 
+import static core.Script.log;
 import core.Controls;
 
 /** Class VmiSimpleInput is a Vmenuitem that is used for collecting
@@ -26,6 +27,19 @@ public class VmiInputInteger extends VmiSimpleInput
 			super.getX().intValue(), super.getY().intValue(),
 			true, false, false, false, false );
 		return(super.getId());
+		}
+
+	/**  Process the input value into the appropriate type.
+	 * 
+	 * @return  An integer from the last input.
+	 */
+	public Integer getInput()
+		{
+		Integer result = 0;
+		try { result = Integer.parseInt( super.getText() );	}
+		catch( NumberFormatException e ) 
+		   { log("WARN: Integer input box has invalid Value. returned zero."); }
+		return(result);
 		}
 
 	}

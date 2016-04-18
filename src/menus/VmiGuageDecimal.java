@@ -255,26 +255,30 @@ public class VmiGuageDecimal extends VmiTextSimple
 				this.guageHeart );
 			}
 
-		if( this.guageShell == null )
+		// BORDER - in either form.
+		if( super.isBorderEnabled() == true )
 			{
-			target.rect( x1, y1+1, x1+this.myWidth-1, y1+this.myHgt-2, 
-				Color.BLACK );
-			target.rect( x1, y1, x1+this.myWidth-1, y1+this.myHgt-1, 
-				Color.WHITE );
-			}
-		else
-			{
-			int x2 = x1+this.myWidth-1;
-			int y2 = y1+this.myHgt;
-			for( int bx = 0; bx < this.getBorderObscure(); bx++ )
-				{		// Clip the edges if so desired.
-			// This seemed to be doing more harm then good. disabled it
-//					target.rect(x1+bx, y1+bx,
-//						x2-bx, y2-bx,  Color.TRANSLUCENT );
+			if( this.guageShell == null )
+				{
+				target.rect( x1, y1+1, x1+this.myWidth-1, y1+this.myHgt-2, 
+					Color.BLACK );
+				target.rect( x1, y1, x1+this.myWidth-1, y1+this.myHgt-1, 
+					Color.WHITE );
 				}
-			target.scaleblit( x1, y1, x2-x1, y2-y1,	this.guageShell );
-//				target.blit( x1+50, y1+50, this.guageShell );
-			}
+			else
+				{
+				int x2 = x1+this.myWidth-1;
+				int y2 = y1+this.myHgt;
+				for( int bx = 0; bx < this.getBorderObscure(); bx++ )
+					{		// Clip the edges if so desired.
+				// This seemed to be doing more harm then good. disabled it
+	//					target.rect(x1+bx, y1+bx,
+	//						x2-bx, y2-bx,  Color.TRANSLUCENT );
+					}
+				target.scaleblit( x1, y1, x2-x1, y2-y1,	this.guageShell );
+	//				target.blit( x1+50, y1+50, this.guageShell );
+				}
+			}		// END border
 
 //			System.out.println("DEBUG :: "+ Integer.toString(fillX)+ " / " + 
 //					Integer.toString(fillY)+ "  :: " + 
@@ -343,11 +347,79 @@ public class VmiGuageDecimal extends VmiTextSimple
 		this.recalculate();
 		return; 
 		}
+	/**   Fills the guage to a given percentage.
+	 * 
+	 * @param pct   percentage in form 0.0d to 1.0d
+	 */
+	public void setToPercentage( Double pct )
+		{
+		if( this.maxValue == this.minValue ) { return; }
+		if( pct > 1.0d )   { pct = 1.0d; }
+		if( pct < 0.0d )   { pct = 0.0d; }
+		this.currentValue = (this.maxValue - this.minValue) * pct;
+		this.recalculate();
+		return;
+		}
+	public void setToMax()
+		{ 
+		this.currentValue = this.maxValue;
+		this.recalculate();
+		return;
+		}
+	public void setToMin()
+		{ 
+		this.currentValue = this.minValue;
+		this.recalculate();
+		return;
+		}
 	public void setValue( Float x )
 		{ 
 		this.currentValue = x.doubleValue();
 		this.recalculate();
 		return; 
+		}
+	public void setValueRelative( Double x , boolean wrap )
+		{
+		this.currentValue += x;
+		if( this.maxValue == this.minValue )	{ return; }
+		if( wrap == true )
+			{
+			while( this.currentValue > this.maxValue )
+				{  this.currentValue -= (this.maxValue - this.minValue); }
+			while( this.currentValue < this.minValue )
+				{  this.currentValue += (this.maxValue - this.minValue); }
+			}
+		else
+			{
+			if( this.currentValue > this.maxValue )
+				{  this.currentValue = this.maxValue; }
+			if( this.currentValue < this.minValue )
+				{  this.currentValue = this.minValue; }
+			}
+		this.recalculate();
+		return; 
+		}
+	public void setValueRelative( Float x , boolean wrap )
+		{	this.setValueRelative( x.doubleValue() , wrap );	}
+	public void setValueRelativePercent( Double pct , boolean wrap )
+		{
+		if( this.maxValue == this.minValue ) 
+			{ return; }
+		if( pct == 0.0d )
+			{ return; }
+		if( pct <= -1.0d ) 
+			{
+			this.setToMin(); 
+			return;
+			}
+		if( pct >= 1.0d )     
+			{
+			this.setToMax();
+			return;
+			}
+		Double adj = (this.maxValue - this.minValue) * pct;
+		this.setValueRelative( adj , wrap );
+		return;
 		}
 	public void setValue( double x )
 		{ 
@@ -461,6 +533,18 @@ public class VmiGuageDecimal extends VmiTextSimple
 	public void setBorderObscure(int borderObscure)
 		{	this.borderObscure = borderObscure;	}
 	
+	/** Resets the colors used to draw the heart (bar) of the guage.
+	*  this uses the same color for the core and edge.
+	*    
+	 * @param barColor   the color.
+	 */
+	public void setBarSolidColor( Color barColor )
+		{
+		this.setTwoColorGradient( barColor,  barColor );
+		this.recalculate();
+		return;
+		}
+
 	}
 
 

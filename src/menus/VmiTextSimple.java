@@ -707,5 +707,16 @@ public class VmiTextSimple implements Vmenuitem
 		return;
 		}
 	
+	public boolean isTextEnabled()
+		{ return( this.showText ); }
+	public boolean isBackgroundEnabled()
+		{ return( this.showBG ); }
+	public boolean isIconEnabled()
+		{ return( this.showIcon ); }
+	public boolean isColorful()
+		{ return( this.showColorful ); }
+	public boolean isBorderEnabled()
+		{ return( this.showFrame ); }
+
 	}
 
