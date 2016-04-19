@@ -475,7 +475,6 @@ public class VmiGuageInt extends VmiTextSimple
 	public void setBarColors( Color coreColor, Color edgeColor )
 		{
 		this.setTwoColorGradient( coreColor,  edgeColor );
-		this.recalculate();
 		return;
 		}
 	
@@ -490,6 +489,38 @@ public class VmiGuageInt extends VmiTextSimple
 		hmTmp.put( 0.60d, this.coreColor );
 		hmTmp.put( 1.00d, this.edgeColor );
 		this.gradientBody = new VImageGradient( 300, hmTmp, null);
+		this.recalculate();
+		return;
 		}
+	
+	/** Directly set the bars gradient from a custom built one. */
+	public void setBarGradient( VImageGradient gradientImage )
+		{
+		this.gradientBody = gradientImage;
+		this.recalculate();
+		return;		
+		}
+
+	public void resize(int newWidth, int newHeight )
+		{
+		this.myWidth = newWidth;
+		this.myHgt = newHeight;
+		this.recalculate();
+		return;
+		}
+	public void resizeDelta( int dWidth, int dHeight )
+		{
+		this.myWidth += dWidth;
+		this.myHgt += dHeight;
+		if( this.myWidth < 1 )	{ this.myWidth = 1; }
+		if( this.myHgt < 1 )		{ this.myHgt = 1; }
+		this.recalculate();
+		return;
+		}
+	
+	public int getWidth()
+		{ return(this.myWidth); }
+	public int getHeight()
+		{ return(this.myHgt); }
 	
 	}

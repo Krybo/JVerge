@@ -135,6 +135,8 @@ public class VmiGuageDecimal extends VmiTextSimple
 		hmTmp.put( 0.60d, this.coreColor );
 		hmTmp.put( 1.00d, this.edgeColor );
 		this.gradientBody = new VImageGradient( 300, hmTmp, null);
+		this.recalculate();
+		return;
 		}
 
 	/** Up-scales Float to Double and delegates that constructor */
@@ -541,9 +543,38 @@ public class VmiGuageDecimal extends VmiTextSimple
 	public void setBarSolidColor( Color barColor )
 		{
 		this.setTwoColorGradient( barColor,  barColor );
+		return;
+		}
+
+	/** Directly set the bars gradient from a custom built one. */
+	public void setBarGradient( VImageGradient gradientImage )
+		{
+		this.gradientBody = gradientImage;
+		this.recalculate();
+		return;		
+		}
+
+	public void resize(int newWidth, int newHeight )
+		{
+		this.myWidth = newWidth;
+		this.myHgt = newHeight;
 		this.recalculate();
 		return;
 		}
+	public void resizeDelta( int dWidth, int dHeight )
+		{
+		this.myWidth += dWidth;
+		this.myHgt += dHeight;
+		if( this.myWidth < 1 )	{ this.myWidth = 1; }
+		if( this.myHgt < 1 )		{ this.myHgt = 1; }
+		this.recalculate();
+		return;
+		}
+	
+	public int getWidth()
+		{ return(this.myWidth); }
+	public int getHeight()
+		{ return(this.myHgt); }
 
 	}
 

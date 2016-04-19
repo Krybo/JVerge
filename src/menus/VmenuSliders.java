@@ -3,10 +3,12 @@ package menus;
 import static core.Script.setMenuFocus;
 
 import java.awt.Color;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import core.Controls;
 import domain.VImage;
+import domain.VImageGradient;
 import domain.VSound;
 
 /**  A Vmenu Class that contains a series of manipulatable guages.
@@ -213,9 +215,12 @@ public class VmenuSliders implements Vmenu
 			// The icon. -- if needed.
 			if( this.useIcons == true && this.hmIcons.get(n) != null )
 				{
-				target.scaleblit( this.x+tmpX, this.y+tmpY, 
-						this.iconPaddingPx, this.iconPaddingPx, 
-						this.hmIcons.get(n) );
+				int tmpicon = this.iconPaddingPx;
+				if( this.guageHeight < this.iconPaddingPx )
+					{ tmpicon = this.guageHeight; } 
+				target.scaleblit( this.x+tmpX, this.y+tmpY,
+					tmpicon, tmpicon, this.hmIcons.get(n) );
+//						this.iconPaddingPx, this.iconPaddingPx, 
 				}
 			// Selection highlighter
 			if( c == this.selectedIndex )
@@ -238,7 +243,6 @@ public class VmenuSliders implements Vmenu
 			{
 			this.statusBar.paint(target);
 			}
-		
 		return false;
 		}
 
@@ -1127,6 +1131,131 @@ public class VmenuSliders implements Vmenu
 	public void setChildID(Long childID)
 		{	this.childID = childID;	}
 
+	/**   Get the number type of the guage at position [index]
+	 * 
+	 * @param index  guage number, hash key.
+	 * @return  true if this is a Decimal guage, false if an Integer.
+	 */
+	public boolean getGuageType( Integer index )
+		{	return( this.hmType.get(index) );	}
+
+	/** If the value of guage [index] is an Intege,  returns the Integer.
+	 *   otherwise it will return null.   Always check for null.  */
+	public Integer getGuageValueInteger( Integer index )
+		{
+		Integer rslt = null;
+		if( this.hmGInt.get( index ) == null )
+			{ return(rslt); }
+		if( this.hmType.get(index) == true ) 
+			{ return(rslt); }
+		rslt = new Integer( this.hmGInt.get(index).getValue() );
+		return(rslt);
+		}
+	/** If the value of guage [index] is a Double (decimal), return it.
+	 *   otherwise it will return null.   Always check for null.  */
+	public Double getGuageValueDecimal( Integer index )
+		{
+		Double rslt = null;
+		if( this.hmGDec.get( index ) == null )
+			{ return(rslt); }
+		if( this.hmType.get(index) == false ) 
+			{ return(rslt); }
+		rslt = this.hmGDec.get(index).getValue();
+		return(rslt);
+		}
+
+	/** Attaches the given Method to all guages. 
+	 * This will be the method invoked when a guage is "activated" when 
+	 * input mode is turned off.  Limited practical usefulness. */
+	public void setAllGuagesAction( Method action )
+		{
+		for( Integer n : this.hmType.keySet() )
+			{
+			if( this.hmType.get(n) == true )
+				{	this.hmGDec.get(n).setAction(action);	}
+			else
+				{	this.hmGInt.get(n).setAction(action); 	}
+			}
+		return;
+		}
+
+	/**  Attach a keycode (hotkey) to a guage.
+	 * It will activate either the attached method or start nput for target.
+	 * @param index   target guage number.  Base 0
+	 * @param vergeKeyCode   extended keycode (typcially 0-255)
+	 */
+	public void setGuageKeyCode( Integer index, Integer vergeKeyCode )
+		{
+		if( this.hmType.get(index) == null )
+			{ return; }
+		if( this.hmType.get(index) == true )
+			{	this.hmGDec.get(index).setKeycode(vergeKeyCode); }
+		else
+			{	this.hmGInt.get(index).setKeycode(vergeKeyCode);	}
+		return;
+		}
+
+	/** Attaches a string description to a guage index.  */
+	public void setGuageTip( Integer index, String theTip )
+		{
+		if( this.hmType.get(index) == null )
+			{ return; }
+		if( this.hmType.get(index) == true )
+			{	this.hmGDec.get(index).setTip(theTip); }
+		else
+			{	this.hmGInt.get(index).setTip(theTip);	}
+		return;
+		}
+	public String getGuageTip( Integer index )
+		{
+		if( this.hmType.get(index) == null )
+			{ return(null); }
+		if( this.hmType.get(index) == true )
+			{	return( this.hmGDec.get(index).getTip()[0] ); }
+		else
+			{	return( this.hmGInt.get(index).getTip()[0] ); }
+		}
+
+	/**  Returns the bounding width of the entire menu. */
+	public int getWidthPx()
+		{ return(this.w); }
+	/**  Returns the calculated height of the entire menu body in pixels. 
+	 * Does not count the status bar, */
+	public int getHeightPx()
+		{ return(this.calcH); }
+
+	public void setGuageGradient( Integer index, 
+			VImageGradient gradientImage )
+		{
+		if( this.hmType.get(index) == null )
+			{ return; }
+		if( this.hmType.get(index) == true )
+			{	this.hmGDec.get(index).setBarGradient(gradientImage); }
+		else
+			{	this.hmGInt.get(index).setBarGradient(gradientImage);	}
+		return;
+		}
+
+	public void setGuageHeight( int newHeightPx )
+		{
+		if( newHeightPx < 3 )		{ return; }
+		this.guageHeight = newHeightPx;
+		for( Integer n : this.hmType.keySet() )
+			{
+			if( this.hmType.get(n) == true )
+				{
+				this.hmGDec.get(n).resize( this.hmGDec.get(n).getWidth(),
+					newHeightPx);
+				}
+			else
+				{
+				this.hmGInt.get(n).resize( this.hmGInt.get(n).getWidth(),
+					newHeightPx);				
+				}
+			}
+		return;
+		}
+	
 	}
 
 
