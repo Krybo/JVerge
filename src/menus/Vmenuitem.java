@@ -55,7 +55,11 @@ public interface Vmenuitem
 			int deltaX, int deltaY, int drelPosX, int drelPosY );
 	// Sets the method called when the thing is used.
 	public void setAction( Method action );
+	public Method getAction();
 	public boolean doAction();
+	public void setActionArgs( Object[] actionArgs );
+	public Object[] getActionArgs();
+	
 	// Method to draw the item.
 	public void paint(VImage target);
 	// mode # For internal use

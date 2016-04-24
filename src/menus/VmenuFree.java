@@ -397,6 +397,13 @@ public class VmenuFree implements Vmenu
 		return this.content.get(index);
 		}
 
+	public Vmenuitem getMenuItemSelected()
+		{
+		if( this.selectedIndex < 0 || this.selectedIndex >= this.content.size())
+			{ return(null); }
+		return( this.content.get(this.selectedIndex) );
+		}
+	
 	/**
 	 * Given a Long menu id , checks all menuItems for that ID If so, Returns
 	 * the menu item object. ALWAYS check for null.

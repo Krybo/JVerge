@@ -2,11 +2,13 @@ package menus;
 
 import static core.Script.log;
 import static core.Script.screen;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import core.Controls;
 import core.JVCL;
@@ -274,7 +276,16 @@ public class VMenuManager
 	public synchronized long delegateControl( int ext_keycode, boolean onlyFocused )
 		{
 		long rslt = 0;
+		// First scan for applicaable targets to send the key press to.
+		// *Then actually do it.   This avoid ConcurrentModificationException
+		// Since these are only refs.. it should be easy on resources.
+		ArrayList<Vmenu> targets = new ArrayList<Vmenu>();
 //		System.out.println(" DEBUG : entered delegateControl " );
+
+		
+		// Warning: Attempted to do this the other way, looping over menu
+		// then checking focus.. but this did not work becasuse the 
+		// focus was being changed within the loop.
 		
 		if( onlyFocused == true )
 			{
@@ -286,34 +297,25 @@ public class VMenuManager
 				for( Vmenu vm : this.menus )	
 					{
 					if( vm.getFocusId() == xid )
-						{
-//						System.out.println("Sent keycode " + 
-//								Integer.toString(ext_keycode) + " to menu id "+
-//								vm.getFocusId().toString() );
-
-						if( vm.doControls(ext_keycode) )
-							{ rslt++; }						
-						}
+						{	targets.add(vm);	}
 					}
 				}
-			
-			// Attempted to do this the other way, looping over menu
-			// then checking focus.. but this did not work becasuse the 
-			// focus was being changed within the loop.
-			
 			}
 		else
 			{
 			for( Vmenu vm : this.menus )
-				{
-//				System.out.println("Sent * keycode " + 
-//					Integer.toString(ext_keycode) + " to menu id "+
-//					vm.getFocusId().toString() );
-				
-				if( vm.doControls(ext_keycode) )
-					{ rslt++; }
-				}
+				{	targets.add(vm);	}
 			}
+		
+		// now, actually do the operations.
+		Iterator<Vmenu> it = targets.iterator();
+		while( it.hasNext() )
+			{
+			Vmenu vm = it.next();
+			if( vm.doControls(ext_keycode) )
+				{ rslt++; }			
+			}
+		
 		return(rslt);
 		}
 

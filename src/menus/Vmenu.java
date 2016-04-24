@@ -22,7 +22,7 @@ import domain.VSound;
  *     
  *  The primary method is the paint() method which will draw the results
  *     by calling paint() of all its menuitem(), outputing to a referenced
- *     VImage object, which can be an existing object, or temporary one.
+ *     VImage object, that may be an existing object, or temporary one.
  *  
  *  Conventions:
  *  	   Implemented Vmenu Classes should be named "Vmenu"+Name
@@ -72,6 +72,7 @@ public interface Vmenu
 	
 	public void moveAbs(int x, int y);
 	public void moveRel(int x, int y);
+
 	public Integer countMenuItems();
 	/**  Adds (appends) any implementation of Vmenuitem into the menu.
 	 * Returns the menu item number of the new addition.   This can be 
@@ -84,11 +85,12 @@ public interface Vmenu
 	public Vmenuitem popItem();
 	public Vmenuitem removeItem(int index);
 	public Integer insertItem(Vmenuitem vmi , int index );
+	public Vmenuitem getMenuItemSelected();
+	public Vmenuitem getMenuItem(int index);
+	public Vmenuitem getMenuItemByID( Long id );
 	
 	public void refresh();
 	
-	public Vmenuitem getMenuItem(int index);
-	public Vmenuitem getMenuItemByID( Long id );
 	public Integer getSelectedIndex();
 	public int getSelectedIndexPosX();
 	public int getSelectedIndexPosY();

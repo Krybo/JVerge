@@ -13,6 +13,7 @@ import core.JVCL;
 
 
 
+
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
@@ -51,6 +52,7 @@ import domain.VSound;
 import domain.VImage;
 import domain.Entity;
 import domain.Map;
+import static core.Script.setMenuFocus;
 import static core.SinCos.*;
 
 
@@ -1323,14 +1325,15 @@ public class Script {
 	 * @param methodName		String name of the desired Method.
 	 * @return		a Method Object, upon total failure, returns null
 	 */
-	public static Method getFunction(Class<?> theClass, String methodName )
+	public static Method getFunction( Class<?> theClass, String methodName )
 		{
 		Method rslt = null;
 		if( methodName.isEmpty() )	{ return(null); }
 		
 		for( Method m : theClass.getMethods() )
 			{
-//			System.out.println( " DEBUG >> " + m.getName() );
+//			System.out.println( " DEBUG >> " + theClass.getName() + " . "
+//					+ m.getName() );
 			if( m.getName().equals(methodName) == true )
 				{ rslt = m; }
 			}
@@ -1580,6 +1583,11 @@ public class Script {
 		{	return( Vmm.setFocus(id, slot ) );	}
 	public static void refreshMenu()
 		{ Vmm.refreshGraphics();   return; }
+	public static void focusSystemMenu()
+		{
+		setMenuFocus( 0, VergeEngine.Vmm.getSystemMenuFocusID() );
+		return;
+		}
 	
 	// Krybo (2014-09-18)   map zooming functions
 	

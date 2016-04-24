@@ -408,9 +408,20 @@ public class VmiDataTable implements Vmenuitem
 	/**  This Vmenutem is for display only.   No actions attached.	 */
 	public void setAction(Method action)
 		{	return;	}
+	public Method getAction()
+		{ 
+		return( core.Script.getFunction(Vmenuitem.class, "nullAction" ) ); 
+		}
 	/**  This Vmenutem is for display only.   No actions attached.	 */
 	public boolean doAction()
-		{	return false;	}
+		{	return(false);	}
+
+	/** only to satisfy interface. */
+	public Object[] getActionArgs()
+		{ return( new Object[]{} );	}
+	public void setActionArgs(Object[] actionArgs)
+		{ return; }
+
 
 	/**  Draws the contents of this menuitem Data table onto 
 	 *    the provided VImage

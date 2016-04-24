@@ -605,6 +605,13 @@ public class VmenuButtonPalette implements Vmenu
 		{
 		return(this.hmButtons.get(index));
 		}
+	
+	public Vmenuitem getMenuItemSelected()
+		{
+		if( this.selectedIndex < 0 )	{ return(null); }
+		if( this.selectedIndex >= this.hmButtons.size() )  { return(null); }
+		return( this.hmButtons.get(this.selectedIndex) );
+		}
 
 	public Vmenuitem getMenuItemByID(Long id)
 		{

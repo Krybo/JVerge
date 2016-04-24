@@ -78,6 +78,9 @@ public class Controls implements
 	// Krybo (Feb.2016)  Adding a low level menu toggle variable.
 	public static boolean MENU_OPEN;
 	public static Long MENU_TIMER = new Long(0);
+	// Krybo (Apr.2016)  the amount of ns to wait between menu cntl scans
+	public static final Long menuControlFreqNs = 
+			new Long( 90000000 );
 	public static int MENU_MASTERKEY = -1; 
 	// Keeps a stack of button keypress codes intended to be fed to menus
 	//   the int keeps track of how many items were sent out to process.
@@ -210,11 +213,12 @@ public class Controls implements
 				}
 			}
 		
-		if( MENU_OPEN )	{ UpdateMenusControls( new Long(90000000) ); }
+		if( MENU_OPEN )	
+			{ UpdateMenusControls( menuControlFreqNs); }
 	}
 
 	/**
-	 * Determine the menu instances that have focus
+	 * Krybo: Determine the menu instances that have focus
 	 *    and call their .controls() method.
 	 *  Several menus can be controlled at once.   This is the purpose
 	 *      behind MENU_FOCUS[] to hold the focusID of each operable
@@ -315,7 +319,8 @@ public class Controls implements
 
 	// JGAME STUFF **** /////////////////////////////////////////////
 	
-	void updateMouse(MouseEvent e,boolean pressed, boolean released, boolean inside) {
+	void updateMouse(MouseEvent e,boolean pressed, boolean released, boolean inside) 
+				{
 				mousepos = e.getPoint();
 				/* [Rafael, the Esper] mousepos.x = (int)(mousepos.x/el.x_scale_fac);
 				mousepos.y = (int)(mousepos.y/el.y_scale_fac); */
@@ -374,12 +379,14 @@ public class Controls implements
 			}
 			public void focusLost(FocusEvent e) {
 				has_focus=false;
-			}
+				}
 
 			/* Standard Wimp event handlers */
-			public void keyPressed(KeyEvent e) 
+			public void keyPressed( KeyEvent e ) 
 				{
 				char keychar = e.getKeyChar();
+
+//				System.out.println("Detected "+keychar );
 				int keycode = e.getKeyCode();				
 				if (keycode>=0 && keycode < 256) {
 					keymap[keycode]=true;
@@ -459,7 +466,7 @@ public class Controls implements
 				}
 			}
 			public void keyTyped (KeyEvent e) { }
-	
+
 			/* WindowListener handlers */
 
 			public void windowActivated(WindowEvent e) {}

@@ -347,6 +347,12 @@ public class VmenuConfirmPrompt implements Vmenu
 		return null;
 		}
 	
+	public Vmenuitem getMenuItemSelected()
+		{
+		if( this.selectedIndex == 0 )	{ return(this.vmiNo); }
+		else { return(this.vmiYes); }
+		}
+	
 	/**  Given a Long menu id , checks all menuItems for that ID
 	 * 	If so, Returns the menu item object.   Always check for null.
 	 */

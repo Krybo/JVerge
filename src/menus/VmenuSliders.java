@@ -243,14 +243,14 @@ public class VmenuSliders implements Vmenu
 			{
 			this.statusBar.paint(target);
 			}
-		return false;
+		return(true);
 		}
 
 	public boolean doControls(Integer kc )
 		{
 		boolean redraw = false;
 //		sltd.setState(enumMenuItemSTATE.NORMAL.value() );
-		this.playMenuSound(enumMenuEVENT.CANCEL, 33);
+//		this.playMenuSound(enumMenuEVENT.CANCEL, 33);
 
 		Integer basecode = Controls.extcodeGetBasecode(kc);
 		boolean isShift = Controls.extcodeGetSHIFT(kc);
@@ -577,6 +577,15 @@ public class VmenuSliders implements Vmenu
 		if( this.hmType.get(index) == true )
 			{	return( this.hmGDec.get(index) );	}		
 		return( this.hmGInt.get(index) );
+		}
+	
+	public Vmenuitem getMenuItemSelected()
+		{
+		if( this.hmType.get(this.selectedIndex) == null )
+			{ return(null); }
+		if( this.hmType.get(this.selectedIndex) == true )
+			{	return( this.hmGDec.get(this.selectedIndex) );	}		
+		return( this.hmGInt.get(this.selectedIndex) );
 		}
 
 	/** Looks for a menu component with a specified ID, then returns it.

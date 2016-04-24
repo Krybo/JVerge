@@ -529,6 +529,14 @@ public class VImage implements Transferable
 			// TODO [Rafael, the Esper] Implement this mechanism in VImage
 			//error("Non implemented function: setclip");
 		}
+		
+		// Grabs the Color at a specified pixel.  in triple-float + alpha .
+		public Color getPixelColor(int x, int y)
+			{
+			int[] iA = new int[4];
+			this.getImage().getData().getPixel(x, y, iA );
+			return( new Color( iA[0], iA[1], iA[2], 255 ) );
+			}
 
 		public void silhouette(int x, int y, Color c, VImage src) {
 			int x1,x2,y1,y2;
@@ -541,7 +549,7 @@ public class VImage implements Transferable
 			for (int j=y1; j<y2; j++)
 			{
 				for(int i=x1;i<x2;i++) {
-					if(src.getImage().getRGB(i, j)==transcolor || src.getImage().getRGB(i, j)==0) // black 
+					if(src.getImage().getRGB(i, j)==transcolor || src.getImage().getRGB(i, j)==0) // black
 						this.setPixel(x+i, y+j, new Color(0,0,0,0));
 					else
 						this.setPixel(x+i, y+j, c);

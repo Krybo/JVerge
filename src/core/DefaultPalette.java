@@ -1,6 +1,7 @@
 package core;
 
 import java.awt.Color;
+import java.util.HashMap;
 
 // verge.pal default v1, based on chr_file.cpp of VOPenchr
 public class DefaultPalette {
@@ -36,6 +37,24 @@ public class DefaultPalette {
 		Color color = new Color(pal[c].r, pal[c].g, pal[c].b, lucent);
 		return color;
 	}
+
+	/**  Transforms the entire palette as a HashMap
+	 *  Krybo (Apr.2016)
+	 * @param lucent  The lucent bit to set in all Colors (int 0-255)
+	 * @return  An Integer,Color HashMap built from the palette colors.
+	 */
+	public HashMap<Integer,Color> getAllColors( int lucent ) 
+		{
+		if( pal == null || pal.length == 0 ) 
+			{  return(null);	}
+		HashMap<Integer,Color> rtn = new HashMap<Integer,Color>();
+		for( Integer c = 0; c < (pal.length-1); c++ )
+			{
+			Color clr = new Color(pal[c].r, pal[c].g, pal[c].b, lucent);
+			rtn.put(c, clr );
+			}
+		return(rtn);
+		}
 	
 		
 	void buildPalette(Palette pal[])

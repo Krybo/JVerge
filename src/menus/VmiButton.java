@@ -5,6 +5,7 @@ import static core.Script.setMenuFocus;
 import java.awt.Color;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 
 import domain.VImage;
@@ -64,6 +65,7 @@ public class VmiButton implements Vmenuitem
 
 	// Da buziness end.
 	private Method myAction = null;
+	private Object[] actionArgs;
 	
 	public static enum enumMenuButtonCOLORS
 		{
@@ -147,6 +149,7 @@ public class VmiButton implements Vmenuitem
 				
 		this.myAction = core.Script.getFunction(Vmenuitem.class, 
 				"nullAction" );
+		this.actionArgs = new Object[]{};
 
 		return;
 		}
@@ -225,29 +228,96 @@ public class VmiButton implements Vmenuitem
 
 	public void setAction(Method action)
 		{	this.myAction = action;	}
+	public Method getAction()
+		{ return(this.myAction); }
+	
+	/** Get the argument(s) passed when doAction is called.
+	 * @return the actionArgs
+	 */
+	public Object[] getActionArgs()
+		{	return actionArgs;	}
+	/**  Set the argument(s) to pass when doAction is called.
+	 * @param actionArgs the actionArgs to set
+	 */
+	public void setActionArgs(Object[] actionArgs)
+		{	this.actionArgs = actionArgs;	 return; }
 
 	// Runs the attached Method - returns true if it was successfully invoked.
 	public boolean doAction()
 		{
-		// Safety is on.. or there is no action set.   Get out.
 		if( this.active == false )		{ return(false); }
 		if( this.myAction == null ) 	{ return(false); }
 
+ 		Type[] pType = myAction.getGenericParameterTypes();
+ 			// arguments are definately not right.  Stop.
+ 		if( pType.length != this.getActionArgs().length )
+ 			{
+ 			System.err.println("Prevented activation of method : "+
+				this.myAction.getName() + " due to argument mismatch!" );
+ 			return(false); 
+ 			}
+		
+		System.out.println("DEBUG : Attempting to activate method : "+
+				this.myAction.getName() + " with " + 
+				Integer.toString( this.getActionArgs().length ) + " args (" +
+				this.myAction.getModifiers() + ")."  );
+		if( this.getActionArgs().length > 0 )
+			{
+			Integer n = -1;
+			for( Object c : this.getActionArgs() )
+				{
+				n++;
+				System.out.println(" ARG "+n.toString()+
+					": Taken Type " + c.getClass().getTypeName()  +
+					" :: Given Type "+c.getClass().getName() );
+				if( pType[n].equals( c.getClass() ) == false ) 
+					{
+					System.err.println("doAction: Prevented type mismatch.");
+					}
+				}
+			}
+
 		try { 			// 	call the method. and prey
 //			this.myAction.invoke(null);
-	        if( this.myAction.getModifiers() == Modifier.STATIC )
-	     	   { this.myAction.invoke( null ); }
+
+	        if( (this.myAction.getModifiers() & Modifier.STATIC)
+	     		   == Modifier.STATIC  )
+	     	   { this.myAction.invoke( null, (Object[])this.getActionArgs() ); }
 	        else
-	     	   { this.myAction.invoke( this ); }
+	     	   {
+//	     	   this.myAction.invoke( this.getClass().getInterfaces(), this.actionArgs );
+	     	   
+	     	   boolean localTest = false;
+	     	   for( Method mTest : this.getClass().getDeclaredMethods() )
+	     		   {
+	     		   if( mTest.getName().equals(myAction.getName()))
+	     			   { localTest = true; }
+	     		   }
+	     	   if( localTest == false )		
+	     		   {
+	     		   System.err.println("Invoking instanced method not"+
+     				   "belonging to the local Class is unsupported!  "+
+     				   "Either make it a static method or add it to this Class");
+	     		   return(false); 
+	     		   }
+	     	   else
+	     		   {
+	     		   this.myAction.invoke( this, this.getActionArgs() );
+//	     		   this.myAction.invoke( myAction.getClass().newInstance(), 
+//	     			   new Object[]{} );
+	     		   }
+	     	   }
 			}
 		catch(Exception e)
-			{	
+			{
 			e.printStackTrace();
-			System.out.println( e.getMessage() );
+			System.err.println( e.getMessage() );
 			return(false); 
 			}
+
 		return(true);
 		}
+	
 
 
 	public void paint(VImage target)
