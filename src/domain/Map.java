@@ -65,6 +65,7 @@ public interface Map {
 		
 	public void setHorizontalWrapable(boolean b);
 	public void setVerticalWrapable(boolean b);
-	
+
+	public void refresh();
 
 }

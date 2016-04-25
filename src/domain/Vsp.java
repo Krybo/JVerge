@@ -134,6 +134,15 @@ public class Vsp
 	public Vsp( int blankTiles )
 		{ this.createDummy(blankTiles); }
 	
+	/** Copy constructor - used in editor :  Delegates the copy method.
+	 *  Krybo Apr.2016 */
+	public Vsp( Vsp cp )
+		{
+		this.copy(cp);
+		return;
+		}
+
+
 	public Vsp(URL urlpath) {
 		try {
 			this.load(urlpath.openStream());
@@ -145,6 +154,38 @@ public class Vsp
 		}		
 	}
 	
+
+	/** Overwrite all data fields in this vsp - from a external source. */
+	public void copy( Vsp cp )
+		{
+			// Take care of primatives first
+		this.compression	= cp.getCompression();
+		this.flipped 		= cp.getFlipped().clone();
+		this.tileidx 		= cp.getTileidx().clone();
+		this.vadelay 		= cp.getVadelay().clone();
+		this.format 		= cp.getFormat();
+		this.numobs  		= cp.getNumObs();
+		this.numtiles		= cp.getNumtiles();
+		this.obsPixels		= cp.getObsPixels().clone();
+		this.signature		= VSP_SIGNATURE;
+		this.tileArea		= 
+				cp.getTileSquarePixelSize() * cp.getTileSquarePixelSize();
+		this.tileSize		= cp.getTileSquarePixelSize();
+		this.version		= VSP_VERSION;
+	
+		// Slightly more complicated Object-based components.
+		this.anims = new Animation[ cp.getNumAnimations() ];
+		for( int n = 0; n < cp.getNumAnimations(); n++ )
+			{
+			this.anims[n] = new Animation( cp.getAnims()[n] );
+			}
+		this.tiles = new BufferedImage[ cp.getNumtiles() ];
+		for( int t = 0; t < cp.getNumtiles(); t++ )
+			{
+			this.tiles[t] = VImage.ImageDeepCopy( cp.getTiles()[t] ); 
+			}
+		return;
+		}
 	
 	private void load (InputStream fis) {
 
@@ -160,7 +201,7 @@ public class Vsp
 			this.numtiles = f.readSignedIntegerLittleEndian();
 			this.compression = f.readSignedIntegerLittleEndian();
 			
-			System.out.println(this.signature + ";"+this.version+";"+this.getNumtiles()+";"+this.compression);
+			System.out.println(this.signature + ";"+this.version+";"+this.getNumtiles()+";"+this.getCompression());
 			// Krybo:: e.x.   5264214;6;100;1
 			
 			byte[] vspdata = f.readCompressedUnsignedShortsIntoBytes(); // tileCount * width * height * 3 bytes!
@@ -170,14 +211,14 @@ public class Vsp
 	        System.out.println("numAnim = " + numAnim);
 	        
 	        for(int i=0; i<numAnim; i++) {
-	        	Vsp.Animation a = this.new Animation();
+	        	Vsp.Animation a = new Animation();
 	        	a.name = f.readFixedString(256);
 	        	a.start = f.readSignedIntegerLittleEndian();
 	        	a.finish = f.readSignedIntegerLittleEndian();
 	        	a.delay = f.readSignedIntegerLittleEndian();
 	        	a.mode = f.readSignedIntegerLittleEndian();
 	        	
-	        	this.anims[i] = a;
+	        	this.getAnims()[i] = a;
 	        }			
 
 	        this.numobs = f.readSignedIntegerLittleEndian();	// obs.length
@@ -238,16 +279,16 @@ public class Vsp
 			f.writeSignedIntegerLittleEndian(this.tileSize);
 			f.writeSignedIntegerLittleEndian(this.format);
 			f.writeSignedIntegerLittleEndian(this.getNumtiles());
-			f.writeSignedIntegerLittleEndian(this.compression);
+			f.writeSignedIntegerLittleEndian(this.getCompression());
 			
-			System.out.println(this.signature + ";"+this.version+";"+this.getNumtiles()+";"+this.compression);
+			System.out.println(this.signature + ";"+this.version+";"+this.getNumtiles()+";"+this.getCompression());
 			byte[] pixels = f.getPixelArrayFromFrames(tiles, tiles.length, this.tileSize, this.tileSize);
 			f.writeCompressedBytes(pixels);
 
-			f.writeSignedIntegerLittleEndian(this.anims.length);
+			f.writeSignedIntegerLittleEndian(this.getAnims().length);
 	        
-	        for(int i=0; i<this.anims.length; i++) {
-	        	Animation a = anims[i];
+	        for(int i=0; i<this.getAnims().length; i++) {
+	        	Animation a = getAnims()[i];
 	        	f.writeFixedString(a.name, 256);
 	        	f.writeSignedIntegerLittleEndian(a.start);
 	        	f.writeSignedIntegerLittleEndian(a.finish);
@@ -430,7 +471,19 @@ public class Vsp
 
 	public BufferedImage [] getTiles() {
 		return tiles;
-	}
+		}
+
+	/** Make a specified tile index into a VImage and return it. 
+	 * Krybo (Apr.2016) */
+	public VImage getTileAsVImage( int index )
+		{
+		if( index > (this.tiles.length-1) )
+			{ index = (this.tiles.length-1); }
+		if( index < 0 )	{ index = 0; }
+		VImage rslt = new VImage( this.tileSize, this.tileSize );
+		rslt.setImage( this.tiles[index] );
+		return(rslt);
+		}
 
 	/* Krybo (Jan.2016) : sets one whole individual tile */
 	
@@ -549,28 +602,28 @@ public class Vsp
 
 	void AnimateTile(int i, int l)
 	{
-		switch (anims[i].mode)
+		switch (getAnims()[i].mode)
 		{
 		    case ANIM_MODE_FORWARD:
-				if (tileidx[l]<anims[i].finish) tileidx[l]++;
-	            else tileidx[l]=anims[i].start;
+				if (tileidx[l]<getAnims()[i].finish) tileidx[l]++;
+	            else tileidx[l]=getAnims()[i].start;
 	            break;
 			case ANIM_MODE_BACKWARD:
-				if (tileidx[l]>anims[i].start) tileidx[l]--;
-	            else tileidx[l]=anims[i].finish;
+				if (tileidx[l]>getAnims()[i].start) tileidx[l]--;
+	            else tileidx[l]=getAnims()[i].finish;
 	            break;
 			case ANIM_MODE_RANDOM:
-				tileidx[l]=Script.random(anims[i].start, anims[i].finish);
+				tileidx[l]=Script.random(getAnims()[i].start, getAnims()[i].finish);
 	            break;
 			case ANIM_MODE_PINGPONG:
 				if (flipped[l]>0)
 	            {
-					if (tileidx[l]!=anims[i].start) tileidx[l]--;
+					if (tileidx[l]!=getAnims()[i].start) tileidx[l]--;
 					else { tileidx[l]++; flipped[l]=0; }
 	            }
 	            else
 	            {
-					if (tileidx[l]!=anims[i].finish) tileidx[l]++;
+					if (tileidx[l]!=getAnims()[i].finish) tileidx[l]++;
 					else { tileidx[l]--; flipped[l]=1; }
 	            }
 				break;
@@ -581,19 +634,19 @@ public class Vsp
 		{
 		boolean animated = false;
 			// Krybo (Jan.2016):  auto-gen maps will not have any of these.  
-		if( anims == null || anims.length == 0 )
+		if( getAnims() == null || getAnims().length == 0 )
 			{ return(false); }
 
-		for (int i=0; i<anims.length; i++)
+		for (int i=0; i<getAnims().length; i++)
 		{
-			if(anims[i] == null || vadelay==null)		// [Rafael, the Esper]
+			if(getAnims()[i] == null || vadelay==null)		// [Rafael, the Esper]
 				return animated;
 			
-			if ((anims[i].delay>0) && (anims[i].delay<vadelay[i]))
+			if ((getAnims()[i].delay>0) && (getAnims()[i].delay<vadelay[i]))
 			{
 				vadelay[i]=0;
 				animated = true;
-				for (int l=anims[i].start; l<=anims[i].finish; l++)
+				for (int l=getAnims()[i].start; l<=getAnims()[i].finish; l++)
 					AnimateTile(i,l);
 			}
 			vadelay[i]++;
@@ -603,8 +656,8 @@ public class Vsp
 
 	void ValidateAnimations()
 	{
-		for (int i=0; i<anims.length; i++)
-			if (anims[i].start<0 || anims[i].start>=getNumtiles() || anims[i].finish<0 || anims[i].finish>=getNumtiles())
+		for (int i=0; i<getAnims().length; i++)
+			if (getAnims()[i].start<0 || getAnims()[i].start>=getNumtiles() || getAnims()[i].finish<0 || getAnims()[i].finish>=getNumtiles())
 				System.err.printf("VSP::ValidateAnimations() - animation %d references out of index tiles", i);
 	}
 	
@@ -612,19 +665,71 @@ public class Vsp
 
 
 
-	public class Animation {
-		
+	/**  Private getters used to copy a vsp. 
+	 * Krybo (Apr.2016)  --------- */
+	
+	private Animation[] getAnims()
+		{	return( this.anims );	  }
+
+	private int getCompression()
+		{	return( this.compression );	}
+	
+	private int getFormat()
+		{  return(this.format);  }
+
+	private int getNumObs()
+		{  return( this.numobs );  }
+
+	private int[] getTileidx()
+		{	return( this.tileidx );	}
+	private int[] getFlipped()
+		{	return( this.flipped );	}
+	private int[] getVadelay()
+		{	return(this.vadelay);	}
+	
+	private byte[] getObsPixels()
+		{	return( this.obsPixels ); 	}
+
+	public int getNumAnimations()
+		{ return( this.anims.length ); }
+
+
+
+	public class Animation 
+		{
 		public String name = "";
 		public int start = 0, finish = 0;
-		
 		public int delay, mode; 
 		
-		public String toString() {
-			return "Animation: " + name + "; startTile:" + start + "; endTile:" + finish + "; delay:" + delay + "; mode: " + mode;
-		}
+		public String toString() 
+			{
+			return "Animation: " + this.name + "; startTile:" + this.start + 
+				"; endTile:" + this.finish + "; delay:" + this.delay + 
+				"; mode: " + this.mode;
+			}
 
-	}
+		public Animation( )
+			{
+			this.name = new String("");
+			this.start = 0;
+			this.finish = 0;
+			this.mode = 0;
+			this.delay = 0;
+			return;
+			}
+
+		public Animation( Animation cp )
+			{
+			this.delay = cp.delay;
+			this.finish = cp.finish;
+			this.mode = cp.mode;
+			this.name = new String(cp.name);
+			this.start = cp.start;
+			return;
+			}
+		
+		}		// END SUB-CLASS animation
 	
 	
-}
+	}			// END CLASS
 

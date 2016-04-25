@@ -556,9 +556,17 @@ public class VmiButton implements Vmenuitem
 	public void setColorContent(
 			HashMap<Integer, Color> basicColors)
 		{
-		this.hmColorItems = basicColors;
+		if( basicColors == null )	{ return; }
+		for( Integer cn : basicColors.keySet() )
+			{
+			this.hmColorItems.put(cn, basicColors.get(cn) );
+			}
+//		this.hmColorItems = basicColors;
 		return;
 		}
+	
+	public Color getColorComponent( Integer hashKeyColor )
+		{	return( this.hmColorItems.get(hashKeyColor) );	}
 
 	public void setImageContent(
 			HashMap<Integer, VImage> imageItems)

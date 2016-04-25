@@ -497,5 +497,8 @@ public class MapDynamic extends MapAbstract implements Map {
 	public int getLayerLucent(int layer) {
 		return 0;
 	}
+	
+	public void refresh()
+		{ MapAbstract.refreshCache(); }
 
 }

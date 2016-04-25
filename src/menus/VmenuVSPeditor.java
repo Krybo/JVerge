@@ -9,7 +9,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
-import menus.Vmenu.enumMenuEVENT;
 import menus.VmiButton.enumMenuButtonCOLORS;
 import core.Controls;
 import core.DefaultPalette;
@@ -29,6 +28,8 @@ public class VmenuVSPeditor implements Vmenu
 
 	// tile index: This is the current tile being edited.
 	private Integer tIndex = 0;
+	// The line the color palette is on.
+	private Integer cBarIndexSet = 0;
 
 	// The component guts.
 	private Vsp vsp = null;
@@ -38,6 +39,9 @@ public class VmenuVSPeditor implements Vmenu
 	private VmenuSliders colorEditor = null;
 	private final DefaultPalette vPal = new DefaultPalette();
 	private HashMap<Integer,Color> clrs = null;
+	private final Color clrTrans = core.Script.Color_DEATH_MAGENTA;
+	private Color clr1st = Color.WHITE;
+	private Color clr2nd = Color.BLACK;
 	private VImage bkgImg = null;
 	private boolean isBkgImg = false;
 	private HashMap<enumMenuEVENT,VSound> hmSounds =
@@ -48,7 +52,8 @@ public class VmenuVSPeditor implements Vmenu
 	private Long parentID = new Long(-1);
 	private Long childID = new Long(-1);
 	
-	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.25f);
+	VImage preview = null;
+	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
 
 
 	/** ----------------  Constructors --------------------  */
@@ -59,36 +64,51 @@ public class VmenuVSPeditor implements Vmenu
 	public VmenuVSPeditor( Vsp sourceTileSet )
 		{
 		this.focusID = Vmenu.getRandomID();
-		this.vsp = sourceTileSet;
+		// copy the VSP from the source.  So we do not edit it directly.
+		this.vsp = new Vsp( sourceTileSet );
 		this.sidebar = new VmenuVertical( 30, 60 );
-		this.colorEditor = new VmenuSliders(30, 300, 128, 3, 
+		this.colorEditor = new VmenuSliders( 20, 300, 128, 3, 
 				false, true, true );
 		this.main = new VmenuButtonPalette(250, 60, 256, 256, 16, 16);
-		this.colorkey = new VmenuHorizontal(1,1);
+		this.colorkey = new VmenuHorizontal( 68,1 );
 		// instantly sets the default verge color palette as the 
 		//  hashmap of available colors at hand.
 		this.clrs = this.vPal.getAllColors(255);
 		
 		// Fill out the menus here.
 		
+		this.clr1st = Color.WHITE;
+		this.clr2nd = Color.BLACK;
+
 		main.setPadding( 0, true, Color.WHITE );
 		main.setBorderAll( false, 0 );
 		main.refresh();
 		
+		Method m3 = null;
 		Method m4 = null;
 		Method m5 = null;
 		Method m6 = null;
+		Method m7 = null;
 		try {
+			m3 = VmenuVSPeditor.class.getDeclaredMethod(
+				"focusSubMenuIndex",  Integer.class );
 			m4 = VmenuVSPeditor.class.getDeclaredMethod(
 				"focusSubMenuIndex",  Integer.class );
 			m5 = VmenuVSPeditor.class.getDeclaredMethod(
 				"nextTile",  new Class[]{} );
 			m6 = VmenuVSPeditor.class.getDeclaredMethod(
 				"prevTile",  new Class[]{} );
+			m7 = VmenuVSPeditor.class.getDeclaredMethod(
+				"saveWorkingTile",  new Class[]{} );
+
 			} catch( Exception e ) 	{ e.printStackTrace(); }
 
 		VmiTextSimple vts01 = new VmiTextSimple("Return to Map");
 		vts01.setAction( getFunction(Script.class,"focusSystemMenu") );
+		
+		VmiTextSimple vts03 = new VmiTextSimple("Edit Palette");
+		vts03.setAction( m3 );
+		vts03.setActionArgs( new Object[]{new Integer(1)} );
 		
 		VmiTextSimple vts04 = new VmiTextSimple("Edit Tile");
 		vts04.setAction( m4 );
@@ -99,21 +119,57 @@ public class VmenuVSPeditor implements Vmenu
 		
 		VmiTextSimple vts06 = new VmiTextSimple("Prev. Tile");
 		vts06.setAction( m6 );
+		
+		VmiTextSimple vts07 = new VmiTextSimple("Save Tile");
+		vts07.setAction( m7 );
 
 		this.sidebar.addItem( vts01 );
 		this.sidebar.addItem( new VmiTextSimple("Save VSP") );
-		this.sidebar.addItem( new VmiTextSimple("Edit Palette") );
+		this.sidebar.addItem( vts03 );
+		this.sidebar.addItem( vts07 );
 		this.sidebar.addItem( vts04 );
 		this.sidebar.addItem( vts05 );
 		this.sidebar.addItem( vts06 );
 		this.sidebar.addItem( 
 			new VmiInputInteger( "<GoTo Tile #>", 
 				"Enter VSP Tile number (INT)", 	0, 0) );
+		
+		for( Integer b = 0; b < 11; b++ )
+			{
+			VmiButton cBtn = new VmiButton(42,42);
+			cBtn.setFrameThicknessPx(3);
+			cBtn.setCircular(true);
+			cBtn.setShadowThicknessPx(3, true);
+			
+			Color thiscolor = this.clrTrans;
+			if( b == 1 )	{ thiscolor = this.clr1st; }
+			if( b == 2 )	{ thiscolor = this.clr2nd; }
+			if( b >= 3 )	{ thiscolor = this.clrs.get(b-3); }
+			
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE, 
+					thiscolor );
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.BODY_INACTIVE, 
+					thiscolor );
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.BODY_SELECTED, 
+					thiscolor );
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.FRAME_OUTER, 
+					Color.GRAY );
+
+			this.colorkey.addItem(cBtn);
+			}
+
+		// -- finish up
 
 		this.bkgImg = null;
 		this.isBkgImg = false;
 
 		this.tIndex = 0;
+		this.updatePreview();
+		
 		this.loadTile( this.tIndex );
 
 		return;
@@ -137,8 +193,11 @@ public class VmenuVSPeditor implements Vmenu
 				target.rectfill( this.sidebar.getX() - 10, this.sidebar.getY()-10,
 						this.sidebar.getX() + this.sidebar.getWidth() + 10, 
 						this.sidebar.getX() + this.sidebar.getHeight() + 10,  
-						new Color(0.0f,0.0f,0.0f, 0.25f ) );
+						this.clrShader  );
 				break;
+			case 1:		// the color key bar.
+				target.rectfill( 58, 0, 636, 59, this.clrShader );
+			break;
 			default:
 				target.rectfill( 240, 50, 516, 326, this.clrShader );
 				break;
@@ -148,6 +207,20 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar.paint(target);
 		this.colorkey.paint(target);
 		this.colorEditor.paint(target);
+		
+		// Tile real-size 3x3 Preview
+		int puX = 176;
+		int puY = 260;
+		target.rect( puX, puY, puX+51, puY+51, Color.BLACK );
+		target.rect( puX+1, puY+1, puX+50, puY+50, Color.WHITE );
+		for( int py = 0; py < 3; py++ )
+			{ for( int px = 0; px < 3; px++ )
+				{
+				target.blit( puX+2+(px*this.preview.getWidth()), 
+					puY+2+(py*this.preview.getHeight() ), 
+					this.preview);  
+				} }
+
 		return(true);
 		}
 
@@ -155,8 +228,8 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		Integer basecode = Controls.extcodeGetBasecode(ext_keycode);
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
-		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
-		
+//		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
+
 		switch( basecode )
 			{
 			case 101:
@@ -169,6 +242,36 @@ public class VmenuVSPeditor implements Vmenu
 				return( true );
 			case 10: // ENTER KEY <CONFIRM> 
 				this.funcActivate();
+				break;
+			case 38: 		// ARROW-UP
+				if( isShift == true )   
+					{
+					// Intercept Shift+Up to transverse palette.
+					this.nextCbarLine();
+					break; 
+					}
+				this.getControlItem().doControls(ext_keycode);
+				break;
+			case 40: 		// ARROW-DOWN
+				if( isShift == true )   
+					{
+					// Intercept Shift+Up to transverse palette.
+					this.prevCbarLine();
+					break; 
+					}
+				this.getControlItem().doControls(ext_keycode);
+				break;
+			// Number keys do da buzinesss.
+			case 48:	case 49:  case 50:  case 51:  case 52:
+			case 53:	case 54:  case 55:  case 56:  case 57:
+				if( this.cFocus == 3 )   // focus only on main.
+					{
+					int transform = basecode - 49;
+					if( transform == -1 )  { transform = 9; }
+					this.setCurrentCell( transform );
+					break;
+					}
+				this.getControlItem().doControls(ext_keycode);
 				break;
 			default:
 				this.getControlItem().doControls(ext_keycode);
@@ -202,7 +305,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar.refresh();
 		this.colorkey.refresh();
 		this.colorEditor.refresh();
-		this.childID = this.getControlItem().getFocusId();
+		this.setChildID(this.getControlItem().getFocusId());
 		return;
 		}
 
@@ -443,14 +546,6 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
-//	private void focusMain()
-//		{  this.cFocus = 3;  return;  }
-//	private void focusSideBar()
-//		{  this.cFocus = 0; return;  }
-//	private void focusColorKeyBar()
-//		{  this.cFocus = 1; return;  }
-//	private void focusColorEditor()
-//		{  this.cFocus = 2; return;  }
 	public static void focusColorEditor( VmenuVSPeditor me )
 		{  me.setSelectedIndex(2);  return; }
 	public static void focusMain( VmenuVSPeditor me )
@@ -503,13 +598,14 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		return;
 		}
-	
+
 	private void nextTile()
 		{
 		this.tIndex++;
 		if( this.tIndex >= vsp.getNumtiles() )
 			{ this.tIndex = 0; }
 		this.loadTile(this.tIndex);
+		this.updatePreview();
 		return;
 		}
 
@@ -519,7 +615,112 @@ public class VmenuVSPeditor implements Vmenu
 		if( this.tIndex < 0 )
 			{ this.tIndex =  vsp.getNumtiles() - 1; }
 		this.loadTile(this.tIndex);
+		this.updatePreview();
 		return;
 		}
 	
-	}
+	private void setCbarLine( int lineIndex )
+		{
+		this.cBarIndexSet = lineIndex;
+		
+		int cbarsets = (this.clrs.size() >> 3);
+		if( this.cBarIndexSet > cbarsets )
+			{ this.cBarIndexSet = 0; }
+		if( this.cBarIndexSet < 0  )
+			{ this.cBarIndexSet = cbarsets; }
+
+		Color theColor = null;
+		for( Integer b = 0; b < 8; b++ )
+			{
+			int bn = b+3;
+			int bc = (this.cBarIndexSet*8)+b;
+			theColor = this.clrs.get(bc);
+			HashMap<Integer,Color> tmp = 
+					new HashMap<Integer,Color>();
+			tmp.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(), 
+					theColor );
+			tmp.put(enumMenuButtonCOLORS.BODY_INACTIVE.value(),
+					theColor );
+			tmp.put(enumMenuButtonCOLORS.BODY_SELECTED.value(), 
+					theColor );
+			this.colorkey.getMenuItem(bn).setColorContent( tmp );
+			}
+		return;
+		}
+
+	private void nextCbarLine()
+		{
+		this.setCbarLine( ++this.cBarIndexSet );
+		return;
+		}
+	private void prevCbarLine()
+		{
+		this.setCbarLine( --this.cBarIndexSet );
+		return;
+		}
+	
+	/**  Applies color to one working pixel.  Given a color key number */
+	private void setCell( int cellIdx, int keyNum )
+		{
+		HashMap<Integer,Color> hmTmp = 
+				new HashMap<Integer,Color>();
+		Color c = this.colorkey.getMenuItem(keyNum).getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value());
+		hmTmp.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(),  c );
+		hmTmp.put(enumMenuButtonCOLORS.BODY_INACTIVE.value(), c);
+		hmTmp.put(enumMenuButtonCOLORS.BODY_SELECTED.value(), 
+				VmenuVSPeditor.invertColor(c) );
+		this.main.getMenuItem(cellIdx).setColorContent( hmTmp );
+		return;
+		}
+	
+	private void setCurrentCell( int keyNum )
+		{	this.setCell( this.main.getSelectedIndex(), keyNum );	}
+	
+	/** Inverts a color.  By components. Leaves alpha alone. */
+	private static Color invertColor( Color in )
+		{
+		return( new Color( 255 - in.getRed(), 255 - in.getGreen(), 
+				255 - in.getBlue(), in.getAlpha() ) );
+		}
+
+	/** Moves the data from the menu object to the actual VSP. */
+	private void saveWorkingTileAs( int vspIdx )
+		{
+		int z = vsp.getTileSquarePixelSize();
+		VImage output = new VImage( z,z );
+		for( Integer y = 0; y < z; y++ )
+			{	for( Integer x = 0; x < z; x++ )
+				{
+				output.setPixel( x, y, this.main.getMenuItem(
+					(y*z)+x).getColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE.value() ));
+			}	}
+		this.updatePreview();
+		vsp.modifyTile( vspIdx, output.getImage() );
+		}
+
+	/** Moves the data from the menu object to the actual VSP.
+	 * Saves the current work to the currently active tile.  */
+	private void saveWorkingTile( )
+		{ this.saveWorkingTileAs( this.tIndex ); }
+	
+	private void updatePreview()
+		{
+		this.preview = this.vsp.getTileAsVImage( this.tIndex );
+		return;
+		}
+
+	public Vsp exportVsp()
+		{	return( new Vsp(this.vsp) );	}
+
+	public Long getParentID()
+		{	return parentID;	}
+	public void setParentID(Long parentID)
+		{	this.parentID = parentID;	}
+	public Long getChildID()
+		{	return childID;	}
+	public void setChildID(Long childID)
+		{	this.childID = childID;	}
+
+	}		// END CLASS

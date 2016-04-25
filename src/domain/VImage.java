@@ -21,10 +21,12 @@ import java.awt.image.AffineTransformOp;
 //import java.awt.geom.AffineTransform;
 //import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
+import java.awt.image.WritableRaster;
 //import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URL;
@@ -72,6 +74,8 @@ public class VImage implements Transferable
 		//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
 		g = (Graphics2D)image.getGraphics();
 		g.drawImage(existingVImage.getImage(), 0, 0, null );
+		g.dispose();
+		return;
 		}	
 
 
@@ -823,6 +827,7 @@ public class VImage implements Transferable
 		
 		// Note: different from Java fillOval, the circle is centered in (x1, y1)
 		public void circle(int x1, int y1, int xr, int yr, Color c, VImage dst) { // [Rafael, the Esper]
+			if( c== null )   { c = Color_DEATH_MAGENTA; }
 			dst.g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), currentLucent));
 			dst.g.drawOval(x1-xr, y1-yr, xr*2, yr*2);
 		}
@@ -840,6 +845,7 @@ public class VImage implements Transferable
 		public void circleTrans(int x1, int y1, int xr, int yr, 
 				Color c, VImage dst) 
 			{
+			if( c== null )   { c = Color_DEATH_MAGENTA; }
 			Composite save = this.g.getComposite();
 			this.g.setComposite( AlphaComposite.getInstance(
 				AlphaComposite.DST_ATOP )  );
@@ -863,8 +869,13 @@ public class VImage implements Transferable
 			}
 		}
 
-		public void circlefill(int x1, int y1, int xr, int yr, Color c) { // [Rafael, the Esper]
-			if(c.getAlpha()==255)
+		public void circlefill(int x1, int y1, int xr, int yr, Color c) 
+			{ // [Rafael, the Esper]
+			
+			// Krybo (Apr.2016)
+			if( c == null )	 { c = Color_DEATH_MAGENTA; }
+			
+			if( c.getAlpha() == 255 )
 				c = new Color(c.getRed(), c.getGreen(), c.getBlue(), currentLucent);
 			
 			this.g.setColor(c);
@@ -873,6 +884,7 @@ public class VImage implements Transferable
 		
 		// Note: it's a filled triangle. A non-filled triangle can be draw with lines.
 		public void triangle(int x1, int y1, int x2, int y2, int x3, int y3, Color c) { // [Rafael, the Esper]
+			if( c == null )   { c = Color_DEATH_MAGENTA; }  // Krybo (Apr.2016)
 			Polygon p = new Polygon();
 			p.addPoint(x1, y1);
 			p.addPoint(x2, y2);
@@ -1305,6 +1317,17 @@ public class VImage implements Transferable
 		VImage rtn = new VImage( src.getWidth(), newY.intValue() );
 		rtn.blit( 0, 0, src );
 		return(rtn);
+		}
+	
+	
+// Klark @ 
+// http://stackoverflow.com/questions/3514158/how-do-you-clone-a-bufferedimage
+	public static BufferedImage ImageDeepCopy( BufferedImage bi ) 
+		{
+		ColorModel cm = bi.getColorModel();
+		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+		WritableRaster raster = bi.copyData(null);
+		return( new BufferedImage(cm, raster, isAlphaPremultiplied, null) );
 		}
 	
 	}

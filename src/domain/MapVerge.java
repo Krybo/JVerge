@@ -707,4 +707,7 @@ log("Layer "+Integer.toString(i) + " , "+l.name+" , px " + Double.toString(l.par
 		
 	}
 	
-}
+	public void refresh()
+		{  MapAbstract.refreshCache(); }
+	
+}				// END CLASS

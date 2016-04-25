@@ -112,7 +112,7 @@ public abstract class MapAbstract implements Map {
 		if(imgcache[l]==null) {
 			imgcache[l] = new VImage(dest.width+16, dest.height+16);
 		}
-		
+
 		// Draw layer into the cache
 		if(xtc!=xcache[l] || ytc!=ycache[l]) {
 			if(transparent) {
@@ -178,4 +178,9 @@ public abstract class MapAbstract implements Map {
 		imgcache = new VImage[1];
 	}	
 
-}
+		// Krybo (Jan.2016)  Call is needed when core.Script.map(MapVerge newMap)
+		// 	b/c the rug is pulled from under this cache.
+	public static void refreshCache()
+		{ resetCacheArray(); }
+	
+}			// END CLASS

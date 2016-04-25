@@ -436,7 +436,18 @@ public class VmiTextSimple implements Vmenuitem
 		}
 
 	public void setColorContent( HashMap<Integer, Color> basicColors)
-		{	this.colorItems = basicColors;	}
+		{
+		if( basicColors == null )	{ return; }
+		for( Integer cn : basicColors.keySet() )
+			{
+			this.colorItems.put(cn, basicColors.get(cn) );
+			}
+//		this.colorItems = basicColors;
+		return;
+		}
+	
+	public Color getColorComponent( Integer hashKeyColor )
+		{ return( this.colorItems.get(hashKeyColor) ); }
 
 	public void setImageContent(HashMap<Integer, VImage> imageItems)
 		{	this.imageItems = imageItems;	}

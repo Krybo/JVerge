@@ -81,6 +81,9 @@ public interface Vmenuitem
 	public void setColorContent( HashMap<Integer,Color> basicColors );
 	public void setImageContent( HashMap<Integer,VImage> imageItems );
 
+	// Methods to get hashed data.
+	public Color getColorComponent( Integer hashKeyColor );
+
 	// Enable different components of possible item.
 	// All implemented instances won't have all of them, so use skeletons.
 	public void enableActivation();	// disable menu action. greyout.

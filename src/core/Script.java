@@ -52,7 +52,6 @@ import domain.VSound;
 import domain.VImage;
 import domain.Entity;
 import domain.Map;
-import static core.Script.setMenuFocus;
 import static core.SinCos.*;
 
 

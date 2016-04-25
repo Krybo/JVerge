@@ -747,7 +747,18 @@ public class VmiDataTable implements Vmenuitem
 		}
 
 	public void setColorContent(HashMap<Integer, Color> basicColors)
-		{	this.clrSettings = basicColors;	 }
+		{
+		if( basicColors == null )	{ return; }
+		for( Integer cn : basicColors.keySet() )
+			{
+			this.clrSettings.put(cn, basicColors.get(cn) );
+			}
+//		this.clrSettings = basicColors;
+		return;
+		}
+	
+	public Color getColorComponent( Integer hashKeyColor )
+		{ return( this.clrSettings.get(hashKeyColor)); }
 
 	/** Not used in this VMI type */
 	public void setImageContent(HashMap<Integer, VImage> imageItems)
