@@ -104,24 +104,34 @@ public class VmenuVSPeditor implements Vmenu
 			} catch( Exception e ) 	{ e.printStackTrace(); }
 
 		VmiTextSimple vts01 = new VmiTextSimple("Return to Map");
+		vts01.setKeycode( 66 );		// Cntl+Backspace exits anywhere.
 		vts01.setAction( getFunction(Script.class,"focusSystemMenu") );
-		
+
 		VmiTextSimple vts03 = new VmiTextSimple("Edit Palette");
+		vts03.setKeycode( 554 );
 		vts03.setAction( m3 );
 		vts03.setActionArgs( new Object[]{new Integer(1)} );
 		
 		VmiTextSimple vts04 = new VmiTextSimple("Edit Tile");
+		vts04.setKeycode( 552 );
 		vts04.setAction( m4 );
 		vts04.setActionArgs( new Object[]{new Integer(3)} );
 
 		VmiTextSimple vts05 = new VmiTextSimple("Next Tile");
+		vts05.setKeycode( 314 );
 		vts05.setAction( m5 );
 		
 		VmiTextSimple vts06 = new VmiTextSimple("Prev. Tile");
+		vts06.setKeycode( 298 );
 		vts06.setAction( m6 );
 		
 		VmiTextSimple vts07 = new VmiTextSimple("Save Tile");
+		vts07.setKeycode( 664 );
 		vts07.setAction( m7 );
+
+		VmiInputInteger vmiIn01 = new VmiInputInteger( 
+				"<GoTo Tile #>", "Enter VSP Tile number (INT)", 	0, 0 );
+		vmiIn01.setKeycode( 568 );
 
 		this.sidebar.addItem( vts01 );
 		this.sidebar.addItem( new VmiTextSimple("Save VSP") );
@@ -130,9 +140,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar.addItem( vts04 );
 		this.sidebar.addItem( vts05 );
 		this.sidebar.addItem( vts06 );
-		this.sidebar.addItem( 
-			new VmiInputInteger( "<GoTo Tile #>", 
-				"Enter VSP Tile number (INT)", 	0, 0) );
+		this.sidebar.addItem( vmiIn01 );
 		
 		for( Integer b = 0; b < 11; b++ )
 			{
@@ -230,6 +238,34 @@ public class VmenuVSPeditor implements Vmenu
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
 //		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
 
+			// Eat hotkeys in specific order.
+			// These get priority over regular controls.
+		if( Vmenu.hasHotKey( this.sidebar, ext_keycode) == true )
+			{
+			this.exec( Vmenu.getHotKeyMethod( this.sidebar, ext_keycode ),
+				Vmenu.getHotKeyMethodArgs( this.sidebar, ext_keycode ) );
+			return( true ); 
+			}
+		if( Vmenu.hasHotKey( this.main, ext_keycode) == true )
+			{
+			this.exec( Vmenu.getHotKeyMethod( this.main, ext_keycode ),
+				Vmenu.getHotKeyMethodArgs( this.main, ext_keycode ) );
+			return( true ); 
+			}
+		if( Vmenu.hasHotKey( this.colorkey, ext_keycode) == true )
+			{
+			this.exec( Vmenu.getHotKeyMethod( this.colorkey, ext_keycode ),
+				Vmenu.getHotKeyMethodArgs( this.colorkey, ext_keycode ) );
+			return( true ); 
+			}
+		if( Vmenu.hasHotKey( this.colorEditor, ext_keycode) == true )
+			{
+			this.exec( Vmenu.getHotKeyMethod( this.colorEditor, ext_keycode ),
+				Vmenu.getHotKeyMethodArgs( this.colorEditor, ext_keycode ) );
+			return( true ); 
+			}
+
+		// normal key overrides.
 		switch( basecode )
 			{
 			case 101:
@@ -696,14 +732,17 @@ public class VmenuVSPeditor implements Vmenu
 					(y*z)+x).getColorComponent(
 					enumMenuButtonCOLORS.BODY_ACTIVE.value() ));
 			}	}
-		this.updatePreview();
 		vsp.modifyTile( vspIdx, output.getImage() );
+		this.updatePreview();
 		}
 
 	/** Moves the data from the menu object to the actual VSP.
 	 * Saves the current work to the currently active tile.  */
 	private void saveWorkingTile( )
-		{ this.saveWorkingTileAs( this.tIndex ); }
+		{
+		this.saveWorkingTileAs( this.tIndex );
+		return;
+		}
 	
 	private void updatePreview()
 		{

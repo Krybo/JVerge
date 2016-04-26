@@ -1,6 +1,9 @@
 package menus;
 
 import static core.Script.load;
+
+import java.lang.reflect.Method;
+
 import domain.VImage;
 import domain.VSound;
 
@@ -177,4 +180,70 @@ public interface Vmenu
 		return;
 		}
 
+	/** This will search a Vmenu's components hotkeys for a target.
+	 * If Found, it will activate that menuitem.   As a static interface method,
+	 *  any properly implemented Vmenu with Vmenuitem
+	 * contents enabled with hotkey functions will activate properly.
+	 * !! note that hotkey codes are extended keycodes. */
+	public static boolean passHotKey( Vmenu vm, int keycode )
+		{
+		int members = vm.countMenuItems();
+		for( int n = 0; n < members; n++ )
+			{
+			if( vm.getMenuItem(n).getKeycode() == keycode )
+				{
+				vm.getMenuItem(n).doAction();
+				System.out.println("Struck hotkey for menuitem # "+
+					Integer.toString(n) + 
+					" in menu id "+Long.toString(vm.getFocusId()) );
+				return(true);
+				}
+			}
+		return(false);
+		}
+
+	/**  Static method to retreive the function attached to the hotkey
+	 * activation.   Use this when the attached method cannot be executed
+	 * from the menuitems scope.  MUST check result for null. */
+	public static Method getHotKeyMethod( Vmenu vm, int keycode )
+		{
+		int members = vm.countMenuItems();
+		for( int n = 0; n < members; n++ )
+			{
+			if( vm.getMenuItem(n).getKeycode() == keycode )
+				{
+				System.out.println("Struck hotkey for menuitem # "+
+					Integer.toString(n) + 
+					" in menu id "+Long.toString(vm.getFocusId()) );
+				return( vm.getMenuItem(n).getAction() );
+				}
+			}
+		return( null );
+		}
+	public static Object[] getHotKeyMethodArgs( Vmenu vm, 
+			int keycode )
+		{
+		int members = vm.countMenuItems();
+		for( int n = 0; n < members; n++ )
+			{
+			if( vm.getMenuItem(n).getKeycode() == keycode )
+				{	return( vm.getMenuItem(n).getActionArgs() );	}
+			}
+		return( new Object[]{} );
+		}
+
+	
+	/** Returns if any Vmenu contains an element set to a given hetkey. */
+	public static boolean hasHotKey( Vmenu vm, int keycode )
+		{
+		int members = vm.countMenuItems();
+		for( int n = 0; n < members; n++ )
+			{
+			if( vm.getMenuItem(n).getKeycode() == keycode )
+				{	return(true);	}
+			}
+		return( false );
+		}
+
+	
 	}
