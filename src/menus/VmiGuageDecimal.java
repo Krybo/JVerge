@@ -448,6 +448,13 @@ public class VmiGuageDecimal extends VmiTextSimple
 		this.recalculate();
 		return; 
 		}
+	/** Utility to set min & max at same time. */
+	public void setValueRange( Double min, Double max )
+		{
+		this.setValueMin( min );
+		this.setValueMax( max );
+		return;
+		}
 	public Double getValue()
 		{ return(this.currentValue); }
 	public Double getValueMin()

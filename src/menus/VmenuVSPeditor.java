@@ -19,6 +19,48 @@ import domain.VImage;
 import domain.VSound;
 import domain.Vsp;
 
+/**  A Tile editor.   Consists of several Vmenu objects with an overriding
+ * Vmenu to manage interactions between them.
+ * 
+ * ----- Controls Overview --------
+ * 
+ * [0-9] 	Change color, cooresponding to palette bar.
+ * [cntl][backspace]	Exits menu regardless of focus
+ * [Cntl Arrow-Right]	Previous Tile
+ * [Cntl Arrow-Left]	Next Tile
+ * a	Areal Random Spray
+ * b
+ * c	Circle		[Cntl] Wrapping Circle		[Shift]  Fill Circle.
+ * d
+ * e	Focus tile edit.   [Cntl] Focus Palette bar.
+ * f		Flood fill Tool
+ * g	Goto Tile #
+ * h	Help screen
+ * i
+ * j
+ * k
+ * l		Line		[Cntl] Wrapping line
+ * m
+ * n
+ * o	Rotate Clockwise		[Cntl] Rotate CCW
+ * p
+ * q
+ * r		Rectangle	[Cntl] Wrapping rectangle
+ * s	Save single tile		[Cntl] Save entire VSP
+ * t
+ * u
+ * v
+ * w
+ * x	Clear, set tile to solid color
+ * y
+ * z	Undo		[Cntl] Redo
+ * NP+		Increase areal size of certain tool functions
+ * NP+		Decrease areal size of certain tool functions
+ * 
+ * @author Krybo
+ *
+ */
+
 public class VmenuVSPeditor implements Vmenu
 	{
 	//    control focus:
@@ -51,6 +93,10 @@ public class VmenuVSPeditor implements Vmenu
 	private Long focusID = new Long(-1);
 	private Long parentID = new Long(-1);
 	private Long childID = new Long(-1);
+	
+	VmiGuageInt gR;
+	VmiGuageInt gG;
+	VmiGuageInt gB;
 	
 	VImage preview = null;
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
@@ -169,6 +215,19 @@ public class VmenuVSPeditor implements Vmenu
 
 			this.colorkey.addItem(cBtn);
 			}
+		
+		// Pull out these guages from the sub-menu, but keep
+		//     the functionality of the submenu.
+		this.gR = (VmiGuageInt) this.colorEditor.getMenuItem(0);
+		this.gG = (VmiGuageInt) this.colorEditor.getMenuItem(1);
+		this.gB = (VmiGuageInt) this.colorEditor.getMenuItem(2);
+		this.gR.setValueRange( 0, 255 );
+		this.gG.setValueRange( 0, 255 );
+		this.gB.setValueRange( 0, 255 );
+		this.gR.setBarColors(Color.RED, Color.BLACK );
+		this.gG.setBarColors(Color.GREEN, Color.BLACK );
+		this.gB.setBarColors(Color.BLUE, Color.BLACK );
+		this.gR.setTip("Red"); this.gG.setTip("Grn"); this.gB.setTip("Blu");
 
 		// -- finish up
 
@@ -279,20 +338,32 @@ public class VmenuVSPeditor implements Vmenu
 			case 10: // ENTER KEY <CONFIRM> 
 				this.funcActivate();
 				break;
+			case 37: 		// ARROW-LEFT
+				this.getControlItem().doControls(ext_keycode);
+				if( this.cFocus == 1 )		// Control is in color keybar.
+					{ this.setColorEditorToCurrentColorKey(); }
+				break;
 			case 38: 		// ARROW-UP
 				if( isShift == true )   
-					{
-					// Intercept Shift+Up to transverse palette.
-					this.nextCbarLine();
-					break; 
-					}
+				{
+				// Intercept Shift+Up to transverse palette.
+				this.nextCbarLine();
+				this.setColorEditorToCurrentColorKey();
+				break; 
+				}
 				this.getControlItem().doControls(ext_keycode);
+				break;
+			case 39: 		// ARROW-RIGHT
+				this.getControlItem().doControls(ext_keycode);
+				if( this.cFocus == 1 )		// Control is in color keybar.
+					{ this.setColorEditorToCurrentColorKey(); }
 				break;
 			case 40: 		// ARROW-DOWN
 				if( isShift == true )   
 					{
 					// Intercept Shift+Up to transverse palette.
 					this.prevCbarLine();
+					this.setColorEditorToCurrentColorKey();
 					break; 
 					}
 				this.getControlItem().doControls(ext_keycode);
@@ -761,5 +832,37 @@ public class VmenuVSPeditor implements Vmenu
 		{	return childID;	}
 	public void setChildID(Long childID)
 		{	this.childID = childID;	}
+	
+	/** immediately changes to color editor values to a r,g,b */
+	private void setColorEditor( int r, int g, int b )
+		{
+		this.gR.setValue(r);
+		this.gG.setValue(g);
+		this.gB.setValue(b);
+		return;
+		}
+	private void setColorEditor( Color c )
+		{
+		if( c == null )	{ this.setColorEditor( 0,0,0 ); return; }
+		this.setColorEditor(c.getRed(), c.getGreen(), c.getBlue() );
+		return;
+		}
+	
+	/** Alters r,g,b values by a given amount. */
+	private void modifyColorEditor( int relR, int relG, int relB )
+		{
+		this.gR.setValueRelative(relR, false);
+		this.gG.setValueRelative(relG, false);
+		this.gB.setValueRelative(relB, false);
+		return;
+		}
+	private void setColorEditorToCurrentColorKey()
+		{
+		Color tmp = 
+		this.colorkey.getMenuItemSelected().getColorComponent(
+			enumMenuButtonCOLORS.BODY_ACTIVE.value());
+		this.setColorEditor( tmp );
+		return;
+		}
 
 	}		// END CLASS

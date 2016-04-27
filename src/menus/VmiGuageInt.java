@@ -366,6 +366,13 @@ public class VmiGuageInt extends VmiTextSimple
 		this.recalculate();
 		return; 
 		}
+	/** Utility to set min & max at same time. */
+	public void setValueRange( int min, int max )
+		{
+		this.setValueMin( min );
+		this.setValueMax( max );
+		return;
+		}
 	public int getValue()
 		{ return(this.currentValue); }
 	public int getValueMin()
