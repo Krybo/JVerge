@@ -36,7 +36,7 @@ import domain.Vsp;
  * f		Flood fill Tool
  * g	Goto Tile #
  * h	Help screen
- * i
+ * i		invert current cell, invert palette entry    [Cntl] invert tile
  * j
  * k
  * l		Line		[Cntl] Wrapping line
@@ -86,6 +86,8 @@ public class VmenuVSPeditor implements Vmenu
 	private Color clr2nd = Color.BLACK;
 	private VImage bkgImg = null;
 	private boolean isBkgImg = false;
+		// This is used when jumping from main directly to color editor.
+	private boolean editColorInPlace = false;
 	private HashMap<enumMenuEVENT,VSound> hmSounds =
 			new HashMap<enumMenuEVENT,VSound>();
 
@@ -233,6 +235,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		this.bkgImg = null;
 		this.isBkgImg = false;
+		this.editColorInPlace = false;
 
 		this.tIndex = 0;
 		this.updatePreview();
@@ -295,7 +298,7 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		Integer basecode = Controls.extcodeGetBasecode(ext_keycode);
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
-//		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
+		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
 
 			// Eat hotkeys in specific order.
 			// These get priority over regular controls.
@@ -328,14 +331,37 @@ public class VmenuVSPeditor implements Vmenu
 		switch( basecode )
 			{
 			case 101:
-			case 8: // BACKSPACE <CANCEL>
+			case 8: 		// BACKSPACE <CANCEL> - change focus.
 				this.playMenuSound(enumMenuEVENT.CANCEL, 33);
-				if( this.cFocus == 0 )
-					{ VmenuVSPeditor.returnToSystem(); }
-				else
-					{ this.cFocus = 0; }
+				switch ( this.cFocus )
+					{
+					case 0:
+						VmenuVSPeditor.returnToSystem();
+						break;
+					case 2:		// Return to color key, discarding changes.
+						this.cFocus = 1;
+						if( this.editColorInPlace == true )
+							{
+							this.cFocus = 3;
+							this.editColorInPlace = false;
+							}
+						this.setColorEditorToCurrentColorKey();
+						break;
+					default:
+						this.cFocus = 0;
+						break;
+					}
+
 				return( true );
-			case 10: // ENTER KEY <CONFIRM> 
+			case 10: 		// ENTER KEY <CONFIRM>
+				// xfer control to the color editor to directly modify this cell.
+				if( this.cFocus == 3 && isCntl == true && isShift == true )
+					{
+					this.setColorEditorToCursor();
+					this.cFocus = 2;
+					this.editColorInPlace = true;
+					return(true);
+					}
 				this.funcActivate();
 				break;
 			case 37: 		// ARROW-LEFT
@@ -380,10 +406,33 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
+			case 73:		//  i - invert function.
+				if( isCntl == true )		
+					{ this.invertAllCells(); break; }
+				switch( this.cFocus )
+					{
+					case 1:		// Invert the color key.
+						this.setColorkeySelectedColor( 
+							VmenuVSPeditor.invertColor(
+								this.getColorkeySelectedColor() ));
+						this.setColorEditorToCurrentColorKey();
+						break;
+					case 3:
+						this.invertSelectedCell();
+						this.setColorEditorToCursor();
+						break;
+					default:
+						break;
+					}
+				break;
 			default:
 				this.getControlItem().doControls(ext_keycode);
 				break;
 			}
+
+		if( this.cFocus == 3 )
+			{ setColorEditorToCursor(); }
+		
 		return(true);
 		}
 
@@ -568,8 +617,42 @@ public class VmenuVSPeditor implements Vmenu
 					this.sidebar.getMenuItemSelected().getActionArgs() );
 				break;
 
-//			case 1:		// Color key bar
-//			case 2:		// Color Editor
+			case 1:		// Color key bar - edit this color pod
+				this.cFocus = 2;
+				break;
+
+			case 2:		// Color Editor - Save color, back to palette.
+				Color nc = new Color( this.gR.getValue(), 
+					this.gG.getValue(), this.gB.getValue(), 255 );
+				if( this.editColorInPlace == true )
+					{	// Directly edit the cursor cell.
+					this.getCursorCell().setColorComponent(
+						enumMenuButtonCOLORS.BODY_ACTIVE , nc );
+					this.getCursorCell().setColorComponent(
+						enumMenuButtonCOLORS.BODY_INACTIVE , nc);
+					this.getCursorCell().setColorComponent(
+						enumMenuButtonCOLORS.BODY_SELECTED , nc);
+					this.editColorInPlace = false;
+					this.cFocus = 3;
+					break;
+					}
+				// Else - we return it to the palette.
+				this.cFocus = 1;
+				int cidx = this.getSelectedColorkeyCIDX();
+
+				HashMap<Integer,Color> hmTmp = 
+					new HashMap<Integer,Color>();
+				hmTmp.put(
+					enumMenuButtonCOLORS.BODY_ACTIVE.value(), nc );
+				hmTmp.put(
+					enumMenuButtonCOLORS.BODY_INACTIVE.value(),nc); 
+				hmTmp.put(
+					enumMenuButtonCOLORS.BODY_SELECTED.value(),nc); 						 
+				this.colorkey.getMenuItemSelected().setColorContent(
+						hmTmp );
+				if( cidx != -1 )
+					{ this.clrs.put(cidx, nc); }
+				break;
 
 			default:		// If unhandled, the sub menu object itself will.
 				this.getControlItem().doControls(10);
@@ -787,6 +870,7 @@ public class VmenuVSPeditor implements Vmenu
 	/** Inverts a color.  By components. Leaves alpha alone. */
 	private static Color invertColor( Color in )
 		{
+		if( in == null )	{ return(in); }
 		return( new Color( 255 - in.getRed(), 255 - in.getGreen(), 
 				255 - in.getBlue(), in.getAlpha() ) );
 		}
@@ -862,6 +946,132 @@ public class VmenuVSPeditor implements Vmenu
 		this.colorkey.getMenuItemSelected().getColorComponent(
 			enumMenuButtonCOLORS.BODY_ACTIVE.value());
 		this.setColorEditor( tmp );
+		return;
+		}
+
+	/** Sets the color editor to the cell color under the cursor in main */
+	private void setColorEditorToCursor()
+		{
+		Color tmp = 
+		this.main.getMenuItemSelected().getColorComponent(
+			enumMenuButtonCOLORS.BODY_ACTIVE.value());
+		this.setColorEditor( tmp );
+		return;
+		}
+
+	private void invertCell( int mainIndex )
+		{
+		Color c = VmenuVSPeditor.invertColor(
+				this.main.getMenuItem(mainIndex).getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value()) );
+		HashMap<Integer,Color> hmTmp = 
+				new HashMap<Integer,Color>(); 
+		hmTmp.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(), c );
+		hmTmp.put(enumMenuButtonCOLORS.BODY_INACTIVE.value(),c);
+		hmTmp.put(enumMenuButtonCOLORS.BODY_SELECTED.value(),c);
+		this.main.getMenuItem(mainIndex).setColorContent(	 hmTmp );
+		return;
+		}
+	private void invertSelectedCell( )
+		{
+		this.invertCell( this.main.getSelectedIndex() );
+		return;
+		}
+	
+	private VmiButton getCursorCell()
+		{	return( (VmiButton) this.main.getMenuItemSelected() );	}
+	
+	// Utilities for manipulating color key bar.
+	
+	private void setColorPaletteEntry( int paletteIndex, Color c )
+		{ 						 
+		this.clrs.put( paletteIndex, c );
+		this.setCbarLine( this.cBarIndexSet );
+		return;
+		}
+
+	private VmiButton getSelectedColorkey()
+		{
+		return( (VmiButton) this.colorkey.getMenuItemSelected() );
+		}
+	
+	/**  Return the clrs index associated with the color key selection 
+	 *   returns -1 if one of the 3 tool colors are selected. */
+	private int getSelectedColorkeyCIDX()
+		{
+		Integer tmp = this.colorkey.getSelectedIndex();
+		if( tmp >= 0 && tmp <= 2 )	{ return(-1); }
+		return( this.cBarIndexSet*8 + (tmp - 3) );
+		}
+
+	private Color getColorkeyColor( int colorKeySlotNumber )
+		{
+		if( colorKeySlotNumber == 0 )	{ return(this.clrTrans); }
+		if( colorKeySlotNumber == 1 )	{ return(this.clr1st); }
+		if( colorKeySlotNumber == 2 )	{ return(this.clr2nd); }
+		return( this.clrs.get( 
+			this.cBarIndexSet*8 + (colorKeySlotNumber - 3) ) );
+		}
+	private Color getColorkeySelectedColor( )
+		{
+		return( this.getColorkeyColor( this.colorkey.getSelectedIndex() ) );
+		}
+
+	/** Directly Change a color keybar setting. */
+	private void setColorkeyColor( int colorKeySlotNumber, Color c )
+		{
+		if( colorKeySlotNumber == 1 )
+			{ this.clr1st = c;   }
+		if( colorKeySlotNumber == 2 )
+			{ this.clr2nd = c; }
+		
+		HashMap<Integer,Color> hmTmp = 
+			new HashMap<Integer,Color>(); 
+		hmTmp.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(), c );
+		hmTmp.put(enumMenuButtonCOLORS.BODY_INACTIVE.value(),c);
+		hmTmp.put(enumMenuButtonCOLORS.BODY_SELECTED.value(),c);
+		
+		this.colorkey.getMenuItem(colorKeySlotNumber).setColorContent(
+				hmTmp);
+
+		if( colorKeySlotNumber >= 3 )
+			{
+			this.clrs.put( this.cBarIndexSet*8 + (colorKeySlotNumber - 3),
+					c);
+			}
+
+		return;
+		}
+	private void setColorkeySelectedColor( Color c )
+		{ 
+		setColorkeyColor( this.colorkey.getSelectedIndex(), c );
+		return; 
+		}
+
+	/** In one function, inverts all cells in the main area. */
+	private void invertAllCells()
+		{
+		for( int vmi = 0; vmi < this.main.countMenuItems(); vmi++ )
+			{
+			HashMap<Integer,Color> hmTmp = 
+					new HashMap<Integer,Color>();
+			hmTmp.put( enumMenuButtonCOLORS.BODY_ACTIVE.value(), 
+				VmenuVSPeditor.invertColor(
+					this.main.getMenuItem(vmi).getColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE.value())
+					)	);
+			hmTmp.put( enumMenuButtonCOLORS.BODY_INACTIVE.value(), 
+				VmenuVSPeditor.invertColor(
+					this.main.getMenuItem(vmi).getColorComponent(
+					enumMenuButtonCOLORS.BODY_INACTIVE.value())
+					)	);
+			hmTmp.put( enumMenuButtonCOLORS.BODY_SELECTED.value(), 
+				VmenuVSPeditor.invertColor(
+					this.main.getMenuItem(vmi).getColorComponent(
+					enumMenuButtonCOLORS.BODY_SELECTED.value())
+					)	);
+			this.main.getMenuItem(vmi).setColorContent(hmTmp);
+			}
 		return;
 		}
 
