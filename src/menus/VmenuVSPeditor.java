@@ -19,7 +19,8 @@ import domain.VImage;
 import domain.VSound;
 import domain.Vsp;
 
-/**  A Tile editor.   Consists of several Vmenu objects with an overriding
+/**                    An Interactive Tile editor.   
+ * Consists of several Vmenu objects with an overriding
  * Vmenu to manage interactions between them.
  * 
  * ----- Controls Overview --------
@@ -29,8 +30,8 @@ import domain.Vsp;
  * [Cntl Arrow-Right]	Previous Tile
  * [Cntl Arrow-Left]	Next Tile
  * a	Areal Random Spray
- * b
- * c	Circle		[Cntl] Wrapping Circle		[Shift]  Fill Circle.
+ * b	Circle		[Cntl] Wrapping Circle		[Shift]  Fill Circle.
+ * c	Copy Tile to clipboard - [Cntl] Copy entire Vsp to clipboard
  * d
  * e	Focus tile edit.   [Cntl] Focus Palette bar.
  * f		Flood fill Tool
@@ -102,6 +103,7 @@ public class VmenuVSPeditor implements Vmenu
 	
 	VImage preview = null;
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
+	private static final int DEFAULT_TILES_PER_ROW = 16;
 
 
 	/** ----------------  Constructors --------------------  */
@@ -397,14 +399,45 @@ public class VmenuVSPeditor implements Vmenu
 			// Number keys do da buzinesss.
 			case 48:	case 49:  case 50:  case 51:  case 52:
 			case 53:	case 54:  case 55:  case 56:  case 57:
-				if( this.cFocus == 3 )   // focus only on main.
+				int transform = basecode - 49;
+				if( transform == -1 )  { transform = 9; }
+				if( this.cFocus == 1 ) 	// we are on color key
 					{
-					int transform = basecode - 49;
-					if( transform == -1 )  { transform = 9; }
+					// Swaps colors, selected with #
+					this.swapColorKeyColor( 
+						this.colorkey.getSelectedIndex(), transform );
+					break;
+					}
+				if( this.cFocus == 3 )   // focus on main.
+					{
+					if( isCntl == true && basecode == 50 ) 
+						{
+						this.setColorkeyColor(1, this.getColorCursorCell() );
+						break;
+						}
+					if( isCntl == true && basecode == 51 ) 
+						{
+						this.setColorkeyColor(2, this.getColorCursorCell() );
+						break;
+						}
 					this.setCurrentCell( transform );
 					break;
 					}
 				this.getControlItem().doControls(ext_keycode);
+				break;
+			case 67:		// [c C] Coping Tile/VSP functions
+				if( isCntl == true )
+					{
+					this.vsp.exportToClipboard(
+						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
+					break;
+					}
+				if( isShift == true )
+					{
+					// TODO : copy/add to tile group.
+					break;
+					}
+				this.workingTileToVImage().copyImageToClipboard();
 				break;
 			case 73:		//  i - invert function.
 				if( isCntl == true )		
@@ -425,6 +458,13 @@ public class VmenuVSPeditor implements Vmenu
 						break;
 					}
 				break;
+			case 86:		//  [v] - paste functions
+				if( isCntl == true )
+					{
+					this.handleVspPaste(core.Script.getClipboardVImage());
+					}
+				this.handleTilePaste( core.Script.getClipboardVImage() );
+				break;
 			default:
 				this.getControlItem().doControls(ext_keycode);
 				break;
@@ -435,6 +475,7 @@ public class VmenuVSPeditor implements Vmenu
 		
 		return(true);
 		}
+
 
 	// This is a full screen menu -- thus moving it makes no sense.
 	public void moveAbs(int x, int y)
@@ -767,11 +808,17 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
-	private void loadTile( int vspIdx)
+/**  Sets the working tile to an arbituary VImage.
+ * If source is larger, this will only use the top x,y pixels.
+ * There is no padding involved. 
+ * @param vi  Any Source VImage
+ */
+	private void loadWorkingImage( VImage vi )
 		{
 		int z = this.vsp.getTileSquarePixelSize();
-		VImage t = new VImage(z,z);
-		t.setImage( this.vsp.getTiles()[vspIdx] );
+		if( vi.getWidth() < z )		{ return; }
+		if( vi.getHeight() < z )		{ return; }
+		
 		for( int y = 0; y < z; y++ )
 			{ 
 			for( int x = 0; x < z; x++ )			
@@ -782,10 +829,29 @@ public class VmenuVSPeditor implements Vmenu
 				VmiButton element = 
 						(VmiButton) this.main.getMenuItem(idx);
 				element.setColorComponent(
-						enumMenuButtonCOLORS.BODY_ACTIVE, 
-						t.getPixelColor(x, y) );
-				}
-			}
+					enumMenuButtonCOLORS.BODY_INACTIVE, 
+					vi.getPixelColor(x, y) );
+				element.setColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE, 
+					vi.getPixelColor(x, y) );
+				element.setColorComponent(
+					enumMenuButtonCOLORS.BODY_SELECTED, 
+					VmenuVSPeditor.invertColor( vi.getPixelColor(x, y) ) );
+			}	}
+		return;
+		}
+	
+/**  Loads up a vsp tile into the working data.
+ * @param vspIdx   The vsp tile index to load.
+ */
+	private void loadTile( int vspIdx )
+		{
+		if( vspIdx > this.vsp.getNumtiles() )
+			{ vspIdx = this.vsp.getNumtiles(); }
+		VImage t = new VImage( this.vsp.getTileSquarePixelSize(),
+				this.vsp.getTileSquarePixelSize() );
+		t.setImage( this.vsp.getTiles()[vspIdx] );
+		this.loadWorkingImage(t);
 		return;
 		}
 
@@ -878,6 +944,14 @@ public class VmenuVSPeditor implements Vmenu
 	/** Moves the data from the menu object to the actual VSP. */
 	private void saveWorkingTileAs( int vspIdx )
 		{
+		VImage output = this.workingTileToVImage();
+		vsp.modifyTile( vspIdx, output.getImage() );
+		this.updatePreview();
+		}
+
+	// exports the current working tile to a VImage
+	private VImage workingTileToVImage()
+		{
 		int z = vsp.getTileSquarePixelSize();
 		VImage output = new VImage( z,z );
 		for( Integer y = 0; y < z; y++ )
@@ -887,8 +961,7 @@ public class VmenuVSPeditor implements Vmenu
 					(y*z)+x).getColorComponent(
 					enumMenuButtonCOLORS.BODY_ACTIVE.value() ));
 			}	}
-		vsp.modifyTile( vspIdx, output.getImage() );
-		this.updatePreview();
+		return(output);
 		}
 
 	/** Moves the data from the menu object to the actual VSP.
@@ -980,6 +1053,11 @@ public class VmenuVSPeditor implements Vmenu
 	
 	private VmiButton getCursorCell()
 		{	return( (VmiButton) this.main.getMenuItemSelected() );	}
+	private Color getColorCursorCell()
+		{ 
+		return( getCursorCell().getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value()) ); 
+		}
 	
 	// Utilities for manipulating color key bar.
 	
@@ -1074,5 +1152,33 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		return;
 		}
+	
+	private void swapColorKeyColor( int slot1, int slot2 )
+		{
+		Color tmp = this.getColorkeyColor( slot1 );
+		this.setColorkeyColor(slot1, this.getColorkeyColor( slot2 ) );
+		this.setColorkeyColor(slot2, tmp );
+		return;
+		}
 
+
+	/** takes the top x/y pixels of the returned VImage and uses it
+	 * to buld a new working tile. */
+	private void handleTilePaste( VImage clipboardVImage )
+		{
+		if( clipboardVImage == null )	
+			{ System.err.print("Failed tile paste."); return; }
+		if(clipboardVImage.getWidth() < this.vsp.getTileSquarePixelSize() ||
+		   clipboardVImage.getHeight() < this.vsp.getTileSquarePixelSize() )
+			{ System.err.print("Failed tile paste.II "); return; }
+		this.loadWorkingImage( clipboardVImage );
+		return;
+		}
+
+	private void handleVspPaste(VImage clipboardVImage)
+		{
+		// TODO Auto-generated method stub
+		
+		}
+	
 	}		// END CLASS

@@ -395,11 +395,10 @@ public class Vsp
 
 	}
 
-	static void createVspFromImages(VImage[] images) {
-		
+	static void createVspFromImages(VImage[] images)
+		{ 
 		// First pixel is default transparent color
 		//Color transC = new Color(images[0].image.getRGB(0, 0));
-		
 		ArrayList<VImage> allTiles = new ArrayList<VImage>();
 				
 		for(int img=0; img<images.length; img++) {

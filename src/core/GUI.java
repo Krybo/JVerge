@@ -8,8 +8,13 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Image;
 //import java.awt.SystemColor;			// Krybo (2014-09-17)
 import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -19,6 +24,8 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 //import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 import static core.VergeEngine.*;
 //import core.JVCL;
@@ -686,4 +693,34 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 	public void setCurheight( int curheight )
 		{	GUI.curheight = curheight;   }
 	
-}
+	
+	/** Makes an attempt to grab an VImage (through bufferedimage)
+	 * from the current clipboard.   Obviously, the results will not be
+	 * entirely predictable.  This is more likely to not work for any
+	 * given random clipboard content.. */
+	public static VImage getVImageFromClipboard()
+		{
+		DataFlavor flavor = DataFlavor.imageFlavor;
+		VImage rtn = null;
+		if( Toolkit.getDefaultToolkit().getSystemClipboard().isDataFlavorAvailable(flavor) )
+			{	
+			 try
+				{
+				BufferedImage tmp = (BufferedImage)  
+					Toolkit.getDefaultToolkit().getSystemClipboard().getData(flavor);
+				rtn = new VImage( tmp.getWidth(), tmp.getHeight() );
+				rtn.setImage(tmp);
+				}
+			catch (HeadlessException | UnsupportedFlavorException
+					| IOException e)
+				{
+				rtn = null;
+				e.printStackTrace();
+				return(rtn);
+				} 
+		      }
+		return(rtn);
+		}
+
+	
+}			// END CLASS

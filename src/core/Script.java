@@ -1588,6 +1588,7 @@ public class Script {
 		return;
 		}
 	
+	
 	// Krybo (2014-09-18)   map zooming functions
 	
 	public static BufferedImage scaleImage(
@@ -1612,6 +1613,15 @@ public class Script {
 			{  UpdateControls(); }
 		}
 
+	/** Makes an attempt to grab an VImage (through bufferedimage)
+	 * from the current clipboard.   Obviously, the results will not be
+	 * entirely predictable.  This is more likely to not work for any
+	 * given random clipboard content.. */
+	public static VImage getClipboardVImage()
+		{
+		return( GUI.getVImageFromClipboard() );
+		}
+	
 
 		// Krybo (2014-10-04)  imported this as it may be helpful
 	  /**
