@@ -31,8 +31,11 @@ import domain.Vsp;
  * [Cntl Arrow-Left]	Next Tile
  * a	Areal Random Spray
  * b	Circle		[Cntl] Wrapping Circle		[Shift]  Fill Circle.
- * c	Copy Tile to clipboard - [Cntl] Copy entire Vsp to clipboard
- * d
+ * c	Copy working tile to the clipboard
+ * 			[Shift]  Copy working tile into tile group. 
+ * 			[Cntl] Copy entire Vsp tileset to clipboard without padding.
+ * 			[Cntl+Shift]   Copy entire Vsp to clipboard with 1px padding
+ * d	DEBUG: for now.
  * e	Focus tile edit.   [Cntl] Focus Palette bar.
  * f		Flood fill Tool
  * g	Goto Tile #
@@ -50,7 +53,10 @@ import domain.Vsp;
  * s	Save single tile		[Cntl] Save entire VSP
  * t
  * u
- * v
+ * v	Clipboard Paste : Single tile 
+ * 			[Shift] Insert tiles here
+ * 			[Cntl] Single tile & save
+ * 			[Cntl+Alt]  Re-paste entire VSP
  * w
  * x	Clear, set tile to solid color
  * y
@@ -82,13 +88,14 @@ public class VmenuVSPeditor implements Vmenu
 	private VmenuSliders colorEditor = null;
 	private final DefaultPalette vPal = new DefaultPalette();
 	private HashMap<Integer,Color> clrs = null;
-	private final Color clrTrans = core.Script.Color_DEATH_MAGENTA;
+	private final Color clrTrans = new Color(255,0,255,0);
 	private Color clr1st = Color.WHITE;
 	private Color clr2nd = Color.BLACK;
 	private VImage bkgImg = null;
 	private boolean isBkgImg = false;
 		// This is used when jumping from main directly to color editor.
 	private boolean editColorInPlace = false;
+	private boolean showOverview = false;	// vsp overview toggle.
 	private HashMap<enumMenuEVENT,VSound> hmSounds =
 			new HashMap<enumMenuEVENT,VSound>();
 
@@ -102,6 +109,8 @@ public class VmenuVSPeditor implements Vmenu
 	VmiGuageInt gB;
 	
 	VImage preview = null;
+	VImage vspOverview = new VImage(300,300,Color.BLACK);
+
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
 	private static final int DEFAULT_TILES_PER_ROW = 16;
 
@@ -238,6 +247,9 @@ public class VmenuVSPeditor implements Vmenu
 		this.bkgImg = null;
 		this.isBkgImg = false;
 		this.editColorInPlace = false;
+		this.showOverview = false;
+		
+		// TODO: Load overview here.
 
 		this.tIndex = 0;
 		this.updatePreview();
@@ -292,15 +304,19 @@ public class VmenuVSPeditor implements Vmenu
 					puY+2+(py*this.preview.getHeight() ), 
 					this.preview);  
 				} }
+		
+		if( this.showOverview )
+			{	target.blit( 200, 100, this.vspOverview );	}
 
 		return(true);
-		}
+		}		// End   paint()
 
 	public boolean doControls( Integer ext_keycode )
 		{
 		Integer basecode = Controls.extcodeGetBasecode(ext_keycode);
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
 		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
+		boolean isAlt = Controls.extcodeGetALT(ext_keycode);
 
 			// Eat hotkeys in specific order.
 			// These get priority over regular controls.
@@ -332,6 +348,14 @@ public class VmenuVSPeditor implements Vmenu
 		// normal key overrides.
 		switch( basecode )
 			{
+			case -9999:		// TODO: warning killer -- eventually get rid of it
+				this.getSelectedColorkey();
+				this.modifyColorEditor(100, 100, 100);
+				this.nextTile();
+				this.prevTile();
+				this.setColorPaletteEntry(0, 
+						core.Script.Color_DEATH_MAGENTA);
+				break;
 			case 101:
 			case 8: 		// BACKSPACE <CANCEL> - change focus.
 				this.playMenuSound(enumMenuEVENT.CANCEL, 33);
@@ -425,21 +449,41 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
-			case 67:		// [c C] Coping Tile/VSP functions
-				if( isCntl == true )
+			case 67:		// [c] Copy
+				// tileset with padding.
+				if( isCntl == true && isShift == true )	
 					{
 					this.vsp.exportToClipboard(
-						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
+						VmenuVSPeditor.DEFAULT_TILES_PER_ROW,
+						true );
 					break;
 					}
-				if( isShift == true )
+			 	// 	Entire Tileset to clipboard
+				if( isCntl == true && isShift == false ) 
+					{
+					this.vsp.exportToClipboard(
+						VmenuVSPeditor.DEFAULT_TILES_PER_ROW,
+						false );
+					break;
+					}
+				if( isShift == true  && isCntl == false )
 					{
 					// TODO : copy/add to tile group.
 					break;
 					}
+				// plain c copies only the working tile.
+				System.out.println("Working tile copied to clipboard.");
 				this.workingTileToVImage().copyImageToClipboard();
 				break;
-			case 73:		//  i - invert function.
+			case 68:		// [d] Debug (for now)
+//				this.vsp.insertReplicaTile(this.tIndex);
+				this.vspOverview.setImage(
+					VImage.newResizedBufferedImage(
+							this.vsp.getTileCopy(43), 100, 100 )
+					);
+				this.toggleVspOverview();
+				break;
+			case 73:		//  [i] - invert function.
 				if( isCntl == true )		
 					{ this.invertAllCells(); break; }
 				switch( this.cFocus )
@@ -459,9 +503,24 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				break;
 			case 86:		//  [v] - paste functions
-				if( isCntl == true )
-					{
+			
+				if( isCntl == true && isAlt == true )
+					{		// Full VSP inport from clipboard.
 					this.handleVspPaste(core.Script.getClipboardVImage());
+					break;					
+					}
+				if( isCntl == true )
+					{		// tile paste + working save.
+					this.handleTilePaste( core.Script.getClipboardVImage() );
+					this.saveWorkingTile();
+					break;
+					}
+				if( isShift == true )
+					{		// Insert tiles from clipboard.
+					this.handleTileInsert( 
+							core.Script.getClipboardVImage() );
+					this.saveWorkingTile();
+					break;
 					}
 				this.handleTilePaste( core.Script.getClipboardVImage() );
 				break;
@@ -819,6 +878,8 @@ public class VmenuVSPeditor implements Vmenu
 		if( vi.getWidth() < z )		{ return; }
 		if( vi.getHeight() < z )		{ return; }
 		
+		Color cTmp;
+		
 		for( int y = 0; y < z; y++ )
 			{ 
 			for( int x = 0; x < z; x++ )			
@@ -826,17 +887,20 @@ public class VmenuVSPeditor implements Vmenu
 				int idx = (y*z)+x;
 				if( idx >= this.main.countMenuItems() )
 					{ continue; }
+				cTmp = vi.getPixelColor(x, y);
+				if( VImage.colorRGBcomp(cTmp, this.clrTrans ) == true )
+					{ cTmp = this.clrTrans; }
 				VmiButton element = 
 						(VmiButton) this.main.getMenuItem(idx);
 				element.setColorComponent(
 					enumMenuButtonCOLORS.BODY_INACTIVE, 
-					vi.getPixelColor(x, y) );
+					cTmp );
 				element.setColorComponent(
 					enumMenuButtonCOLORS.BODY_ACTIVE, 
-					vi.getPixelColor(x, y) );
+					cTmp );
 				element.setColorComponent(
 					enumMenuButtonCOLORS.BODY_SELECTED, 
-					VmenuVSPeditor.invertColor( vi.getPixelColor(x, y) ) );
+					VmenuVSPeditor.invertColor( cTmp ) );
 			}	}
 		return;
 		}
@@ -855,6 +919,13 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
+	/** (re) loads the data from current VSP into the working display.*/
+	private void loadWorkingTile()
+		{
+		this.loadTile( this.tIndex );
+		this.updatePreview();
+		}
+	
 	private void nextTile()
 		{
 		this.tIndex++;
@@ -1155,6 +1226,8 @@ public class VmenuVSPeditor implements Vmenu
 	
 	private void swapColorKeyColor( int slot1, int slot2 )
 		{
+		if( slot2 == 0 )  { return; }	// cannot swap with static trans c
+		if( slot1 == slot2 )	{ return; }		// no point.
 		Color tmp = this.getColorkeyColor( slot1 );
 		this.setColorkeyColor(slot1, this.getColorkeyColor( slot2 ) );
 		this.setColorkeyColor(slot2, tmp );
@@ -1163,22 +1236,103 @@ public class VmenuVSPeditor implements Vmenu
 
 
 	/** takes the top x/y pixels of the returned VImage and uses it
-	 * to buld a new working tile. */
-	private void handleTilePaste( VImage clipboardVImage )
+	 * to buld a new working tile.
+	 * WILL NOT SAVE THE WORKING TILE */
+	private boolean handleTilePaste( VImage clipboardVImage )
 		{
 		if( clipboardVImage == null )	
-			{ System.err.print("Failed tile paste."); return; }
+			{ System.err.print("Failed tile paste."); return(false); }
 		if(clipboardVImage.getWidth() < this.vsp.getTileSquarePixelSize() ||
 		   clipboardVImage.getHeight() < this.vsp.getTileSquarePixelSize() )
-			{ System.err.print("Failed tile paste.II "); return; }
+			{ System.err.print("Failed tile paste.II "); return(false); }
 		this.loadWorkingImage( clipboardVImage );
+		return(true);
+		}
+
+	/** Paste a VSP from an image in the clipboard. 
+	 * Compatibility with external editors is unknown */
+	private boolean handleVspPaste( VImage clipboardVImage )
+		{
+		if( clipboardVImage == null )
+			{ 
+			System.err.println("VSP Paste : non-compatible data"); 
+			return(false);
+			}
+		int inX = clipboardVImage.getWidth();
+		int inY = clipboardVImage.getHeight();
+		Integer tcx, tcy;	// tile count in x and y.
+		int z = this.vsp.getTileSquarePixelSize();
+		Integer inportCount = 0;
+		boolean r;
+		// The incoming size must be a multiple of the square tile size
+		//  +1 padding is also acceptable.
+		if( (inX % z == 0) && (inY % z == 0) )		// No padding.
+			{
+			tcx = inX / z;
+			tcy = inY / z;
+			if( tcx <= 1 && tcy <= 1 )		// refuse to copy 1 tile vsp.
+				{
+				System.err.println("Refused to inport 1 tile VSP");
+				return(false); 
+				}
+			System.out.println("Clipboard paste in no-padding form x "+
+				tcx.toString() + " y " + tcy.toString() );
+			for( int iy = 0; iy < tcy; iy++ )
+				{ for( int ix = 0; ix < tcx; ix++ )
+					{
+					r = this.vsp.modifyTile( iy * tcx + ix, 
+						clipboardVImage.getRegion( ix*z, iy*z, z, z) );
+					if( r == true ) { inportCount++; }
+				}	}
+			System.out.println("Inported "+inportCount.toString()+" tiles.");
+			this.loadWorkingTile();
+			return(true);
+			}
+		if( ((inX-1) % (z+1) == 0) &&  ((inY-1) % (z+1) == 0) ) //1px pad
+			{
+			tcx = (inX-1) / (z+1);
+			tcy = (inY-1) / (z+1);
+			if( tcx <= 1 && tcy <= 1 )		// refuse to copy 1 tile vsp.
+				{
+				System.err.println("Refused to inport 1 tile VSP");
+				return(false); 
+				}
+			System.out.println("Clipboard paste in padded form   x "+
+				tcx.toString() + " y " + tcy.toString() );
+			for( int iy = 0; iy < tcy; iy++ )
+				{ for( int ix = 0; ix < tcx; ix++ )
+					{
+					r = this.vsp.modifyTile( iy * tcx + ix, 
+						clipboardVImage.getRegion( ix*(z+1), iy*(z+1), 
+							z, z) );
+					if( r == true ) { inportCount++; }
+				}	}
+			System.out.println("Inported "+inportCount.toString()+" tiles.");
+			this.loadWorkingTile();
+			return(true);
+			}
+		System.err.println("VSP Paste : non-compatible clipboard");
+		return(false);
+		}
+
+/**  Takes clipboard contents and splits them into new tiles.
+ * then inserts them starting at the current tile Index.
+ * It is not picky what size the clipboard is.. long as its an image flavor.
+ * Any partial tiles along the edges will be discarded.
+ *
+ * @param clipboardVImage		Image to chop & insert.
+ */
+	private void handleTileInsert( VImage clipboardVImage )
+		{
+		if( clipboardVImage == null )	{ return; }
+		VImage parts[] = VImage.splitIntoTiles( clipboardVImage,
+				0, 0, this.vsp.getTileSquarePixelSize() );
+		for( int n = (parts.length-1); n >= 0; n-- )
+			{	this.vsp.insertTile( this.tIndex, parts[n].getImage() );	}
 		return;
 		}
 
-	private void handleVspPaste(VImage clipboardVImage)
-		{
-		// TODO Auto-generated method stub
-		
-		}
+	private void toggleVspOverview()
+		{	this.showOverview = ! this.showOverview;	return;	}
 	
 	}		// END CLASS

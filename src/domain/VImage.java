@@ -42,7 +42,10 @@ public class VImage implements Transferable
 	{
 	public BufferedImage image;
 	public Graphics2D g;
-	
+		// Death Magenta (verge transparent color) in RGB only form.
+	private static final Color COLOR_DEATHMAG = 
+			new Color( core.Script.Color_DEATH_MAGENTA.getRGB() );
+
 	public int width, height;
 	
 	public VImage(int x, int y) {
@@ -212,10 +215,12 @@ public class VImage implements Transferable
 		    int height = src.getHeight();
 		    int dstoffs = dx + dy * dst.getWidth();
 		    int srcoffs = 0;
-		    for (int y = 0 ; y < height ; y++ , dstoffs+= dst.getWidth(), srcoffs += width ) {
+		    for (int y = 0 ; y < height ; 
+				    y++ , dstoffs+= dst.getWidth(), srcoffs += width ) 
+			    {
 		        System.arraycopy(srcbuf, srcoffs , dstbuf, dstoffs, width);
-		    }
-		}
+			    }
+			}
 
 	   // Transfer to Clipboard
 	   // http://elliotth.blogspot.com/2005/09/copying-images-to-clipboard-with-java.html
@@ -356,7 +361,8 @@ public class VImage implements Transferable
 		
 
 		public VImage duplicateImage() { // TODO Test
-			VImage img = new VImage(this.image.getWidth(), this.image.getHeight());
+			VImage img = new VImage(
+					this.image.getWidth(), this.image.getHeight());
 			img.g.drawImage(this.getImage(), 0, 0, null);
 			return img;
 		}
@@ -429,7 +435,7 @@ public class VImage implements Transferable
 			d.SetClip(dcx1, dcy1, dcx2, dcy2);
 		}*/
 		
-		/** This extremely powerful function will allow you to take an image, define a rectangle 
+		/** This method will allow you to take an image, define a rectangle 
 		 * within it, and get an image handle referencing that rectangle within the original image. 
 		 * xofs, yofs, width, height indicate the position and dimensions of the rectangle within 
 		 * the source image. Clipping rectangles for the two images are completely independent. 
@@ -442,12 +448,141 @@ public class VImage implements Transferable
 			}
 
 
-		/** This extremely powerful function will allow you to take an image, define a rectangle 
+/**	Return a region of any given VImage (static method)
+ * (Krybo.Apr2016)
+ * @param x	Upper-left pixel x-coord of the target region
+ * @param y	Upper-left pixel y-coord of the target region
+ * @param w	Width of the region starting at upper left target 
+ * @param h	Pixel Height of the region starting at upper left target
+ * @param src	Any given VImage
+ * @return	A BufferedImage of the target.  New object.
+ */
+		public static BufferedImage getSubImage(int x,int y,
+				int w, int h, VImage src )
+			{
+			return( src.getImage().getSubimage(x, y, w, h) );
+			}
+		
+		
+		private static BufferedImage getSubImage(int x,int y,
+				int w, int h, BufferedImage src )
+			{
+			return( src.getSubimage(x, y, w, h) );
+			}
+		
+
+/**	Return a region of any given VImage (static method)
+ * (Krybo.Apr2016)
+ * @param x	Upper-left pixel x-coord of the target region
+ * @param y	Upper-left pixel y-coord of the target region
+ * @param w	Width of the region starting at upper left target 
+ * @param h	Pixel Height of the region starting at upper left target
+ * @param src	Any given VImage
+ * @return	A new VImage of the target
+ */
+		public static VImage getSubVImage(int x,int y,
+				int w, int h, VImage src )
+			{
+			VImage rtn = new VImage(w,h);
+			rtn.setImage( src.getImage().getSubimage(x, y, w, h)  );
+			return( rtn );
+			}
+		
+/**	Return a region within this VImage.
+ * (Krybo.Apr2016)
+ * @param x	Upper-left pixel x-coord of the target region
+ * @param y	Upper-left pixel y-coord of the target region
+ * @param w	Width of the region starting at upper left target 
+ * @param h	Pixel Height of the region starting at upper left target
+ * @return	A new VImage of the target
+ */
+		public VImage getRegion(int x, int y, int w, int h)
+			{
+			return( VImage.getSubVImage( x,y,w,h, this ) );
+			}
+		
+	/**  Combines getSubImage and blit methods to obtain a 
+	 * subregion from any given VImage and blits it onto this VImage.
+	 * Can also take BufferedImage instead of VImage source.
+	 * (Krybo.Apr2016)
+	 * 
+	 * @param src		The source VImage.
+	 * @param srcX		upper-left X pixel within src to start region
+	 * @param srcY		upper-left Y pixel within src to start region
+	 * @param srcW		pixel width to pull sub-region from anchor
+	 * @param srcH		pixel height to pull sub-region from anchor
+	 * @param destX		X pixel on this VImage to paste the src region
+	 * @param destY		Y pixel on this VImage to paste the src region
+	 */
+		public void blitSubRegion( VImage src, int srcX, int srcY,
+				int srcW, int srcH, int destX, int destY )
+			{
+			this.blit( destX, destY, 
+				VImage.getSubImage( srcX, srcY, srcW, srcH, src ) );
+			return;
+			}
+		public void blitSubRegion( BufferedImage src, int srcX, int srcY,
+				int srcW, int srcH, int destX, int destY )
+			{
+			this.blit( destX, destY, 
+				VImage.getSubImage( srcX, srcY, srcW, srcH, src ) );
+			return;
+			}
+
+	/**  Combines getSubImage and tblit methods to obtain a 
+	 * subregion from any given VImage that has a transparent color
+	 * ignored.   Then blits that onto this VImage.
+	 * (Krybo.Apr2016)
+	 * 
+	 * @param src		The source VImage.
+	 * @param srcX		upper-left X pixel within src to start region
+	 * @param srcY		upper-left Y pixel within src to start region
+	 * @param srcW		pixel width to pull sub-region from anchor
+	 * @param srcH		pixel height to pull sub-region from anchor
+	 * @param destX		X pixel on this VImage to paste the src region
+	 * @param destY		Y pixel on this VImage to paste the src region
+	 * @param trans		Pixel Color within src to treat as transparent.
+	 */
+		public void tBlitSubRegion( VImage src, int srcX, int srcY,
+				int srcW, int srcH, int destX, int destY, Color trans )
+			{
+			VImage srcCp = new VImage(src); 
+				// Take care of the transparency first.
+			if( trans.getTransparency() == 2 )
+				{ 
+				srcCp.colorReplacer(trans, 
+					core.Script.Color_DEATH_MAGENTA, -1, -1); 
+				}
+			else
+				{ 
+				srcCp.colorReplacer(trans, COLOR_DEATHMAG, -1, -1); 
+				}
+			BufferedImage tmp = VImage.getSubImage( 
+					srcX, srcY, srcW, srcH, srcCp );
+			this.tblit( destX, destY, tmp );
+			return;
+			}
+
+		/** delegator to tBlitSubRegion(VImage,....) */
+		public void tBlitSubRegion( BufferedImage src, int srcX, 
+			int srcY, int srcW, int srcH, int destX, int destY, Color trans )
+				{
+				VImage n = new VImage( src.getWidth(), src.getHeight() );
+				n.setImage(src);
+				this.tBlitSubRegion( n, srcX, srcY,	 srcW, srcH, 
+						destX, destY, trans );
+				return;
+				}
+		
+		
+		/** This will allow you to take an image, define a rectangle 
 		 * within it, and get an image handle referencing that rectangle within the original image. 
 		 * xofs, yofs, width, height indicate the position and dimensions of the rectangle within 
 		 * the source image. Clipping rectangles for the two images are completely independent. 
 		 * Rendering into one will render into the other.* If that is what you want to do, then this 
-		 * is the function you want to use. 
+		 * is the function you want to use.
+		 * 
+		 *  @deprecated Does not work, not finished, Use ?  
 		 */
 		public VImage imageShell(int x, int y, int w, int h) {
 			if (w+x > this.width || y+h > this.height)
@@ -573,24 +708,36 @@ public class VImage implements Transferable
 		}*/
 		
 		/**
-		 * @deprecated Use {@link #grabRegion(int,int,int,int,int,int,VImage)} instead
+		 * @deprecated Use  {@link #blitSubRegion(VImage,int,int,int,int,int,int)} or 
+		 * {@link #getSubVImage(int,int,int,int VImage)} instead
 		 */
 		public void grabregion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, VImage src) {
 			grabRegion(sx1, sy1, sx2, sy2, dx, dy, src);
 			}
 
+		/**
+		 * @deprecated Use  {@link #blitSubRegion(VImage,int,int,int,int,int,int)} or 
+		 * {@link #getSubVImage(int,int,int,int VImage)} instead
+		 */
 		public void grabRegion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, VImage src) {
 			this.grabRegion(sx1, sy1, sx2, sy2, dx, dy, src.image);
 		}
 		
 		/**
-		 * @deprecated Use {@link #grabRegion(int,int,int,int,int,int,BufferedImage)} instead
+		 * @deprecated Use  {@link #blitSubRegion(BufferedImage,int,int,int,int,int,int)} or 
+		 * {@link #getSubVImage(int,int,int,int VImage)} instead
 		 */
 		public void grabregion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, BufferedImage src) {
 			grabRegion(sx1, sy1, sx2, sy2, dx, dy, src);
 			}
 
-		public void grabRegion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, BufferedImage src) {
+		
+		/**
+		 * @deprecated Use  {@link #blitSubRegion(BufferedImage,int,int,int,int,int,int)} or 
+		 * {@link #getSubVImage(int,int,int,int VImage)} instead
+		 */
+		public void grabRegion(int sx1, int sy1, int sx2, int sy2, 
+				int dx, int dy, BufferedImage src) {
 			
 				// Getclip
 				//int dcx1 = dst.cx1;
@@ -622,7 +769,8 @@ public class VImage implements Transferable
 					   || dx+i >= this.getWidth() || dy+j >= this.getHeight())		
 						break;
 					color = new Color(src.getRGB(sx1+i, sy1+j));
-					if(color.getRed() + color.getGreen() + color.getBlue() == 0) // TODO [Rafael, the Esper] Probably move it to tgrabregion?
+					if(color.getRed() + color.getGreen() + color.getBlue() == 0) 
+						// TODO [Rafael, the Esper] Probably move it to tgrabregion?
 						color = new Color(0,0,0,0); //color.getRed(), color.getGreen(), color.getBlue(), 0);
 					this.setPixel(i+dx, j+dy, color);
 
@@ -636,6 +784,9 @@ public class VImage implements Transferable
 				dst.SetClip(dcx1, dcy1, dcx2, dcy2);*/
 		}
 
+		/**
+		 * @deprecated Use {@link #tBlitSubRegion(VImage,int,int,int,int,int,int,Color)}
+		 */
 		public void tgrabregion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, Color transC, VImage src) {
 			this.tgrabRegion(sx1, sy1, sx2, sy2, dx, dy, transC, src.image);
 		}	
@@ -646,10 +797,62 @@ public class VImage implements Transferable
 		public void tgrabregion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, Color transC, BufferedImage src) {
 			tgrabRegion(sx1, sy1, sx2, sy2, dx, dy, transC, src);
 			}
+		
+		/** static method to compare only the rgb values of 2 colors.
+		 * returns true if they are identical.   else false.  
+		 * Alpha value is completely ignored.  */
+		public static boolean colorRGBcomp( Color c1, Color c2 )
+			{
+			if(	c1.getRed() == c2.getRed() &&
+				c1.getGreen() == c2.getGreen() && 
+				c1.getBlue() == c2.getBlue()  )
+					{ return(true); }
+			return(false);
+			}
+
+	/**  Does a deep pixel scan of the image, looking for target colors
+	 * [find]  and compares the RGB values.  If R-G-B match, it checks
+	 * the src alpha channel to make sure it is within a range.
+	 * then it will be replaced with Color [replace].
+	 * This is slow, and should only be used in in-frequent operations.
+	 * (Krybo.Apr2016)
+	 * 
+	 * @param find		Color to find
+	 * @param replace	Color to replace
+	 * @param minAlpha	pixels with alpha below this are ignored. (0-255)
+	 * @param maxAlpha	pixels with alpha below this are ignored. (0-255),
+	 *    either alpha threshold can be set negative to skip the test.
+	 * @return  a count of the number of pixels changed. 
+	 */
+		public int colorReplacer( Color find, Color replace, 
+				int minAlpha, int maxAlpha )
+			{
+			int operCount = 0;
+			for( int yp = 0; yp < this.getHeight(); yp++ )
+				{ for( int xp = 0; xp < this.getWidth(); xp++ )
+					{
+					Color target = this.getPixelColor(xp, yp);
+					
+					if( VImage.colorRGBcomp( target, find ) == true )
+						{
+						if( (minAlpha > 0) && (target.getAlpha() < minAlpha) )  
+							{ continue; }
+						if( (maxAlpha > 0) && (target.getAlpha() > maxAlpha) )
+							{ continue; }
+						this.setPixel( xp, yp, replace );
+						operCount++;
+						}
+				}	}
+			return(operCount);
+			}
 
 
-		public void tgrabRegion(int sx1, int sy1, int sx2, int sy2, int dx, int dy, Color transC, BufferedImage src) {
-			
+		/**
+		 * @deprecated Use {@link #tBlitSubRegion(BufferedImage,int,int,int,int,int,int,Color)}
+		 */
+		public void tgrabRegion(int sx1, int sy1, int sx2, int sy2,
+				int dx, int dy, Color transC, BufferedImage src) 
+			{
 			if (sx1>sx2) { // swap sx1, sx2
 				int temp = sx1;
 				sx1 = sx2;
@@ -662,19 +865,20 @@ public class VImage implements Transferable
 			}
 			
 			Color color = null;
-			for(int j=0; j<sy2-sy1; j++)
-			for(int i=0; i<sx2-sx1; i++) {
+			for(int j=0; j<sy2-sy1; j++) {
+			for(int i=0; i<sx2-sx1; i++) 
+				{
 				if(sx1+i >= src.getWidth() || sy1+j >= src.getHeight()
 				   || dx+i >= this.getWidth() || dy+j >= this.getHeight())		
 					break;
 				color = new Color(src.getRGB(sx1+i, sy1+j));
 				if(color.equals(transC)) 
-					color = new Color(255,0,255,0); //color.getRed(), color.getGreen(), color.getBlue(), 0);
+					{ color = COLOR_DEATHMAG; }
 				this.setPixel(i+dx, j+dy, color);
-
-			}	
+			}	}
+		return;
 		}
-	
+
 		public void setPixel(int x, int y, Color color) {
 			this.image.setRGB(x, y, color.getRGB());
 		}	
@@ -1098,6 +1302,42 @@ public class VImage implements Transferable
 			}
 
 
+	/** Handy static method to scale a BufferedImage onto a new 
+	 * BufferedImage object.
+	 * (Krybo.Apr.2016)
+	 * 
+	 * @param in			The source.
+	 * @param newXpx	new x pixel Image size.
+	 * @param newYpx	new y pixel Image size
+	 * @return	a new & resized, BufferedImage object.
+	 */
+	public static BufferedImage newResizedBufferedImage(
+			BufferedImage in, int newXpx, int newYpx )
+		{
+		if( in.getWidth() <= 0 || in.getHeight() <= 0 )
+			{ return(null); }		// this should never happen, but w/e
+		double xFactor = (double) newXpx / (double) in.getWidth();
+		double yFactor = (double) newYpx / (double) in.getHeight();
+		
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsDevice gs = ge.getDefaultScreenDevice();
+		GraphicsConfiguration gc = gs.getDefaultConfiguration();
+		BufferedImage out = gc.createCompatibleImage( 
+				newXpx,  newYpx, in.getTransparency() );
+		
+		AffineTransform at = new AffineTransform();
+		at.scale( xFactor,  yFactor );
+		Graphics2D g2dIn	= (Graphics2D) in.getGraphics();
+		Graphics2D g2dOut	= (Graphics2D) out.getGraphics();
+		g2dOut.setComposite( g2dIn.getComposite() );
+		// Scales the input BImage onto the output BImage.
+		g2dOut.drawImage( in , at, null );
+		
+		g2dOut.dispose();
+		g2dIn.dispose();
+		return(out);
+		}
+	
 		// Krybo (2014-09-30)  zoom-like function.  now used for map zoom.
 	public void rotateScaleBlendWithImageSubsection( VImage src, 
 			int ssX1, int ssY1,
@@ -1231,6 +1471,37 @@ public class VImage implements Transferable
 		return;
 		}
 	
+	
+/** A simplified alternative to split() when dealing with
+ * square sections, no padding, or other stuff.
+ * (Krybo.Apr.2016)
+ *  
+ * @param sourceImg		The source image to butcher
+ * @param startx				anchor x pixel within source
+ * @param starty				anchor y pixel within source
+ * @param squarePxSize		Size of each square tile to extract starting at
+ *      the anchor points.
+ * @return	An array of VImage Objects.
+ * */
+	public static VImage[] splitIntoTiles( VImage sourceImg,
+			int startx, int starty, int squarePxSize )  
+		{
+		if( squarePxSize < 1 )		{ return(null); }
+		int tx = (sourceImg.getWidth()-startx) / squarePxSize;
+		int ty = (sourceImg.getHeight()-starty) / squarePxSize;
+		int tot = tx*ty;
+		VImage[] images = new VImage[tot];
+		for( int ny = 0; ny < ty; ny++ )
+			{ for( int nx = 0; nx < tx; nx++ )
+				{
+				images[ ((ny * tx) + nx) ] = 
+					VImage.getSubVImage( startx+(nx*squarePxSize), 
+					starty+(ny*squarePxSize), squarePxSize, squarePxSize, 
+					sourceImg); 
+			}	}
+		return(images);
+		}
+	
 /**  Takes a larger VImage and splits it into multiple (array) VImages.
  *   { Krybo adaptation of RafaelEsper's original }
  * @param startx  Pixel-X within source to start cutting.
@@ -1245,7 +1516,6 @@ public class VImage implements Transferable
  * @param sourceImg  The larger source image.
  * @return
  */
-
 	public static VImage[] split(int startx, int starty, 
 			int cellW, int cellH, int skipx, int skipy, int columns, 
 			int totalframes, boolean padding, VImage sourceImg ) 

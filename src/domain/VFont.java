@@ -76,9 +76,15 @@ public class VFont {
 		int imageindex = 0;
 		for (int yl = 0; yl<5 * subsets; yl++)
 			for (int xl = 0; xl<20; xl++) {
-				rawdata[imageindex] = new VImage(xsize, ysize);
-				rawdata[imageindex++].grabRegion(1+(xl*(xsize+1)), 1+(yl*(ysize+1)), width+1+(xl*(xsize+1)), height+1+(yl*(ysize+1)),
-					0, 0, workingimage);
+			
+				rawdata[imageindex] = VImage.getSubVImage(
+						1+(xl*(xsize+1)),	1+(yl*(ysize+1)), 
+						width, height, workingimage );
+
+//			Krybo:  Fix deprecation.   Apr.2016
+//				rawdata[imageindex] = new VImage(xsize, ysize);
+//				rawdata[imageindex++].grabRegion(1+(xl*(xsize+1)), 1+(yl*(ysize+1)), width+1+(xl*(xsize+1)), height+1+(yl*(ysize+1)),
+//					0, 0, workingimage);
 			}
 
 		for (int i=0; i<100; i++)

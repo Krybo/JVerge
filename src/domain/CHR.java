@@ -699,7 +699,7 @@ public class CHR {
 	/**Rafael:
 	 * New method implemented to allow bypassing .chr files and use an image file instead
 	 */
-	public static CHR createCHRFromImage(int startx, int starty, 
+	public static CHR createCHRFromImage( int startx, int starty, 
 			int sizex, int sizey, int skipx, int skipy, int columns, int totalframes, 
 			boolean padding, VImage image) 
 		{
@@ -721,8 +721,16 @@ public class CHR {
 			if(padding)
 				posx++;
 				 
-			images[frames] = new VImage(sizex, sizey);
-			images[frames].grabRegion(startx+posx, starty+posy, startx+posx+sizex, starty+posy+sizey, 0, 0, image); 
+			
+			images[frames] = VImage.getSubVImage( 
+					startx+posx, starty+posy, 
+					sizex, sizey, image );
+			
+// Krybo : fix grabregion's beeing deprecated. Apr.2016
+//			images[frames] = new VImage(sizex, sizey);
+//			images[frames].grabRegion(startx+posx, starty+posy, 
+//					startx+posx+sizex, starty+posy+sizey, 0, 0, image);
+			
 			//images[frames].tgrabregion(startx+posx, starty+posy, startx+posx+sizex, starty+posy+sizey, 0, 0, transC, image);
 			column++;
 			posx+=sizex+skipx;

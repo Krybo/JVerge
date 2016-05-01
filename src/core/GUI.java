@@ -1,5 +1,24 @@
 package core;
 
+import static core.Script.ZoomScreenSubset;
+import static core.Script.current_map;
+import static core.Script.jvcl;
+import static core.Script.log;
+import static core.Script.myself;
+import static core.Script.playerGetMapPixelX;
+import static core.Script.playerGetMapPixelY;
+import static core.Script.playerIsSet;
+import static core.Script.screen;
+import static core.Script.screenHalfHeight;
+//import core.JVCL;
+//import static core.Controls.KeyF6;
+//import static core.Controls.clearKey;
+import static core.Script.screenHalfWidth;
+import static core.Script.screenZOOM;
+import static core.Script.stopmusic;
+import static core.VergeEngine.Vmm;
+import static core.VergeEngine.config;
+
 import java.awt.AlphaComposite;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -9,10 +28,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
-import java.awt.Image;
 //import java.awt.SystemColor;			// Krybo (2014-09-17)
 import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
@@ -27,12 +44,6 @@ import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-import static core.VergeEngine.*;
-//import core.JVCL;
-//import static core.Controls.KeyF6;
-//import static core.Controls.clearKey;
-import static core.Script.*;
-
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -41,8 +52,8 @@ import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
-import domain.VImage;
 import menus.VMenuManager;
+import domain.VImage;
 
 //import javax.swing.UIDefaults;
 //import domain.Map;

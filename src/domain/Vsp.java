@@ -189,7 +189,7 @@ public class Vsp
 	
 	private void load (InputStream fis) {
 
-		try    
+		try
 		{
 			ExtendedDataInputStream f = new ExtendedDataInputStream(fis);
 			
@@ -201,7 +201,8 @@ public class Vsp
 			this.numtiles = f.readSignedIntegerLittleEndian();
 			this.compression = f.readSignedIntegerLittleEndian();
 			
-			System.out.println(this.signature + ";"+this.version+";"+this.getNumtiles()+";"+this.getCompression());
+			System.out.println(this.signature + ";"+this.version+";"+
+				this.numtiles+" ; "+this.getCompression());
 			// Krybo:: e.x.   5264214;6;100;1
 			
 			byte[] vspdata = f.readCompressedUnsignedShortsIntoBytes(); // tileCount * width * height * 3 bytes!
@@ -238,23 +239,24 @@ public class Vsp
 			f.close();
 			
 			// initialize tile anim stuff
-			tileidx = new int[getNumtiles()];
-			flipped = new int[getNumtiles()];
-			vadelay = new int[numAnim];
+			this.tileidx = new int[this.numtiles];
+			this.flipped = new int[this.numtiles];
+			this.vadelay = new int[numAnim];
 			int i;
 			for (i=0; i<numAnim; i++)
-				vadelay[i]=0;
-			for (i=0; i<getNumtiles(); i++)
+				this.vadelay[i]=0;
+			for (i=0; i<this.numtiles; i++)
 			{
-				flipped[i] = 0;
-				tileidx[i] = i;
+				this.flipped[i] = 0;
+				this.tileidx[i] = i;
 			}
 			mytimer = systemtime;
 			
 			
 			// Get image tiles from pixel array 
-			System.out.println("Numtiles: " + getNumtiles() + "(" + vspdata.length + " bytes)");
-			this.tiles = f.getBufferedImageArrayFromPixels(vspdata, getNumtiles(), this.tileSize, this.tileSize);
+			System.out.println("Numtiles: " + this.numtiles + "(" + vspdata.length + " bytes)");
+			this.tiles = f.getBufferedImageArrayFromPixels(vspdata, 
+					this.numtiles, this.tileSize, this.tileSize);
 			//for(int x=0; x<tiles.length; x++)
 				//Script.graycolorfilter(tiles[x]);
 			
@@ -281,7 +283,7 @@ public class Vsp
 			f.writeSignedIntegerLittleEndian(this.getNumtiles());
 			f.writeSignedIntegerLittleEndian(this.getCompression());
 			
-			System.out.println(this.signature + ";"+this.version+";"+this.getNumtiles()+";"+this.getCompression());
+			System.out.println(this.signature + ";"+this.version+";"+this.numtiles+";"+this.getCompression());
 			byte[] pixels = f.getPixelArrayFromFrames(tiles, tiles.length, this.tileSize, this.tileSize);
 			f.writeCompressedBytes(pixels);
 
@@ -297,7 +299,7 @@ public class Vsp
 	        }			
 
 	        f.writeSignedIntegerLittleEndian(this.numobs);
-	        
+//	        
 			f.writeCompressedBytes(this.obsPixels);
 	
 		}
@@ -352,11 +354,11 @@ public class Vsp
 			}
         
 		// initialize tile anim stuff
-		tileidx = new int[getNumtiles()];
-		flipped = new int[getNumtiles()];
+		tileidx = new int[this.numtiles];
+		flipped = new int[this.numtiles];
 		vadelay = null;
 
-		for( int i=0; i<getNumtiles(); i++ )
+		for( int i=0; i < this.numtiles; i++ )
 			{
 			flipped[i] = 0;
 			tileidx[i] = i;
@@ -380,20 +382,67 @@ public class Vsp
 		return;
 		}
 
-	public void exportToClipboard(int tiles_per_row) {
+	/**  copies the tileset data to an image to the clipboard.
+	 * if pad1px is true, also adds a 1 pixel padding between tiles.
+	 * Krybo (Apr.2016)   */
+	public void exportToClipboard(int tiles_per_row, boolean pad1px ) 
+		{
+		if( tiles_per_row <= 0 )	{ return; }
+		int row_size = tiles_per_row * this.getTileSquarePixelSize();
+		if( pad1px == true )
+			{ row_size += tiles_per_row + 1; }
+		VImage clipboard = null;
+		if( pad1px == true )
+			{
+			clipboard = new VImage(row_size, 
+				((this.getNumtiles()/tiles_per_row+1) * 17) +1 );						
+			}
+		else
+			{
+			clipboard = new VImage(row_size, 
+				(this.getNumtiles()/tiles_per_row+1) * 16);			
+			}
 		
-		int row_size = tiles_per_row*16;
-		VImage clipboard = new VImage(row_size, (this.getNumtiles()/tiles_per_row+1) * 16);
-//		Font font = new Font("Serif", Font.PLAIN, 7);
-		
-		for(int i=0; i<this.getNumtiles(); i++) {
-			clipboard.blit((i*16)%row_size, i/tiles_per_row*16, getTiles()[i]);
-			//if(i%tiles_per_row == 0)
-				//clipboard.printstring(0, i/tiles_per_row*16+7, font, Integer.toString(i/tiles_per_row)); 
-		}
+		int tmpx, tmpy;
+		for( int i=0; i<this.getNumtiles(); i++ ) 
+			{
+			if( pad1px == true )
+				{
+				tmpx = ( i * (this.getTileSquarePixelSize()+1) ) % (row_size-1); 
+				tmpy = (i / tiles_per_row) * (this.getTileSquarePixelSize() + 1);				
+				}
+			else
+				{
+				tmpx = ( i * this.getTileSquarePixelSize() ) % row_size; 
+				tmpy = (i / tiles_per_row) * this.getTileSquarePixelSize();				
+				}
+			clipboard.blit( tmpx, tmpy, getTiles()[i]);
+			}
 		clipboard.copyImageToClipboard();
+		return;
+		}
+	
+	public void exportToClipboard(int tiles_per_row) 
+		{
+		this.exportToClipboard( tiles_per_row, false );
+		return;
+		}
+		
+	// Rafeal's exportToClipboard  method. - now delegated.
+//		if( tiles_per_row <= 0 )	{ return; }
+//		int row_size = tiles_per_row * this.getTileSquarePixelSize();
+//		VImage clipboard =
+//			new VImage(row_size,
+//					(this.getNumtiles()/tiles_per_row+1) * 16);
+////		Font font = new Font("Serif", Font.PLAIN, 7);
+//		
+//		for(int i=0; i<this.getNumtiles(); i++) {
+//			clipboard.blit((i*16)%row_size, i/tiles_per_row*16, getTiles()[i]);
+//			//if(i%tiles_per_row == 0)
+//				//clipboard.printstring(0, i/tiles_per_row*16+7, font, Integer.toString(i/tiles_per_row)); 
+//		}
+//		clipboard.copyImageToClipboard();
 
-	}
 
 	static void createVspFromImages(VImage[] images)
 		{ 
@@ -408,9 +457,13 @@ public class Vsp
 			int sizey = images[img].height;
 			System.out.println("Analysing image " + img);
 			for(int j=0; j<sizey/16;j++) {
-				for(int i=0; i<sizex/16;i++) {
-					VImage newTile = new VImage(16, 16);
-					newTile.grabRegion(posx, posy, posx+16, posy+16, 0, 0, images[img].image);					
+				for(int i=0; i<sizex/16;i++) 
+					{
+					// Krybo.Apr2016 - replace deprecated method.
+					VImage newTile = images[img].getRegion(
+						posx, posy, posx+16, posy+16);
+				//	VImage newTile = new VImage(16, 16);
+				//	newTile.grabRegion(posx, posy, posx+16, posy+16, 0, 0, images[img].image);					
 					posx+=16;
 
 					// Checks for repeated tile 
@@ -458,9 +511,12 @@ public class Vsp
 		v.save("C:\\TEMP.VSP");
 	}
 	
-	public int getNumtiles() {
-		return numtiles;
-	}
+	public int getNumtiles() 
+		{
+		if( this.tiles == null )		{ return(0); }
+		this.numtiles = this.tiles.length;
+		return this.numtiles;
+		}
 	
 		// Krybo (Jan.2016) : 
 		// opens the internal size of tiles in pixels to public
@@ -471,6 +527,78 @@ public class Vsp
 	public BufferedImage [] getTiles() {
 		return tiles;
 		}
+	
+	/**  Increases the size of the VSP by one.   Specify the new tiles image,
+	 * at the insertion index to fill the void.   Pushes up all tiles between
+	 * insertion index and the end of the VSP.
+	 * 
+	 * @param atIndex	tile index at which to replicate and insert a tile.
+	 * @param newBImage	new tile image.  Will be scaled to fit.
+	 */
+	public void insertTile( int atIndex, BufferedImage newBImage )
+		{
+			// Rescale if necessary.
+		if(  this.tileSize != newBImage.getWidth() ||
+			this.tileSize != newBImage.getHeight()  )
+			{ 
+			newBImage = VImage.newResizedBufferedImage(newBImage, 
+					this.tileSize, this.tileSize );
+			}
+		int newCount = this.tiles.length + 1;
+		BufferedImage[] newTileSet = new BufferedImage[newCount];
+		int[] newFlipped = new int[newCount];
+		for( int n = 0; n < this.numtiles; n++ )
+			{
+			if( n < atIndex )	
+				{ 
+				newTileSet[n] = this.tiles[n];
+				newFlipped[n] = this.flipped[n];
+				}
+			else if( n == atIndex )
+				{
+				newTileSet[n] = newBImage;
+				newTileSet[n+1] = this.tiles[atIndex];
+				newFlipped[n] = this.flipped[atIndex];
+				newFlipped[n+1] = this.flipped[atIndex];
+				}
+			else
+				{
+				newTileSet[n+1] = this.tiles[n];
+				newFlipped[n+1] = this.flipped[n];
+				}
+			}
+		this.tiles = newTileSet;
+		this.flipped = newFlipped;
+		this.numtiles = this.tiles.length;
+		this.tileidx = new int[this.numtiles];
+		for( int n = 0; n < newCount; n++ )
+			{ this.tileidx[n] = n; }
+
+		// Check animation sequences for extension
+		for( int a = 0; a < this.anims.length; a++ )
+			{
+			int a1 = this.anims[a].start;
+			int a2 = this.anims[a].finish;
+			if( atIndex >= a1 && atIndex <= a2 )
+				{ this.anims[a].finish++; }
+			}
+		
+		return;
+		}
+
+	/**  Increases the size of the tileset by one.   Replicates the tile
+	 * at the insertion index to fill the void.   Pushes up all tiles between
+	 * index and the end of the tileset.  Use with caution.
+	 * 
+	 * @param atIndex	tile index at which to replicate and insert a tile.
+	 */
+	public void insertReplicaTile( int atIndex )
+		{ 	this.insertTile( atIndex, this.getTileCopy(atIndex) );	}
+	
+	/** Returns a new image instance of a given tile index. 
+	 * (Krybo.Apr.2016) 				*/
+	public BufferedImage getTileCopy( int tileIdx ) 
+		{	return( VImage.ImageDeepCopy(this.tiles[tileIdx]) );  }	
 
 	/** Make a specified tile index into a VImage and return it. 
 	 * Krybo (Apr.2016) */
@@ -490,7 +618,7 @@ public class Vsp
 		{
 		if( newTileImage.getWidth() != this.tileSize ) 	{ return(false); }
 		if( newTileImage.getHeight() != this.tileSize ) 	{ return(false); }
-		if( tileIdx < 0 || tileIdx > this.numtiles )			{ return(false); }
+		if( tileIdx < 0 || tileIdx >= this.numtiles )		{ return(false); }
 		tiles[tileIdx] = newTileImage;
 		return(true);
 		}
