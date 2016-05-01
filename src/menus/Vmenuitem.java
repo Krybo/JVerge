@@ -1,6 +1,7 @@
 package menus;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
@@ -80,6 +81,7 @@ public interface Vmenuitem
 	public void setIconContent( HashMap<Integer,VImage> imageItems );
 	public void setColorContent( HashMap<Integer,Color> basicColors );
 	public void setImageContent( HashMap<Integer,VImage> imageItems );
+	public void setFont( Font newFont );
 
 	// Methods to get hashed data.
 	public Color getColorComponent( Integer hashKeyColor );

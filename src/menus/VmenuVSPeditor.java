@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 import menus.VmiButton.enumMenuButtonCOLORS;
+import menus.VmiTextSimple.enumMenuStxtCOLORS;
 import core.Controls;
 import core.DefaultPalette;
 import core.Script;
@@ -39,7 +40,7 @@ import domain.Vsp;
  * e	Focus tile edit.   [Cntl] Focus Palette bar.
  * f		Flood fill Tool
  * g	Goto Tile #
- * h	Help screen
+ * h	Toggle Keyboard Help table.
  * i		invert current cell, invert palette entry    [Cntl] invert tile
  * j
  * k
@@ -51,7 +52,7 @@ import domain.Vsp;
  * q
  * r		Rectangle	[Cntl] Wrapping rectangle
  * s	Save single tile		[Cntl] Save entire VSP
- * t
+ * t 	Toggle view of entire Tileset
  * u
  * v	Clipboard Paste : Single tile 
  * 			[Shift] Insert tiles here
@@ -126,7 +127,7 @@ public class VmenuVSPeditor implements Vmenu
 		// copy the VSP from the source.  So we do not edit it directly.
 		this.vsp = new Vsp( sourceTileSet );
 		this.sidebar = new VmenuVertical( 30, 60 );
-		this.colorEditor = new VmenuSliders( 20, 300, 128, 3, 
+		this.colorEditor = new VmenuSliders( 16, 334, 128, 3, 
 				false, true, true );
 		this.main = new VmenuButtonPalette(250, 60, 256, 256, 16, 16);
 		this.colorkey = new VmenuHorizontal( 68,1 );
@@ -142,6 +143,17 @@ public class VmenuVSPeditor implements Vmenu
 		main.setPadding( 0, true, Color.WHITE );
 		main.setBorderAll( false, 0 );
 		main.refresh();
+		
+		HashMap<Integer,Color> hmSideBarClrs = 
+			new HashMap<Integer,Color>();
+		hmSideBarClrs.put(enumMenuStxtCOLORS.BKG_ACTIVE.value(), 
+			new Color(0.0f, 0.2f, 0.8f, 0.8f ) );
+		hmSideBarClrs.put(enumMenuStxtCOLORS.BKG_INACTIVE.value(), 
+			Color.BLACK );
+		hmSideBarClrs.put(enumMenuStxtCOLORS.FRAME_INNER.value(), 
+			Color.BLACK );
+		hmSideBarClrs.put(enumMenuStxtCOLORS.FRAME_OUTER.value(), 
+			Color.GRAY );
 		
 		Method m3 = null;
 		Method m4 = null;
@@ -187,9 +199,16 @@ public class VmenuVSPeditor implements Vmenu
 		VmiTextSimple vts07 = new VmiTextSimple("Save Tile");
 		vts07.setKeycode( 664 );
 		vts07.setAction( m7 );
+		
+		VmiTextSimple vts08 = new VmiTextSimple("Show All Tiles");
+		vts08.setKeycode( 672 );
+//		vts07.setAction( m7 );
+		VmiTextSimple vts09 = new VmiTextSimple("Keyboard map");
+		vts09.setKeycode( 576 );
+//		vts07.setAction( m7 );
 
 		VmiInputInteger vmiIn01 = new VmiInputInteger( 
-				"<GoTo Tile #>", "Enter VSP Tile number (INT)", 	0, 0 );
+				"<GoTo Tile #> ", "Enter VSP Tile number (INT)", 	0, 0 );
 		vmiIn01.setKeycode( 568 );
 
 		this.sidebar.addItem( vts01 );
@@ -200,6 +219,10 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar.addItem( vts05 );
 		this.sidebar.addItem( vts06 );
 		this.sidebar.addItem( vmiIn01 );
+		this.sidebar.addItem( vts08 );
+		this.sidebar.addItem( vts09 );
+		this.sidebar.setColorContentAll( hmSideBarClrs );
+		this.sidebar.setFontAll(core.Script.fntLogicalScans14 );
 		
 		for( Integer b = 0; b < 11; b++ )
 			{
@@ -239,9 +262,27 @@ public class VmenuVSPeditor implements Vmenu
 		this.gB.setValueRange( 0, 255 );
 		this.gR.setBarColors(Color.RED, Color.BLACK );
 		this.gG.setBarColors(Color.GREEN, Color.BLACK );
-		this.gB.setBarColors(Color.BLUE, Color.BLACK );
+		this.gB.setBarColors( new Color(0.2f,0.2f,1.0f,1.0f) ,
+				Color.BLACK );
 		this.gR.setTip("Red"); this.gG.setTip("Grn"); this.gB.setTip("Blu");
+		
+		VmiTextSimple clrEdHelp = new VmiTextSimple("");
+		clrEdHelp.setFrameThicknessPx(0);
+		clrEdHelp.enableBackdrop(false);
+		clrEdHelp.setColor(enumMenuStxtCOLORS.BKG_ACTIVE, 
+				core.Script.Color_DEATH_MAGENTA);
+		clrEdHelp.setColor(enumMenuStxtCOLORS.BKG_INACTIVE, 
+				core.Script.Color_DEATH_MAGENTA);
+		clrEdHelp.enableIcons(false);
+		clrEdHelp.enableFrame(false);
+		clrEdHelp.setFont(core.Script.fntLogicalScans10 );
 
+		this.colorEditor.setAllGuagesBorder(false);
+		this.colorEditor.setPaddingWidthPx(2);
+		this.colorEditor.setStatusBarObject(clrEdHelp);
+		this.colorEditor.setGuageHeight( 12 );
+		this.colorEditor.setHighlight(false);
+		
 		// -- finish up
 
 		this.bkgImg = null;
@@ -269,7 +310,17 @@ public class VmenuVSPeditor implements Vmenu
 			target.scaleblit(0, 0, 
 				target.getWidth(), target.height, this.bkgImg);
 			}
-		
+
+		// Update color editor status.
+		this.colorEditor.setHighlight( false );
+		if( this.cFocus != 2 )
+			{
+			this.colorEditor.setStatus("RGB : "+
+				Integer.toString(gR.getValue()) + " " + 
+				Integer.toString(gG.getValue()) + " " +
+				Integer.toString(gB.getValue())  ); 
+			}
+
 			// Draw a shading box behind the active sub-menus
 		switch( this.cFocus )
 			{
@@ -281,11 +332,19 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 			case 1:		// the color key bar.
 				target.rectfill( 58, 0, 636, 59, this.clrShader );
-			break;
+				break;
+			case 2:		// Color Editor
+				target.rectfill( 4, 322, this.colorEditor.getWidthPx()+28, 
+					this.colorEditor.getHeightPx()+344, 
+					this.clrShader );
+				this.colorEditor.setHighlight(true);
+				break;
 			default:
 				target.rectfill( 240, 50, 516, 326, this.clrShader );
 				break;
 			}
+		
+		
 		
 		this.main.paint(target);
 		this.sidebar.paint(target);
@@ -304,7 +363,41 @@ public class VmenuVSPeditor implements Vmenu
 					puY+2+(py*this.preview.getHeight() ), 
 					this.preview);  
 				} }
+
+		// Main frame.
+		target.rect( this.main.getX()-2, this.main.getY()-2, 
+				this.main.getX()+this.main.getWidth()+1, 
+				this.main.getY()+this.main.getHeight()+1, 
+				Color.WHITE );
+		target.rect( this.main.getX()-3, this.main.getY()-3, 
+				this.main.getX()+this.main.getWidth()+2, 
+				this.main.getY()+this.main.getHeight()+2, 
+				Color.BLACK );
 		
+		for( int row = -1; row <= 1; row++ )
+			{	for( int col = -4; col <= 4; col++ )
+				{
+				int thisrow = 
+					this.tIndex / DEFAULT_TILES_PER_ROW;
+				int thiscol = 
+					this.tIndex % DEFAULT_TILES_PER_ROW;
+				int thistile = this.tIndex + col + 
+					(row * DEFAULT_TILES_PER_ROW);
+				while( thistile >= this.vsp.getNumtiles() )
+					{ thistile -= this.vsp.getNumtiles(); }
+				while( thistile < 0 )
+					{ thistile += this.vsp.getNumtiles(); }
+				int xAdj = col * 33;
+				int yAdj = row * 33;
+				target.tscaleblit( 350+xAdj, 380+yAdj, 32, 32, 
+						this.vsp.getTileAsVImage( thistile ) );
+			}	}
+		target.rect(349, 379, 383, 413, Color.WHITE );
+		target.rect(348, 378, 384, 414, Color.BLACK );
+		target.rect(347, 377, 385, 415, Color.WHITE );
+		target.rect(346, 376, 386, 416, Color.BLACK );
+			
+
 		if( this.showOverview )
 			{	target.blit( 200, 100, this.vspOverview );	}
 
@@ -530,8 +623,8 @@ public class VmenuVSPeditor implements Vmenu
 			}
 
 		if( this.cFocus == 3 )
-			{ setColorEditorToCursor(); }
-		
+			{ this.setColorEditorToCursor(); }
+
 		return(true);
 		}
 
@@ -932,6 +1025,7 @@ public class VmenuVSPeditor implements Vmenu
 		if( this.tIndex >= vsp.getNumtiles() )
 			{ this.tIndex = 0; }
 		this.loadTile(this.tIndex);
+		this.setColorEditorToCursor();
 		this.updatePreview();
 		return;
 		}
@@ -942,6 +1036,7 @@ public class VmenuVSPeditor implements Vmenu
 		if( this.tIndex < 0 )
 			{ this.tIndex =  vsp.getNumtiles() - 1; }
 		this.loadTile(this.tIndex);
+		this.setColorEditorToCursor();
 		this.updatePreview();
 		return;
 		}

@@ -1,6 +1,7 @@
 package menus;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -831,6 +832,21 @@ public class VmenuVertical implements Vmenu
 	public Vmenuitem getSelectedMenuItem()
 		{
 		return( this.content.get(this.selectedIndex) );
+		}
+	
+	public void setColorContentAll( 
+			HashMap<Integer,Color> newColors )
+		{
+		for( Vmenuitem vmi : this.content )
+			{	vmi.setColorContent(newColors);	}
+		return;
+		}
+	
+	public void setFontAll( Font newFont )
+		{
+		for( Vmenuitem vmi : this.content )
+			{	vmi.setFont(newFont);	}
+		return;
 		}
 
 	//

@@ -1,5 +1,8 @@
 package menus;
 
+import java.awt.Color;
+import java.util.HashMap;
+
 import menus.Vmenuitem.enumMenuItemSTATE;
 import core.Controls;
 import domain.VImage;

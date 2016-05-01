@@ -64,14 +64,30 @@ public class Script {
 
 
 
-		// Krybo (Feb.2016) : Some Global Fonts
-		// This one is guarenteed to work anywhere and used as backup
-		//  if fancy fonts are not avbl on a particular machine.
+/* Krybo (Feb.2016) : Some Global Fonts
+  These Logical fonts are guarenteed to work on any system 
+  and should be used as backup or the default fonts for objects 
+  in case fancy fonts are not available.
+*/
 	public static Font fntMASTER =
 			new Font("Monospaced", Font.PLAIN, 14 );
+	public static Font fntLogicalScans10 = 
+			new Font("SansSerif",Font.PLAIN, 10 );
+	public static Font fntLogicalScans14 = 
+			new Font("SansSerif",Font.PLAIN, 14 );
+	public static Font fntLogicalScans18 = 
+			new Font("SansSerif",Font.PLAIN, 18 );
+	
 		// Plain, Large, easy on the eyes, textbox() kinda font.
 	public static Font fntVERGE = 
 			new Font("Tahoma",Font.PLAIN, 18 );
+	public static Font fntVERGEmid = 
+			new Font("Tahoma",Font.PLAIN, 14 );
+	public static Font fntVERGEmini = 
+			new Font("Tahoma",Font.PLAIN, 10 );
+	
+
+	
 		// good console font
 	public static Font fntCONSOLE = 
 			new Font("Consolas",Font.PLAIN, 12 );

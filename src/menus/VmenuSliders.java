@@ -51,6 +51,7 @@ public class VmenuSliders implements Vmenu
 	private boolean isBkgImg = false;
 	private boolean isVisible = true;
 	private boolean isActive = true;
+	private boolean useHighlighter = true;
 
 	private Long focusID = new Long(-1);
 	private Long parentID = new Long(-1);
@@ -96,6 +97,7 @@ public class VmenuSliders implements Vmenu
 		this.isBkgImg = false;
 		this.isVisible = true;
 		this.isActive = true;
+		this.useHighlighter = true;
 		
 		this.selectedIndex = -1;
 		this.setIconPaddingPx(16);
@@ -223,7 +225,7 @@ public class VmenuSliders implements Vmenu
 //						this.iconPaddingPx, this.iconPaddingPx, 
 				}
 			// Selection highlighter
-			if( c == this.selectedIndex )
+			if(( this.useHighlighter == true) && (c == this.selectedIndex))
 				{
 				target.rectfill( this.x, this.y+tmpY, this.x+this.w, 
 						this.y+tmpY+this.guageHeight, 
@@ -884,6 +886,10 @@ public class VmenuSliders implements Vmenu
 		{	return highlighter;	}
 	public void setHighlighterColor(Color highlighter)
 		{	this.highlighter = highlighter;	}
+	public void setHighlight(boolean onOff )
+		{	this.useHighlighter = onOff;	}
+	public boolean getHighlight( )
+		{	return( this.useHighlighter );	}
 
 	private void returnToParent()
 		{

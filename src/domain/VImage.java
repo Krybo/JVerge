@@ -1097,11 +1097,15 @@ public class VImage implements Transferable
 			this.g.fillPolygon(p);
 		}
 		
-		public void tscaleblit(int x, int y, int dw, int dh, VImage src) {
-			//TScaleBlit(x, y, dw, dh, s, d);
-			this.tblit(x, y, src); // TODO [Rafael, the Esper] Implement scaling
-			
-		}
+		public void tscaleblit(int x, int y, int dw, int dh, VImage src)
+			{
+			float sx = (float) dw / (float) src.getWidth();
+			float sy = (float) dh / (float) src.getHeight();
+			this.rotScaleBlendBlit( src, x, y, 0.0f, sx, sy, 1.0f );
+//			this.tblit(x, y, src); // TODO [Rafael, the Esper] Implement scaling
+			return;
+			}
+		
 		/*
 		static void TSubtractiveBlit(int x, int y, int src, int dst) {
 			image *s = ImageForHandle(src);

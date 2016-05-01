@@ -1077,6 +1077,13 @@ public class VmenuButtonPalette implements Vmenu
 		return;
 		}
 
+	public void setColorContentAll( 
+			HashMap<Integer,Color> newColors )
+		{
+		for( Integer n : this.hmButtons.keySet() )
+			{	this.hmButtons.get(n).setColorContent(newColors);	}
+		return;
+		}
 
 
 	

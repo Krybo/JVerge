@@ -786,5 +786,12 @@ public class VmenuFree implements Vmenu
 		return( this.content.get(this.selectedIndex) );
 		}
 
+	public void setColorContentAll( 
+			HashMap<Integer,Color> newColors )
+		{
+		for( Vmenuitem vmi : this.content )
+			{	vmi.setColorContent(newColors);	}
+		return;
+		}
 
 	}

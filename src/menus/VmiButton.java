@@ -3,6 +3,7 @@ package menus;
 import static core.Script.setMenuFocus;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -231,6 +232,10 @@ public class VmiButton implements Vmenuitem
 	public Method getAction()
 		{ return(this.myAction); }
 	
+	/** no font involved.   this does nothing but furfill interface. */
+	public void setFont( Font newFont )
+		{ return; }
+
 	/** Get the argument(s) passed when doAction is called.
 	 * @return the actionArgs
 	 */
