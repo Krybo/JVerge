@@ -105,14 +105,15 @@ public class VmenuVSPeditor implements Vmenu
 	private Long parentID = new Long(-1);
 	private Long childID = new Long(-1);
 	
-	VmiGuageInt gR;
-	VmiGuageInt gG;
-	VmiGuageInt gB;
+	private VmiGuageInt gR;
+	private VmiGuageInt gG;
+	private VmiGuageInt gB;
 	
-	VImage preview = null;
-	VImage vspOverview = new VImage(300,300,Color.BLACK);
-
+	private VImage preview = null;
+	private VImage vspOverview = null;
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
+
+	private boolean showHelp;
 	private static final int DEFAULT_TILES_PER_ROW = 16;
 
 
@@ -160,6 +161,7 @@ public class VmenuVSPeditor implements Vmenu
 		Method m5 = null;
 		Method m6 = null;
 		Method m7 = null;
+		Method m8 = null;
 		try {
 			m3 = VmenuVSPeditor.class.getDeclaredMethod(
 				"focusSubMenuIndex",  Integer.class );
@@ -171,6 +173,8 @@ public class VmenuVSPeditor implements Vmenu
 				"prevTile",  new Class[]{} );
 			m7 = VmenuVSPeditor.class.getDeclaredMethod(
 				"saveWorkingTile",  new Class[]{} );
+			m8 = VmenuVSPeditor.class.getDeclaredMethod( 
+				"toggleVspOverview",  new Class[]{} );
 
 			} catch( Exception e ) 	{ e.printStackTrace(); }
 
@@ -202,7 +206,7 @@ public class VmenuVSPeditor implements Vmenu
 		
 		VmiTextSimple vts08 = new VmiTextSimple("Show All Tiles");
 		vts08.setKeycode( 672 );
-//		vts07.setAction( m7 );
+		vts08.setAction( m8 );
 		VmiTextSimple vts09 = new VmiTextSimple("Keyboard map");
 		vts09.setKeycode( 576 );
 //		vts07.setAction( m7 );
@@ -289,8 +293,14 @@ public class VmenuVSPeditor implements Vmenu
 		this.isBkgImg = false;
 		this.editColorInPlace = false;
 		this.showOverview = false;
+		this.showHelp = false;
 		
-		// TODO: Load overview here.
+		this.vspOverview = new VImage(
+				VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
+					(this.vsp.getTileSquarePixelSize()+2),
+				100 * VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
+					(this.vsp.getTileSquarePixelSize()+2), 
+				Color.BLACK );
 
 		this.tIndex = 0;
 		this.updatePreview();
@@ -377,10 +387,6 @@ public class VmenuVSPeditor implements Vmenu
 		for( int row = -1; row <= 1; row++ )
 			{	for( int col = -4; col <= 4; col++ )
 				{
-				int thisrow = 
-					this.tIndex / DEFAULT_TILES_PER_ROW;
-				int thiscol = 
-					this.tIndex % DEFAULT_TILES_PER_ROW;
 				int thistile = this.tIndex + col + 
 					(row * DEFAULT_TILES_PER_ROW);
 				while( thistile >= this.vsp.getNumtiles() )
@@ -397,9 +403,13 @@ public class VmenuVSPeditor implements Vmenu
 		target.rect(347, 377, 385, 415, Color.WHITE );
 		target.rect(346, 376, 386, 416, Color.BLACK );
 			
-
 		if( this.showOverview )
-			{	target.blit( 200, 100, this.vspOverview );	}
+			{
+			target.tblit( 0, 0, 
+				new VImage(target.getWidth(), target.getHeight(),
+					new Color(0.0f,0.0f,0.0f,0.5f)) );
+			target.blit( 200, 10, this.vspOverview );	
+			}
 
 		return(true);
 		}		// End   paint()
@@ -442,6 +452,7 @@ public class VmenuVSPeditor implements Vmenu
 		switch( basecode )
 			{
 			case -9999:		// TODO: warning killer -- eventually get rid of it
+				this.toggleHelp();
 				this.getSelectedColorkey();
 				this.modifyColorEditor(100, 100, 100);
 				this.nextTile();
@@ -489,13 +500,19 @@ public class VmenuVSPeditor implements Vmenu
 					{ this.setColorEditorToCurrentColorKey(); }
 				break;
 			case 38: 		// ARROW-UP
+				if( isCntl == true ) 
+					{
+					this.changeTile( -1 *
+						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
+					break;
+					}
 				if( isShift == true )   
-				{
-				// Intercept Shift+Up to transverse palette.
-				this.nextCbarLine();
-				this.setColorEditorToCurrentColorKey();
-				break; 
-				}
+					{
+					// Intercept Shift+Up to transverse palette.
+					this.nextCbarLine();
+					this.setColorEditorToCurrentColorKey();
+					break; 
+					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
 			case 39: 		// ARROW-RIGHT
@@ -504,6 +521,12 @@ public class VmenuVSPeditor implements Vmenu
 					{ this.setColorEditorToCurrentColorKey(); }
 				break;
 			case 40: 		// ARROW-DOWN
+				if( isCntl == true ) 
+					{
+					this.changeTile( 
+						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
+					break;
+					}
 				if( isShift == true )   
 					{
 					// Intercept Shift+Up to transverse palette.
@@ -569,11 +592,7 @@ public class VmenuVSPeditor implements Vmenu
 				this.workingTileToVImage().copyImageToClipboard();
 				break;
 			case 68:		// [d] Debug (for now)
-//				this.vsp.insertReplicaTile(this.tIndex);
-				this.vspOverview.setImage(
-					VImage.newResizedBufferedImage(
-							this.vsp.getTileCopy(43), 100, 100 )
-					);
+//
 				this.toggleVspOverview();
 				break;
 			case 73:		//  [i] - invert function.
@@ -904,7 +923,7 @@ public class VmenuVSPeditor implements Vmenu
 	     		   }
 	     	   if( localTest == false )		
 	     		   {
-	     		   System.err.println("Invoking instanced method not"+
+	     		   System.err.println("Invoking instanced method not "+
      				   "belonging to the local Class is unsupported!  "+
      				   "Either make it a static method or add it to this Class");
 	     		   return(false); 
@@ -1018,26 +1037,29 @@ public class VmenuVSPeditor implements Vmenu
 		this.loadTile( this.tIndex );
 		this.updatePreview();
 		}
+
+	private void changeTile( int indexDiff )
+		{
+		this.tIndex += indexDiff;
+		while( this.tIndex >= this.vsp.getNumtiles() )
+			{ this.tIndex -= this.vsp.getNumtiles(); }
+		while( this.tIndex < 0 )
+			{ this.tIndex += this.vsp.getNumtiles(); }
+		this.loadTile( this.tIndex );
+		this.setColorEditorToCursor();
+		this.updatePreview();
+		return;
+		}
 	
 	private void nextTile()
 		{
-		this.tIndex++;
-		if( this.tIndex >= vsp.getNumtiles() )
-			{ this.tIndex = 0; }
-		this.loadTile(this.tIndex);
-		this.setColorEditorToCursor();
-		this.updatePreview();
+		this.changeTile( +1 );
 		return;
 		}
 
 	private void prevTile()
 		{
-		this.tIndex--;
-		if( this.tIndex < 0 )
-			{ this.tIndex =  vsp.getNumtiles() - 1; }
-		this.loadTile(this.tIndex);
-		this.setColorEditorToCursor();
-		this.updatePreview();
+		this.changeTile( -1 );
 		return;
 		}
 	
@@ -1428,6 +1450,36 @@ public class VmenuVSPeditor implements Vmenu
 		}
 
 	private void toggleVspOverview()
-		{	this.showOverview = ! this.showOverview;	return;	}
+		{
+		this.showOverview = ! this.showOverview;
+		if( this.showOverview == true )
+			{
+			this.updateMiniTileset();
+			}
+		return;
+		}
+	
+	private void updateMiniTileset()
+		{
+		this.vspOverview.paintBlack();
+		int padding = this.vsp.getTileSquarePixelSize() / 2;
+		for( int n = 0; n < this.vsp.getNumtiles(); n++ )
+			{
+			this.vspOverview.blit( 
+				((n%VmenuVSPeditor.DEFAULT_TILES_PER_ROW)
+					*17)+padding ,
+				((n/VmenuVSPeditor.DEFAULT_TILES_PER_ROW)
+					*17)+padding , 
+				this.vsp.getTileAsVImage(n) );
+			}
+		return;
+		}
+	
+	private void toggleHelp()
+		{
+		this.showHelp = ! this.showHelp;
+		// TODO : implement
+		return;
+		}
 	
 	}		// END CLASS
