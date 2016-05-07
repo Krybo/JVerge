@@ -931,6 +931,12 @@ public class Script {
 		error("Non implemented function: setcustomcolorfilter");
 	}
 	
+	/** Delegate function : return true if the current runtime is an executable
+	 * jar file.   Importing when saving and loading resources.    
+	 * Krybo (May.2016) */
+	public static boolean isRunningJar()
+		{ return( VergeEngine.isExecJar() ); }
+	
 	public static void setlucent(int p) { 
 		if(p < 0 || p > 100)
 			return;

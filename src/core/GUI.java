@@ -733,5 +733,11 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		return(rtn);
 		}
 
+	public static void showMessage( String msg )
+		{
+		javax.swing.JOptionPane.showMessageDialog(null, msg );
+		log(msg);
+		return;
+		}
 	
 }			// END CLASS

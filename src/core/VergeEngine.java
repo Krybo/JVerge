@@ -44,7 +44,9 @@ public class VergeEngine extends Thread
 	{
 	public static boolean done, inscroller = false;
 	public static int px, py;
-	
+	public static Double JAVA_VERSION =  
+		Double.parseDouble( 
+				System.getProperty("java.specification.version") );
 	public static int lastentitythink;
 	public static int lastspritethink = 0;
 	
@@ -54,7 +56,7 @@ public class VergeEngine extends Thread
 	public static VMenuManager Vmm;
 	private static Long SYSTEM_MENU_FOCUS_ID = new Long( -1 );
 	
-	public static final String JVERGE_VERSION = "1.1.0";
+	public static final String JVERGE_VERSION = "1.1.1";
 
 	public static boolean die;
 	
@@ -984,10 +986,25 @@ public class VergeEngine extends Thread
 		GUI.cycleTime = System.currentTimeMillis();
 	}
 	
-	public static void initVergeEngine(String[] args) {
+	public static void initVergeEngine(String[] args) 
+		{
+		// Krybo (May.2016)  Logs some information about the system.
+		//    Helpful if system specific bugs are found.
+		log("Hello JVerge : "+ JVERGE_VERSION.toString() );
+		VergeEngine.logSystemProperties();
 
-		log("Hello JVerge");
-	
+		if( VergeEngine.JAVA_VERSION < 1.6 )
+			{
+			String stp = 
+					new String(" !! System Requirement violation:"+
+					"old JVM : JVerge requires java 1.6 or later.");
+			GUI.showMessage( stp );
+			exit( stp );
+			return;
+			}
+		
+		
+
 		if (args !=null && args.length != 0) {
 			mapname = args[0];
 		}
@@ -1031,6 +1048,27 @@ public class VergeEngine extends Thread
 
 	}
 
+	public static boolean isExecJar()
+		{
+		return( VergeEngine.class.getResource(
+				"VergeEngine.class").getProtocol().equals("jar") );
+		}
+	
+	/** Logs a good deal of basic system properties. */
+	public static void logSystemProperties()
+		{		
+		log(  " System properties:   JVM "+	JAVA_VERSION.toString() +   
+			" Operating System: " + System.getProperty("os.name") +
+			" " + System.getProperty("os.version") +
+			" (" + System.getProperty("os.arch") + 
+			")   User Home: " + System.getProperty("user.home" )
+				);
+		if( VergeEngine.isExecJar() )
+			{ log(" Running from an executable jar."); }
+		else { log("Not Running from a jar."); }
+		log("-----------------------------------------------------------");
+		return;
+		}
 	
 }		// END VergeEngine CLASS
 
