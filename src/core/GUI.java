@@ -111,43 +111,12 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		  mine shall now be to my prefs., while most others will stay white
 		  needs tested on systems other than windows  */
 		try {
-			// Initialize the windows-level menu
-		UIManager.put("Menu.foreground", 
-				java.awt.SystemColor.menuText );
-		UIManager.put("Menu.background", 
-				java.awt.SystemColor.menu );
-		UIManager.put("Menu.selectionForeground", 
-				java.awt.SystemColor.textHighlightText );
-		UIManager.put("Menu.selectionBackground", 
-				java.awt.SystemColor.textHighlight );
-		
-		UIManager.put("MenuItem.foreground", 
-				java.awt.SystemColor.menuText );
-		UIManager.put("MenuItem.background", 
-				java.awt.SystemColor.menu );
-		UIManager.put("MenuItem.selectionForeground", 
-				java.awt.SystemColor.textHighlightText );
-		UIManager.put("MenuItem.selectionBackground", 
-				java.awt.SystemColor.textHighlight );
-		
-		UIManager.put("MenuBar.foreground", 
-				java.awt.SystemColor.menuText );
-		UIManager.put("MenuBar.background", 
-			java.awt.SystemColor.menu );
-		UIManager.put("MenuBar.selectionForeground", 
-				java.awt.SystemColor.textHighlightText );
-		UIManager.put("MenuBar.selectionBackground", 
-				java.awt.SystemColor.textHighlight );
-		
-		UIManager.put("CheckBoxMenuItem.foreground", 
-				java.awt.SystemColor.menuText );
-		UIManager.put("CheckBoxMenuItem.background", 
-				java.awt.SystemColor.menu );
-		UIManager.put("CheckBoxMenuItem.selectionForeground", 
-				java.awt.SystemColor.textHighlightText );
-		UIManager.put("CheckBoxMenuItem.selectionBackground", 
-				java.awt.SystemColor.textHighlight );
-
+			// Krybo (May.2016)  
+			// Found way to do this in one command and it works great.
+			// only tested 
+// http://stackoverflow.com/questions/2999569/swing-ui-does-not-have-native-os-look
+		  UIManager.setLookAndFeel(
+		    UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) { }  // Whatever ~ noone will care.
 		// 	END Krybo (2014-09-17)
 	

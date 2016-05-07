@@ -42,27 +42,57 @@ public class VImage implements Transferable
 	{
 	public BufferedImage image;
 	public Graphics2D g;
-		// Death Magenta (verge transparent color) in RGB only form.
-	private static final Color COLOR_DEATHMAG = 
+	// Death Magenta (verge transparent color) in RGB only form.
+	private static final Color COLOR_DEATHMAG =
 			new Color( core.Script.Color_DEATH_MAGENTA.getRGB() );
+	// Krybo (May.2016) to impose size restrictions to avoid crazyness.
+	private static final int MAX_PX_X = 20000;
+	private static final int MAX_PX_Y = 10000;
 
 	public int width, height;
 	
-	public VImage(int x, int y) {
+	public VImage(int x, int y) 
+		{
+		if( x < 1 )   { x = 1; }
+		if( y < 1 )   { y = 1; }
+		if( x > VImage.MAX_PX_X )
+			{ 
+			x = VImage.MAX_PX_X;
+			System.err.println("Warning Maximum VImage width capped "
+			+ "!  There may be somethign wrong with whatever"
+			+ "called this constructor.");
+			}
+		if( y > VImage.MAX_PX_Y )
+			{
+			y = VImage.MAX_PX_Y;
+			System.err.println("Warning Maximum VImage height capped"
+			+ "!  There may be somethign wrong with whatever"
+			+ "called this constructor.");
+			}
 		this.width = x;
 		this.height = y;
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice gs = ge.getDefaultScreenDevice();
-		GraphicsConfiguration gc = gs.getDefaultConfiguration();
-		image = gc.createCompatibleImage(x, y, Transparency.TRANSLUCENT);
-		//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
-		g = (Graphics2D)image.getGraphics();
+		try {
+			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			GraphicsDevice gs = ge.getDefaultScreenDevice();
+			GraphicsConfiguration gc = gs.getDefaultConfiguration();
+			image = gc.createCompatibleImage(x, y, Transparency.TRANSLUCENT);
+			//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
+			g = (Graphics2D)image.getGraphics();
+			}
+		catch( Exception e )
+			{
+			e.printStackTrace();
+			g.dispose();
+			}
+		return;
 		}
+
 	// Krybo (Feb.2016)  : builds a new VImage & fills it with solid Color c
-	public VImage(int x, int y, Color c ) 
+	public VImage( int x, int y, Color c ) 
 		{
 		this(x,y);
-		this.rectfill(0, 0, x, y, c);
+		this.rectfill( 0, 0, this.getWidth(), this.getHeight(), c);
+		return;
 		}
 			// Krybo (2014-10-03) Essentially a copy method.
 	public VImage( VImage existingVImage ) 

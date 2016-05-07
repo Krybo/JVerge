@@ -29,7 +29,7 @@ public class Vsp
 	public static final int  VID_BYTESPERPIXEL	=	3;
 	public static final int  VSP_SIGNATURE	=	5264214;
 	public static final int  VSP_VERSION	=		6;
-	
+
 	public static final int ANIM_MODE_FORWARD   = 0;
 	public static final int ANIM_MODE_BACKWARD  = 1;
 	public static final int ANIM_MODE_RANDOM    = 2;
@@ -39,7 +39,7 @@ public class Vsp
 	
 	// .vsp format: 	https://github.com/Bananattack/v3tiled/wiki/.vsp-file
 	
-	private int signature = VSP_SIGNATURE;
+	private int signature = 0;
 	private int version = VSP_VERSION;
 	private int tileSize = 16;
 	private int tileArea = this.tileSize * this.tileSize;	// Krybo added as utility - not needed in vsp file 
@@ -146,7 +146,6 @@ public class Vsp
 	public Vsp(URL urlpath) {
 		try {
 			this.load(urlpath.openStream());
-
 		} catch (FileNotFoundException fnfe) {
 			error("VSP::FileNotFoundException : " + urlpath);
 		} catch (IOException e) {
@@ -167,11 +166,11 @@ public class Vsp
 		this.numobs  		= cp.getNumObs();
 		this.numtiles		= cp.getNumtiles();
 		this.obsPixels		= cp.getObsPixels().clone();
-		this.signature		= VSP_SIGNATURE;
+		this.signature		= cp.getSignature();
 		this.tileArea		= 
 				cp.getTileSquarePixelSize() * cp.getTileSquarePixelSize();
 		this.tileSize		= cp.getTileSquarePixelSize();
-		this.version		= VSP_VERSION;
+		this.version		= cp.getVersion();
 	
 		// Slightly more complicated Object-based components.
 		this.anims = new Animation[ cp.getNumAnimations() ];
@@ -187,13 +186,20 @@ public class Vsp
 		return;
 		}
 	
-	private void load (InputStream fis) {
-
-		try
+	private void load( InputStream fis) 
 		{
-			ExtendedDataInputStream f = new ExtendedDataInputStream(fis);
-			
+		ExtendedDataInputStream f = null;
+		try
+			{
+			 f = new ExtendedDataInputStream(fis);
 			this.signature = f.readSignedIntegerLittleEndian();
+			System.out.println( "MP SIG : "+
+				Integer.toString(this.signature));
+			
+		switch( this.signature )
+			{
+		case VSP_SIGNATURE:		// expected Jverge vsp sig.
+			
 			this.version = f.readSignedIntegerLittleEndian();
 			this.tileSize = f.readSignedIntegerLittleEndian();
 			this.tileArea = this.tileSize * this.tileSize;
@@ -201,15 +207,16 @@ public class Vsp
 			this.numtiles = f.readSignedIntegerLittleEndian();
 			this.compression = f.readSignedIntegerLittleEndian();
 			
-			System.out.println(this.signature + ";"+this.version+";"+
-				this.numtiles+" ; "+this.getCompression());
+			System.out.println( "VSP METADATA :: SIG="+ this.signature + 
+				";VER="+this.version+";TILE#="+this.numtiles+";COMP"
+				+this.getCompression());
 			// Krybo:: e.x.   5264214;6;100;1
 			
 			byte[] vspdata = f.readCompressedUnsignedShortsIntoBytes(); // tileCount * width * height * 3 bytes!
 				
 	        int numAnim = f.readSignedIntegerLittleEndian();	// anim.length
 	        this.anims = new Vsp.Animation[numAnim];	
-	        System.out.println("numAnim = " + numAnim);
+//	        System.out.println("numAnim = " + numAnim);
 	        
 	        for(int i=0; i<numAnim; i++) {
 	        	Vsp.Animation a = new Animation();
@@ -223,7 +230,7 @@ public class Vsp
 	        }			
 
 	        this.numobs = f.readSignedIntegerLittleEndian();	// obs.length
-	        System.out.println("numObs = " + numobs);
+//	        System.out.println("numObs = " + numobs);
 	        
 			this.obsPixels = f.readCompressedUnsignedShortsIntoBytes();
 
@@ -235,9 +242,7 @@ public class Vsp
 	        		System.out.println();
 	        	System.out.print(obsPixels[i]);
 	        }*/
-	        
-			f.close();
-			
+		
 			// initialize tile anim stuff
 			this.tileidx = new int[this.numtiles];
 			this.flipped = new int[this.numtiles];
@@ -253,28 +258,45 @@ public class Vsp
 			mytimer = systemtime;
 			
 			
-			// Get image tiles from pixel array 
-			System.out.println("Numtiles: " + this.numtiles + "(" + vspdata.length + " bytes)");
+ 
+//			System.out.println("Numtiles: " + this.numtiles + "(" + 
+//					vspdata.length + " bytes)");
+
+			// Get image tiles from pixel array
 			this.tiles = f.getBufferedImageArrayFromPixels(vspdata, 
 					this.numtiles, this.tileSize, this.tileSize);
 			//for(int x=0; x<tiles.length; x++)
 				//Script.graycolorfilter(tiles[x]);
+					break;
+				default:
+					log("Invalid or old/unsupported map signature.");
+					this.signature = 0;
+					break;
+				}		// END SWITCH CASE over signature.
 			
-			
-		 }catch (IOException e) {
+			 }  
+		catch (IOException e) {
 			 System.out.println("IOException : " + e);
-		 }		
+			 }	
+		finally { 
+		 	if( f != null )
+		 		{ try { f.close(); } catch(Exception e) {} } 
+		 	}
 
-	}
+		}			// END method load()
 
-	private void save(String filename) {
+	// Krybo : needed to extend this to menu system.
+	// Expose private save method as static public
+	public static boolean saveVsp( Vsp v, String filename )
+		{ return( v.save(filename) ); }
 
+	private boolean save(String filename) 
+		{
 		System.out.println("VSP::save at " + filename);
 		ExtendedDataOutputStream f = null;
 		try {
 			OutputStream os = new FileOutputStream(filename);
 			f = new ExtendedDataOutputStream(os);
-			
 			
 			f.writeSignedIntegerLittleEndian(this.signature);
 			f.writeSignedIntegerLittleEndian(this.version);
@@ -298,27 +320,24 @@ public class Vsp
 	        	f.writeSignedIntegerLittleEndian(a.mode);
 	        }			
 
-	        f.writeSignedIntegerLittleEndian(this.numobs);
-//	        
+	        	f.writeSignedIntegerLittleEndian(this.numobs);	        
 			f.writeCompressedBytes(this.obsPixels);
-	
-		}
+			}
 		catch(IOException e) {
 			System.err.println("VSP::save " + e.getMessage());
-		}
-		finally {
-			try {
-				f.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+			return(false);
 			}
+		finally {
+			try {	f.close();	} 
+			catch (IOException e) { }
 		}
+	return(true);
 	}	
 
 	private void createDummy(int blankTiles) 
 		{
-		this.signature = 5264214;
-		this.version = 6;
+		this.signature = Vsp.VSP_SIGNATURE;
+		this.version = Vsp.VSP_VERSION;
 		this.tileSize = 16;
 		this.tileArea = this.tileSize * this.tileSize;
 		this.format = 3;
@@ -856,7 +875,11 @@ public class Vsp
 			}
 		
 		}		// END SUB-CLASS animation
-	
+
+	public int getSignature()
+		{ return(this.signature); }
+	public int getVersion()
+		{ return(this.version); }	
 	
 	}			// END CLASS
 

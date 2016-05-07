@@ -27,7 +27,11 @@ import static domain.Entity.WEST;
 
 
 
+
+
 import java.awt.Color;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -57,6 +61,8 @@ public class VergeEngine extends Thread
 	private static Long SYSTEM_MENU_FOCUS_ID = new Long( -1 );
 	
 	public static final String JVERGE_VERSION = "1.1.1";
+	// (Krybo) The current working directory when the engine starts.
+	public static File JVERGE_CWD;
 
 	public static boolean die;
 	
@@ -1002,8 +1008,42 @@ public class VergeEngine extends Thread
 			exit( stp );
 			return;
 			}
-		
-		
+
+		 /* Krybo (May.2016)  Save up Initialization Current Working DIR */
+		try	{
+			if( VergeEngine.isExecJar() )
+				{  
+				// if we're in a jar file.. must use system variable & hope
+				//    It will act as a sandbox so the program can write files.
+				VergeEngine.JVERGE_CWD = new File( 
+					System.getProperty( "user.home" )+File.separator+
+					"JVergeProgramData" );
+				if( ! VergeEngine.JVERGE_CWD.exists() )
+					{
+					if( ! VergeEngine.JVERGE_CWD.mkdir() ) 
+						{ 
+						System.err.println(	"Running in Jar file but "+
+							" cannot set up sandbox writable directory. "+
+							VergeEngine.JVERGE_CWD.toString()+
+							" JVerge will continue but may be doomed "+
+							" for I/O Errors.");
+						}
+					else
+						{
+						log(" Jar mode sandbox created : "+
+							VergeEngine.JVERGE_CWD.toString() );
+						}
+					}
+				}
+			else
+				{
+				VergeEngine.JVERGE_CWD = new File( 
+					new java.io.File( "." ).getCanonicalPath() );
+				}
+			}
+		catch (IOException e)
+			{	VergeEngine.JVERGE_CWD = null; }
+	     System.out.println(" >$ CWD: ["+JVERGE_CWD.toString()+"]");
 
 		if (args !=null && args.length != 0) {
 			mapname = args[0];

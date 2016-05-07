@@ -5,9 +5,17 @@ import static core.Script.getFunction;
 
 import java.awt.Color;
 import java.util.HashMap;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import menus.VmiButton.enumMenuButtonCOLORS;
 import menus.VmiTextSimple.enumMenuStxtCOLORS;
@@ -112,9 +120,12 @@ public class VmenuVSPeditor implements Vmenu
 	private VImage preview = null;
 	private VImage vspOverview = null;
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
+	private static final int STANDARD_TSIZE = 16;
 
 	private boolean showHelp;
 	private static final int DEFAULT_TILES_PER_ROW = 16;
+	
+//	private static final long serialVersionUID = 6666410183698706332L;
 
 
 	/** ----------------  Constructors --------------------  */
@@ -130,7 +141,9 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar = new VmenuVertical( 30, 60 );
 		this.colorEditor = new VmenuSliders( 16, 334, 128, 3, 
 				false, true, true );
-		this.main = new VmenuButtonPalette(250, 60, 256, 256, 16, 16);
+		this.main = new VmenuButtonPalette(250, 60, 256, 256, 
+				VmenuVSPeditor.STANDARD_TSIZE, 
+				VmenuVSPeditor.STANDARD_TSIZE  );
 		this.colorkey = new VmenuHorizontal( 68,1 );
 		// instantly sets the default verge color palette as the 
 		//  hashmap of available colors at hand.
@@ -156,6 +169,8 @@ public class VmenuVSPeditor implements Vmenu
 		hmSideBarClrs.put(enumMenuStxtCOLORS.FRAME_OUTER.value(), 
 			Color.GRAY );
 		
+		Method m2 = null;   Method m2a = null;
+		Method m2b = null;
 		Method m3 = null;
 		Method m4 = null;
 		Method m5 = null;
@@ -163,6 +178,12 @@ public class VmenuVSPeditor implements Vmenu
 		Method m7 = null;
 		Method m8 = null;
 		try {
+			m2 = VmenuVSPeditor.class.getDeclaredMethod(
+				"saveCurrentVSP",  new Class[]{} );
+			m2b = VmenuVSPeditor.class.getDeclaredMethod(
+				"loadVsp",  new Class[]{} );
+			m2a = VmenuVSPeditor.class.getDeclaredMethod(
+				"newVsp",  new Class[]{} );
 			m3 = VmenuVSPeditor.class.getDeclaredMethod(
 				"focusSubMenuIndex",  Integer.class );
 			m4 = VmenuVSPeditor.class.getDeclaredMethod(
@@ -182,6 +203,15 @@ public class VmenuVSPeditor implements Vmenu
 		vts01.setKeycode( 66 );		// Cntl+Backspace exits anywhere.
 		vts01.setAction( getFunction(Script.class,"focusSystemMenu") );
 
+		VmiTextSimple vts02a = new VmiTextSimple("New VSP");
+		vts02a.setAction( m2a );
+
+		VmiTextSimple vts02 = new VmiTextSimple("Save VSP");
+		vts02.setAction( m2 );
+		
+		VmiTextSimple vts02b = new VmiTextSimple("Load VSP");
+		vts02b.setAction( m2b );
+		
 		VmiTextSimple vts03 = new VmiTextSimple("Edit Palette");
 		vts03.setKeycode( 554 );
 		vts03.setAction( m3 );
@@ -215,16 +245,13 @@ public class VmenuVSPeditor implements Vmenu
 				"<GoTo Tile #> ", "Enter VSP Tile number (INT)", 	0, 0 );
 		vmiIn01.setKeycode( 568 );
 
-		this.sidebar.addItem( vts01 );
-		this.sidebar.addItem( new VmiTextSimple("Save VSP") );
-		this.sidebar.addItem( vts03 );
-		this.sidebar.addItem( vts07 );
-		this.sidebar.addItem( vts04 );
-		this.sidebar.addItem( vts05 );
-		this.sidebar.addItem( vts06 );
-		this.sidebar.addItem( vmiIn01 );
-		this.sidebar.addItem( vts08 );
-		this.sidebar.addItem( vts09 );
+		this.sidebar.addItem( vts01 );	this.sidebar.addItem( vts02a );
+		this.sidebar.addItem( vts02 );	this.sidebar.addItem(vts02b);
+		this.sidebar.addItem( vts03 );	this.sidebar.addItem( vts07 );
+		this.sidebar.addItem( vts04 );	this.sidebar.addItem( vts05 );
+		this.sidebar.addItem( vts06 );	this.sidebar.addItem( vmiIn01 );
+		this.sidebar.addItem( vts08 );	this.sidebar.addItem( vts09 );
+
 		this.sidebar.setColorContentAll( hmSideBarClrs );
 		this.sidebar.setFontAll(core.Script.fntLogicalScans14 );
 		
@@ -1479,6 +1506,135 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		this.showHelp = ! this.showHelp;
 		// TODO : implement
+		return;
+		}
+
+
+	/**  Does an file system object save of the current VSP data. */
+	private static boolean saveVSP( Vsp theTileSet )
+		{
+		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+				File.separator + "Editor/");
+		// Must ensure sandbox is setup.
+		if( ! dirOut.exists() )
+			{
+			// Panic!  cannot make default dir to save data.
+			if( ! dirOut.mkdir() )
+				{ return(false); }
+			}
+		
+		dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+				File.separator + "Editor/" +
+				File.separator + "vsp/" );
+		if( ! dirOut.exists() )
+			{
+			// Panic!  cannot make default dir to save data.
+			if( ! dirOut.mkdir() )
+				{ return(false); }
+			}
+		
+		javax.swing.JFileChooser fileChooser = 
+				new javax.swing.JFileChooser();
+		fileChooser.setApproveButtonText( "Save VSP" );
+		fileChooser.setFileFilter( new FileNameExtensionFilter(
+				"Verge Sprite Palette", "vsp") );
+		fileChooser.setAutoscrolls( true );
+		fileChooser.setCurrentDirectory( dirOut );
+		int returnVal = fileChooser.showSaveDialog(
+				VergeEngine.getGUI() );
+		if( returnVal == 1 )	//  save was Cancelled.
+			{  return(false); }
+
+		return( Vsp.saveVsp( 
+				theTileSet, fileChooser.getSelectedFile().toString() ) );
+		}
+	
+	private boolean loadVsp()
+		{
+		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+				File.separator + "Editor/" +
+				File.separator + "vsp/" );
+		if( ! dirOut.exists() )
+			{		// Fail over to the directory where verge started.
+			dirOut = new File( VergeEngine.JVERGE_CWD.toString());
+			if( ! dirOut.mkdir() )
+				{ return(false); }
+			}
+		
+		javax.swing.JFileChooser fileChooser = 
+				new javax.swing.JFileChooser();
+		fileChooser.setApproveButtonText( "Save VSP" );
+		fileChooser.setFileFilter( new FileNameExtensionFilter(
+				"Verge Sprite Palette", "vsp") );
+		fileChooser.setAutoscrolls( true );
+		fileChooser.setCurrentDirectory( dirOut );
+		int returnVal = fileChooser.showSaveDialog(
+				VergeEngine.getGUI() );
+		if( returnVal == 1 )	//  load cancelled in GUI
+			{  return(false); }
+		
+		java.net.URL testUrl;
+		try	{
+			testUrl = fileChooser.getSelectedFile().toURI().toURL();
+			}
+		catch (MalformedURLException e)
+			{
+			e.printStackTrace();
+			return(false);
+			}
+
+		Vsp newguy = new Vsp( testUrl );
+
+		// This could very easily fail...
+		// Examine this new VSP before we engage it.
+		if( newguy.getSignature() == 0 )		// indicates load problem. 
+			{
+			System.err.println("VSP Load failed, bad vsp signature.");
+			return(false); 
+			}
+
+		if( newguy.getTileSquarePixelSize() != 
+				VmenuVSPeditor.STANDARD_TSIZE  )
+			{
+			System.err.println("VSP uses non-standard tile size ("+
+				Integer.toString( newguy.getTileSquarePixelSize()) +
+				") - VSP editor cannot work with it." );
+			return(false);
+			}
+
+		System.out.println(   " Loading VSP with : " +
+			Integer.toString( newguy.getNumtiles() ) + " tiles.   " + 
+			Integer.toString( newguy.getNumObsTiles() ) + " obs  " +
+			Integer.toString( newguy.getNumAnimations() ) + " anims "
+			);
+		
+		this.vsp = newguy;
+
+		// Post-load - must restore some internals to a fresh state.
+		
+		this.editColorInPlace = false;
+		this.showOverview = false;
+		this.showHelp = false;
+
+		this.vspOverview = new VImage(
+			VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
+				(this.vsp.getTileSquarePixelSize()+2),
+			30 * VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
+				(this.vsp.getTileSquarePixelSize()+2), 
+			Color.BLACK );
+
+		main.refresh();
+		this.loadTile( this.tIndex );
+		this.updatePreview();
+
+		return(true);
+		}
+
+	private boolean saveCurrentVSP()
+		{	return( VmenuVSPeditor.saveVSP( this.vsp ) );	}
+
+	private void newVsp()
+		{
 		return;
 		}
 	
