@@ -1,19 +1,15 @@
 package menus;
 
-import static core.Script.setMenuFocus;
 import static core.Script.getFunction;
+import static core.Script.setMenuFocus;
 
 import java.awt.Color;
-import java.util.HashMap;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -484,6 +480,9 @@ public class VmenuVSPeditor implements Vmenu
 				this.modifyColorEditor(100, 100, 100);
 				this.nextTile();
 				this.prevTile();
+				this.newVsp();
+				this.saveCurrentVSP();
+				this.loadVsp();
 				this.setColorPaletteEntry(0, 
 						core.Script.Color_DEATH_MAGENTA);
 				break;
@@ -1043,16 +1042,17 @@ public class VmenuVSPeditor implements Vmenu
 			}	}
 		return;
 		}
-	
+
 /**  Loads up a vsp tile into the working data.
+ * If there are problems... tile # 0 is loaded.
  * @param vspIdx   The vsp tile index to load.
  */
 	private void loadTile( int vspIdx )
 		{
-		if( vspIdx > this.vsp.getNumtiles() )
-			{ vspIdx = this.vsp.getNumtiles(); }
+		if( this.vsp.checkTile(vspIdx) == false )
+			{  vspIdx = 0; }
 		VImage t = new VImage( this.vsp.getTileSquarePixelSize(),
-				this.vsp.getTileSquarePixelSize() );
+			this.vsp.getTileSquarePixelSize() );
 		t.setImage( this.vsp.getTiles()[vspIdx] );
 		this.loadWorkingImage(t);
 		return;
@@ -1535,6 +1535,8 @@ public class VmenuVSPeditor implements Vmenu
 		
 		javax.swing.JFileChooser fileChooser = 
 				new javax.swing.JFileChooser();
+		fileChooser.setToolTipText("Browse and save this Vsp");
+		fileChooser.setDialogTitle("Browse and save this Vsp");
 		fileChooser.setApproveButtonText( "Save VSP" );
 		fileChooser.setFileFilter( new FileNameExtensionFilter(
 				"Verge Sprite Palette", "vsp") );
@@ -1560,18 +1562,19 @@ public class VmenuVSPeditor implements Vmenu
 			if( ! dirOut.mkdir() )
 				{ return(false); }
 			}
-		
+
 		javax.swing.JFileChooser fileChooser = 
 				new javax.swing.JFileChooser();
 		fileChooser.setToolTipText("Browse for a .vsp file to edit.");
 		fileChooser.setDialogTitle("Browse for a .vsp file to open");
 		fileChooser.setApproveButtonText( "Load VSP" );
+		fileChooser.setApproveButtonToolTipText( "Load VSP" );
 		fileChooser.setMultiSelectionEnabled(false);
 		fileChooser.setFileFilter( new FileNameExtensionFilter(
 				"Verge Sprite Palette", "vsp") );
 		fileChooser.setAutoscrolls( true );
 		fileChooser.setCurrentDirectory( dirOut );
-		int returnVal = fileChooser.showSaveDialog(
+		int returnVal = fileChooser.showOpenDialog(
 				VergeEngine.getGUI() );
 		if( returnVal == 1 )	//  load cancelled in GUI
 			{  return(false); }
@@ -1614,16 +1617,18 @@ public class VmenuVSPeditor implements Vmenu
 		this.vsp = newguy;
 
 		// Post-load - must restore some internals to a fresh state.
-		
+
+		this.tIndex = 0;
 		this.editColorInPlace = false;
 		this.showOverview = false;
 		this.showHelp = false;
 
+		int tileRows = newguy.getNumtiles() / 
+				VmenuVSPeditor.DEFAULT_TILES_PER_ROW;
 		this.vspOverview = new VImage(
 			VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
 				(this.vsp.getTileSquarePixelSize()+2),
-			100 * VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
-				(this.vsp.getTileSquarePixelSize()+2), 
+			tileRows *	(this.vsp.getTileSquarePixelSize()+2) , 
 			Color.BLACK );
 
 		main.refresh();
@@ -1638,6 +1643,28 @@ public class VmenuVSPeditor implements Vmenu
 
 	private void newVsp()
 		{
+		// Make a blank "dummy" VSP.
+		this.vsp = new Vsp(
+				VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
+
+		// Post-load stuff.
+		this.tIndex = 0;
+		this.editColorInPlace = false;
+		this.showOverview = false;
+		this.showHelp = false;
+
+		int tileRows = this.vsp.getNumtiles() / 
+				VmenuVSPeditor.DEFAULT_TILES_PER_ROW;
+		this.vspOverview = new VImage(
+			VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
+				(this.vsp.getTileSquarePixelSize()+2),
+			tileRows *	(this.vsp.getTileSquarePixelSize()+2) , 
+			Color.BLACK );
+
+		main.refresh();
+		this.loadTile( this.tIndex );
+		this.updatePreview();
+
 		return;
 		}
 	

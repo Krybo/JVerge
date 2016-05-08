@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import domain.Vsp;
-
 
 public class ExtendedDataInputStream extends DataInputStream {
 	

@@ -56,9 +56,8 @@ public class Vsp
 	// [Rafael, the Esper]
 	private BufferedImage [] tiles;
 
-	public static void main(String args[]) throws Exception{
-
-			
+	public static void main(String args[]) throws Exception
+		{	
 			/*// EXAMPLE OF ADDING ANIMATIONS PROGRAMATICALLY
 			Vsp v = new Vsp(new URL("file:///C:\\JavaRef3\\EclipseWorkspace\\wmap.vsp"));
 			
@@ -80,51 +79,11 @@ public class Vsp
 			v.save("C:\\JAVAREF3\\ECLIPSEWORKSPACE\\wmap2.vsp");
 			*/
 
-		Vsp v = new Vsp(new URL("file:///C:\\javaref\\workspace\\Phantasy\\src\\ps\\ps1.vsp"));
-		
-		int NEW_PIXELS = 4;
-		byte[] newPixels = new byte[256*(v.numobs+NEW_PIXELS)];
-		int pos=0;
-		for(int i=0;i<256*v.numobs; i++) {
-			newPixels[i] = v.obsPixels[i];
-			pos++;
-		}
-		for(int i=0; i<256; i++) { // Add vertical | left obs
-			if( i % 16 == 0)
-				newPixels[pos++] = 1;
-			else
-				newPixels[pos++] = 0;
-		}
-		for(int i=0; i<256; i++) { // Add vertical | right obs
-			if(i%16==15)
-				newPixels[pos++] = 1;
-			else
-				newPixels[pos++] = 0;
-		}
-		for(int i=0; i<256; i++) { // Add horizontal _ bottom obs
-			if(i<16)
-				newPixels[pos++] = 1;
-			else
-				newPixels[pos++] = 0;
-		}
-		for(int i=0; i<256; i++) { // Add horizontal -- top obs
-			if(i>=240)
-				newPixels[pos++] = 1;
-			else
-				newPixels[pos++] = 0;
-		}		
-		
-		v.numobs = v.numobs + NEW_PIXELS;
-		v.obsPixels = newPixels;
-		
-		v.save("C:\\ps1.vsp");
+		Vsp v = new Vsp(16);
+		v.setDefaultObstructions();				
 		System.out.println(v.obsPixels.length);
-			
-			
-			
-		
-	}
-
+		return;
+		}		// END main()
 	
 	
 	public Vsp() 
@@ -379,10 +338,14 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 					}
 
 				Integer cmpDataLen = f.readUnsignedIntegerLittleEndian();
+				Double cmpEfficency =  new Double( cmpDataLen )
+						/ new Double(this.numtiles) 
+						/ new Double(this.tileSize*this.tileSize) * 100.0d; 
 				log( " Reading "+Integer.toString(this.numtiles)+
 					" Tiles using "+
-					cmpDataLen.toString()+" compressed bytes." );
-				
+					cmpDataLen.toString()+" compressed bytes - "+
+					Integer.toString(cmpEfficency.intValue() ) + " % eff." );
+
 				//f.readUnsignedIntegerLittleEndian();
 				byte[] dataV3 = 
 					ExtendedDataInputStream.readRLEcompressedBytes(
@@ -391,7 +354,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 				if( dataV3.length != (256*this.numtiles) )
 					{ 
 					System.err.println(
-						"V2-VSP loader: corrupted data section"+
+						"V2-VSP loader: decompression error ! "+
 						Integer.toString(dataV3.length) + " vs expected. "+
 						Integer.toString( 255*this.numtiles ) );
 					}
@@ -479,7 +442,6 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 
 	private boolean save(String filename) 
 		{
-		System.out.println("VSP::save at " + filename);
 		ExtendedDataOutputStream f = null;
 		try {
 			OutputStream os = new FileOutputStream(filename);
@@ -491,11 +453,6 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			f.writeSignedIntegerLittleEndian(this.format);
 			f.writeSignedIntegerLittleEndian(this.getNumtiles());
 			f.writeSignedIntegerLittleEndian(this.getCompression());
-
-			log( Integer.toString( this.signature ) + ";"+
-				Integer.toString( this.version ) +";"+
-				Integer.toString( this.numtiles ) +";"+
-				Integer.toString( this.getCompression() ) );
 
 			byte[] pixels = f.getPixelArrayFromFrames(tiles, tiles.length, this.tileSize, this.tileSize);
 			f.writeCompressedBytes(pixels);
@@ -515,13 +472,20 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			f.writeCompressedBytes(this.obsPixels);
 			}
 		catch(IOException e) {
-			System.err.println("VSP::save " + e.getMessage());
+			System.err.println("VSP::save FAIL " + e.getMessage());
 			return(false);
 			}
 		finally {
 			try {	f.close();	} 
 			catch (IOException e) { }
-		}
+			log( "SIG="+Integer.toString( this.signature ) + "; VER="+
+				Integer.toString( this.version ) +"; TILE#="+
+				Integer.toString( this.version ) +"; OBS#="+
+				Integer.toString( this.getNumObsTiles() ) +"; ANIM="+
+				Integer.toString( this.getNumAnimations() ) +"; COMP="+
+				Integer.toString( this.getCompression() ) );
+			}
+	log("VSP save OK >> " + filename );
 	return(true);
 	}	
 
@@ -535,34 +499,10 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		this.numtiles = blankTiles;
 		this.compression = 1;
 
-//        int numAnim = 0;
-        this.anims = null;
+		// make up some obs... do not make up animations.
+		this.anims = null;
+		this.setDefaultObstructions();
 
-       // Krybo:  nope, no animation in auto-generated VSP
-//        this.anims = new Vsp.Animation[numAnim];	
-//        System.out.println("numAnim = " + numAnim);
-//        for(int i=0; i<numAnim; i++) {
-//        	Vsp.Animation a = this.new Animation();
-//        	a.name = f.readFixedString(256);
-//        	a.start = f.readSignedIntegerLittleEndian();
-//        	a.finish = f.readSignedIntegerLittleEndian();
-//        	a.delay = f.readSignedIntegerLittleEndian();
-//        	a.mode = f.readSignedIntegerLittleEndian();
-//        	
-//        	this.anims[i] = a;
-//        }			
-
-        	this.numobs = 12;
-		this.obsPixels = new byte[ numobs*this.tileSize*this.tileSize ];
-		for( int op = 0; op < (numobs*this.tileSize*this.tileSize)-1; op++ )
-			{
-			this.obsPixels[op] = (byte) 0;
-				// Make 2nd obs tile is default full-tile obsturction.
-			if( (op >= this.tileArea) && (op < this.tileArea*2) )
-				{ this.obsPixels[op] = (byte) 1; }
-			// Perhaps add more later.
-			}
-        
 		// initialize tile anim stuff
 		tileidx = new int[this.numtiles];
 		flipped = new int[this.numtiles];
@@ -1033,8 +973,164 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		return( this.anims.length ); 
 		}
 
+	public int getSignature()
+		{ return(this.signature); }
+	public int getVersion()
+		{ return(this.version); }	
+
+	/** Use this to make some obs for V1, V2, and new vsps.   */
+	private void setDefaultObstructions()
+		{
+		// Some of this was cannabalized from Rapheal's main[] test func.
+		// An obstruction tile is just a tilesize square boolean array.
+		this.numobs = 13;
+		int gridsize = this.tileSize*this.tileSize;
+		int gridsize0 = this.tileSize*this.tileSize-1;	// Base zero grid size
+		int i = 0;
+		int pos = 0;
+		byte[] newPixels = 
+				new byte[ gridsize*this.numobs ];
+
+		// Non (0) and Solid (1) obs.
+		for( i=0; i<gridsize; i++) 
+			{
+			newPixels[i] = 0;
+			newPixels[i+gridsize] = 1;
+			}
+		pos = gridsize*2;
+
+		for( i=0; i<gridsize; i++ ) 
+			{ // (3) Add vertical | right obs    o|
+			if( (i+1) % 16 == 0)   { newPixels[pos+i] = 1; }
+			else				{ newPixels[pos+i] = 0; }
+			}
+		pos += gridsize;
+
+		for( i=0; i<gridsize; i++)
+			{   // (2) Add vertical Edge left obs   |o
+			if( i % 16 == 0)   { newPixels[pos+i] = 1; }
+			else				{ newPixels[pos+i] = 0; }
+			}
+		pos += gridsize;
+		
+		for( i=0; i<gridsize; i++ ) 
+			{ 	// (4) Add horizontal bottom obs   _
+			if(i<16)	{ newPixels[i+pos] = 1; }
+			else		{ newPixels[i+pos] = 0; }
+			}
+		pos += gridsize;
+
+		for( i=0; i<gridsize; i++ ) 
+			{ 	// (5) Add horizontal top ob  
+			if( i>=240 )	{ newPixels[i+pos] = 1; }
+			else			{ newPixels[i+pos] = 0; }
+			}
+		pos += gridsize;
+
+		int offs = 0;
+		for( i=0; i<gridsize; i++ ) 
+			{ 	// (6) Diagonal /
+			 // ! need to watch div by zero
+			if( offs == 0 && i == 0 )  { newPixels[pos] = 1; offs++; }
+			else if( offs == 0 )		{ newPixels[pos] = 1; }
+			else if( i % ((offs*this.tileSize)+offs) == 0)	
+				{ 
+				newPixels[i+pos] = 1;
+				offs++;
+				}
+			else			
+				{ newPixels[i+pos] = 0; }
+			}
+		pos += gridsize;
+
+		offs = 0;
+		for( i=1; i<gridsize; i++ ) 
+			{ 	// (7) Diagonal \  
+			if( i % (((offs+1)*this.tileSize)-(offs+1)) == 0 )	
+				{ 
+				newPixels[i+pos] = 1;
+				offs++;
+				}
+			else			
+				{ newPixels[i+pos] = 0; }
+			}
+		newPixels[pos] = 0;
+		newPixels[pos+gridsize-1] = 0;
+		pos += gridsize;
+
+		// (8) Center small pole
+		for( i=0; i<gridsize; i++ )		{  newPixels[i+pos] = 0; }
+		newPixels[119+pos] = 1;
+		newPixels[120+pos] = 1;
+		newPixels[135+pos] = 1;
+		newPixels[136+pos] = 1;
+		pos += gridsize;
+
+		// (9) Center small pole
+		for( i=0; i<gridsize; i++ )		{  newPixels[i+pos] = 0; }
+		for( i=4; i<=11; i++ )
+			{
+			newPixels[ (4*this.tileSize)+i+pos] = 1;
+			newPixels[ (11*this.tileSize)+i+pos] = 1;
+			newPixels[ (i*this.tileSize)+4+pos] = 1;
+			newPixels[ (i*this.tileSize)+11+pos] = 1;
+			}
+		pos += gridsize;
+		
+		// (10)  Slight Cut-Corner
+		for( i=0; i<gridsize; i++ )		{  newPixels[i+pos] = 1; }
+		newPixels[pos] = 0;
+		newPixels[pos+1] = 0;
+		newPixels[pos+this.tileSize] = 0;
+		newPixels[pos+this.tileSize-1] = 0;
+		newPixels[pos+this.tileSize-2] = 0;
+		newPixels[pos+(this.tileSize*2)-1] = 0;
+		newPixels[pos+gridsize0] = 0;
+		newPixels[pos+gridsize0-1] = 0;
+		newPixels[pos+gridsize0-this.tileSize] = 0;
+		newPixels[pos+gridsize0-this.tileSize+1] = 0;
+		newPixels[pos+gridsize0-this.tileSize+2] = 0;
+		newPixels[pos+gridsize0-(this.tileSize*2)+1] = 0;		
+		pos += gridsize;
+
+		// (11) Half Wall - Horizontal
+		for( i=0; i<gridsize; i++ )		
+			{
+			newPixels[i+pos] = 0;
+			if( (i >= (this.tileSize*7)) && (i <  (this.tileSize*9)) )
+				{ newPixels[i+pos] = 1; }
+			}
+		pos += gridsize;
+		
+		// (12) Half Wall - vertical
+		for( i=0; i<gridsize; i++ )		
+			{
+			newPixels[i+pos] = 0;
+			if( ( i % 16 == 7 ) || ( i % 16 == 8 ) )
+				{ newPixels[i+pos] = 1; }
+			}
+		pos += gridsize;
+
+		this.obsPixels = newPixels;
+
+		// test by resaving WORLDMAP>vsp
+		return;
+		}
+	
+	/** basic existance and null-data check on tile  X */
+	public boolean checkTile(int tileIndex)
+		{
+		if( tileIndex > this.tiles.length )		{ return( false ); }
+		if( this.tiles[tileIndex] == null )		{ return( false ); }
+		return( true );
+		}
 
 
+	
+	
+	/* ===========  Sub Classes ================== */
+	
+	
 	public class Animation 
 		{
 		public String name = "";
@@ -1047,7 +1143,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 				"; endTile:" + this.finish + "; delay:" + this.delay + 
 				"; mode: " + this.mode;
 			}
-
+	
 		public Animation( )
 			{
 			this.name = new String("");
@@ -1057,7 +1153,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			this.delay = 0;
 			return;
 			}
-
+	
 		public Animation( Animation cp )
 			{
 			this.delay = cp.delay;
@@ -1069,21 +1165,6 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			}
 		
 		}		// END SUB-CLASS animation
-
-	public int getSignature()
-		{ return(this.signature); }
-	public int getVersion()
-		{ return(this.version); }	
-
-	/** Use this to make some obs for V1 and V2 imported vsps. */
-	private void setDefaultObstructions()
-		{
-		// TODO : create
-		// test by resaving WORLDMAP>vsp
-		this.obsPixels = null;
-		this.numobs = 0;
-		return;
-		}
 	
-	}			// END CLASS
+	}			// END CLASS Vsp
 

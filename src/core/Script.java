@@ -572,12 +572,26 @@ public class Script {
 		done = true;		
 		}
 	
-	/*  Krybo (Jan.2016) : experimental vsp tile pixel changer.   */
-	
-	public static boolean changeVspPixel( int tileNum, int x1, int y1, int red256, int green256, int blue256 )
+/**   Change a pixel in a map's vsp tileset.
+ * 	Note : this will not automatically refresh the map!
+ *   Always call <map>.refresh() after your done altering tiles.
+ * Krybo (Jan.2016, May.2016)
+ * 
+ * @param tileNum	Target tile number
+ * @param x1		target x pixel location
+ * @param y1		target y pixel location
+ * @param red256	new Color Red component.	(0-255)
+ * @param green256	new Color Green component.	(0-255)
+ * @param blue256	new Color Blue component.	(0-255)
+ * @return	true if success, false when nothing got changed.
+ */
+	public static boolean changeVspPixel( int tileNum, int x1, int y1, 
+			int red256, int green256, int blue256 )
 		{
+		if( current_map.getTileSet().checkTile(tileNum) == false )
+			{ return(false); }
 		return(  current_map.getTileSet().modifyTile(
-				tileNum, x1, y1, red256, green256, blue256	)	);
+			tileNum, x1, y1, red256, green256, blue256	)	);
 		}
 
 	//VI.e. Entity Functions
