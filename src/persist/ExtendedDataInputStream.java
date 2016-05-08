@@ -5,8 +5,11 @@ import java.awt.image.WritableRaster;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
+
+import domain.Vsp;
 
 
 public class ExtendedDataInputStream extends DataInputStream {
@@ -99,6 +102,49 @@ public class ExtendedDataInputStream extends DataInputStream {
 				{	rtn[n] = super.readByte();	}			
 			}
 		return(rtn);
+		}
+	
+	public static byte[] readRLEcompressedBytes( 
+			DataInputStream in, int length )
+		{
+		int j,n = 0, b = 0;
+		Byte run, dat;
+		Byte runTag = new Byte((byte) 255);
+		ArrayList<Byte> byteStack = new  ArrayList<Byte>();
+
+		do {
+			try {
+				dat = in.readByte();
+				b++;
+
+				if( runTag.equals(dat) )
+					{		// This is a run-length
+					run = in.readByte();
+					dat = in.readByte();
+					for( j=0; j < Byte.toUnsignedInt(run); j++ )
+						{  byteStack.add(dat); }
+//		System.out.println( "DEBUG RLE : value = "+				
+//			Integer.toString( Byte.toUnsignedInt(dat))+"   run = "+
+//			Integer.toString( Byte.toUnsignedInt(run)) );
+					n += Byte.toUnsignedInt(run);
+					b += 2;
+					}
+				else
+					{		// This is a single value.
+					byteStack.add(dat);
+					n++; 
+					}
+			} catch ( IOException e) 
+				{ b = length;  System.out.println("reached end!"); }
+			
+		} while( b < length );
+
+		// Byte[] to byte[]... Java makes this difficult?
+		byte[] rtn = new byte[ n ];
+		for( int nb = 0; nb < n; nb++ )
+			{	rtn[nb] = (byte) byteStack.get(nb);	}
+
+		return( rtn );
 		}
 	
     // http://mindprod.com/jgloss/unsigned.html

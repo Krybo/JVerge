@@ -161,7 +161,6 @@ public class Vsp
 		this.compression	= cp.getCompression();
 		this.flipped 		= cp.getFlipped().clone();
 		this.tileidx 		= cp.getTileidx().clone();
-		this.vadelay 		= cp.getVadelay().clone();
 		this.format 		= cp.getFormat();
 		this.numobs  		= cp.getNumObs();
 		this.numtiles		= cp.getNumtiles();
@@ -173,11 +172,16 @@ public class Vsp
 		this.version		= cp.getVersion();
 	
 		// Slightly more complicated Object-based components.
-		this.anims = new Animation[ cp.getNumAnimations() ];
-		for( int n = 0; n < cp.getNumAnimations(); n++ )
-			{
-			this.anims[n] = new Animation( cp.getAnims()[n] );
+		if( cp.getNumAnimations() > 0  )
+			{ 
+			this.anims = new Animation[ cp.getNumAnimations() ];
+			for( int n = 0; n < cp.getNumAnimations(); n++ )
+				{  this.anims[n] = new Animation( cp.getAnims()[n] );  }
+			this.vadelay = cp.getVadelay().clone();
 			}
+		else
+			{ this.anims = null;    this.vadelay = null; }
+
 		this.tiles = new BufferedImage[ cp.getNumtiles() ];
 		for( int t = 0; t < cp.getNumtiles(); t++ )
 			{
@@ -195,8 +199,8 @@ public class Vsp
 			 f = new ExtendedDataInputStream(fis);
 			f.mark(12);
 			this.signature = f.readSignedIntegerLittleEndian();
-			System.out.println( "MP SIG : "+
-				Integer.toString(this.signature));
+//			System.out.println( "MP SIG : "+
+//				Integer.toString(this.signature));
 			
 		switch( this.signature )
 			{
@@ -244,10 +248,9 @@ public class Vsp
 			this.tileidx = new int[this.numtiles];
 			this.flipped = new int[this.numtiles];
 			this.vadelay = new int[numAnim];
-			int i;
-			for (i=0; i<numAnim; i++)
-				this.vadelay[i]=0;
-			for (i=0; i<this.numtiles; i++)
+			for ( int i=0; i<numAnim; i++)
+				{ this.vadelay[i]=0; }
+			for ( int i=0; i<this.numtiles; i++)
 			{
 				this.flipped[i] = 0;
 				this.tileidx[i] = i;
@@ -268,7 +271,7 @@ public class Vsp
 
 			case 2:			// Vsp commonly attached to VERGE 1 maps.
 			
-/* Krybo (May.2016) This is Verge2x  (VSP version 3).
+/* Krybo (May.2016) This is Verge1x  (VSP version 3).
 Conversion from Reference C++ code:
 https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 @ Func Starting Line 128.
@@ -278,7 +281,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 				this.version = this.signature;
 				this.tileSize = 16;
 				this.compression = 0;
-				
+
 				// These are R G B palette colors, 256 total.
 				byte[] palette = f.readUnsignedBytes(768, false);
 				this.numtiles = f.readUnsignedShortLittleEndian();
@@ -307,11 +310,11 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 							new VImage(this.tileSize,this.tileSize,
 								new Color(255,0,255) );
 					// "de-palette" each pixel.  Probably a better way...
-					for( int py = 0;  py < 16; py++ )
-						{ for( int px = 0; px < 16; px++ ) 
+					for( int py = 0;  py < this.tileSize; py++ )
+						{ for( int px = 0; px < this.tileSize; px++ ) 
 							{
 							int item = (tn<<8) + (py*16+px);
-							
+							if( item > data.length )  { continue; }
 							tmpImg.setPixel( px, py, pal[ 
 							    Byte.toUnsignedInt( data[ item ] ) ] );
 						}	}
@@ -343,22 +346,116 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 					{ 
 					this.anims = new Vsp.Animation[realAnim.size()];
 					this.anims = realAnim.toArray(this.anims);
+					this.vadelay = new int[ realAnim.size() ];
+					for(  int i=0; i < realAnim.size(); i++ )
+						{ this.vadelay[i]=0; }
 					}
-				else { this.anims = null; }
+				else { this.anims = null; this.vadelay = null; }
 
+				this.setDefaultObstructions();
 				mytimer = systemtime;
 				break;
+
+			case 3:			// Verge 2.vsp's
+				f.reset();
+				this.signature = f.readUnsignedShortLittleEndian();
+				this.version = this.signature;
+				this.tileSize = 16;
+				this.compression = 1;
+
+				// These are R G B palette colors, 256 total.
+				byte[] paletteV3 = f.readUnsignedBytes(768, false);
+				this.numtiles = f.readUnsignedShortLittleEndian();
 				
+				Color[] palV3 = new Color[256];
+				for( int c = 0; c<256; c++ )
+					{		// Simplify palette by munching RGBs
+					// Because this was an old format.
+					// each color component only had 64 colors.  (*4)
+					palV3[c] = new Color(
+						Byte.toUnsignedInt( paletteV3[c*3] ) * 4, 
+						Byte.toUnsignedInt( paletteV3[(c*3)+1] ) * 4, 
+						Byte.toUnsignedInt( paletteV3[(c*3)+2] ) * 4 );
+					}
+
+				Integer cmpDataLen = f.readUnsignedIntegerLittleEndian();
+				log( " Reading "+Integer.toString(this.numtiles)+
+					" Tiles using "+
+					cmpDataLen.toString()+" compressed bytes." );
+				
+				//f.readUnsignedIntegerLittleEndian();
+				byte[] dataV3 = 
+					ExtendedDataInputStream.readRLEcompressedBytes(
+						f, cmpDataLen);
+				
+				if( dataV3.length != (256*this.numtiles) )
+					{ 
+					System.err.println(
+						"V2-VSP loader: corrupted data section"+
+						Integer.toString(dataV3.length) + " vs expected. "+
+						Integer.toString( 255*this.numtiles ) );
+					}
+				
+				this.tiles = new BufferedImage[this.numtiles];
+				this.tileidx = new int[this.numtiles];
+				this.flipped = new int[this.numtiles];
+
+				for( int tn = 0; tn < this.numtiles; tn++ )
+					{
+					VImage tmpImg = 
+							new VImage(this.tileSize,this.tileSize,
+								new Color(255,0,255) );
+					// "de-palette" each pixel.  Probably a better way...
+					int item = 0;
+					for( int py = 0;  py < this.tileSize; py++ )
+						{ for( int px = 0; px < this.tileSize; px++ ) 
+							{
+							item = (tn<<8) + (py*16+px);
+							if( item > dataV3.length )  { continue; }
+							tmpImg.setPixel( px, py, palV3[ 
+							    Byte.toUnsignedInt( dataV3[ item ] ) ] );
+						}	}
+				
+					this.tiles[tn] = tmpImg.getImage();
+					this.tileidx[tn] = tn;
+					this.flipped[ tn ] = 0;
+					}
+				
+				// animations exactly the same as Verge1
+				ArrayList<Vsp.Animation> realAnimV3 = 
+						new ArrayList<Vsp.Animation>();
+
+				for( int an = 0;  an < 100; an++ ) 
+					{
+					Vsp.Animation tmp = new Vsp.Animation();
+					tmp.start = f.readUnsignedShortLittleEndian();
+					tmp.finish = f.readUnsignedShortLittleEndian();
+					tmp.delay = f.readUnsignedShortLittleEndian();
+					tmp.mode = f.readUnsignedShortLittleEndian();
+					if( tmp.start != tmp.finish )		// weed out.
+						{  realAnimV3.add(tmp); }
+					}
+				// Now just convert the real animations to an primative.
+				if( ! realAnimV3.isEmpty() )
+					{ 
+					this.anims = new Vsp.Animation[realAnimV3.size()];
+					this.anims = realAnimV3.toArray(this.anims);
+					this.vadelay = new int[ realAnimV3.size() ];
+					for(  int i=0; i < realAnimV3.size(); i++ )
+						{ this.vadelay[i]=0; }
+					}
+				else { this.anims = null;  this.vadelay = null; }
+
+				this.setDefaultObstructions();
+				mytimer = systemtime;
+				break;
+			
 			default:
 				log("Invalid or old/unsupported map signature.");
 				this.signature = 0;
 				break;
 				}		// END SWITCH CASE over signature.
 
-			System.out.println( "VSP METADATA :: SIG="+ this.signature + 
-				";VER="+this.version+";TILE#="+this.numtiles+";COMP"
-				+this.getCompression());
-		
 			 }  
 		catch (IOException e) {
 			e.printStackTrace();
@@ -368,7 +465,11 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		 	if( f != null )
 		 		{ try { f.close(); } catch(Exception e) {} } 
 		 	}
-
+		
+		System.out.println( "VSP METADATA :: SIG="+ this.signature + 
+			";VER="+this.version+";TILE#="+this.numtiles+";COMP"
+			+this.getCompression());
+		return;
 		}			// END method load()
 
 	// Krybo : needed to extend this to menu system.
@@ -399,9 +500,9 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			byte[] pixels = f.getPixelArrayFromFrames(tiles, tiles.length, this.tileSize, this.tileSize);
 			f.writeCompressedBytes(pixels);
 
-			f.writeSignedIntegerLittleEndian(this.getAnims().length);
+			f.writeSignedIntegerLittleEndian( this.getNumAnimations() );
 	        
-	        for(int i=0; i<this.getAnims().length; i++) {
+	        for(int i=0; i<this.getNumAnimations(); i++) {
 	        	Animation a = getAnims()[i];
 	        	f.writeFixedString(a.name, 256);
 	        	f.writeSignedIntegerLittleEndian(a.start);
@@ -973,6 +1074,16 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		{ return(this.signature); }
 	public int getVersion()
 		{ return(this.version); }	
+
+	/** Use this to make some obs for V1 and V2 imported vsps. */
+	private void setDefaultObstructions()
+		{
+		// TODO : create
+		// test by resaving WORLDMAP>vsp
+		this.obsPixels = null;
+		this.numobs = 0;
+		return;
+		}
 	
 	}			// END CLASS
 
