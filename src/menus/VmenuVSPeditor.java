@@ -317,13 +317,14 @@ public class VmenuVSPeditor implements Vmenu
 		this.editColorInPlace = false;
 		this.showOverview = false;
 		this.showHelp = false;
-		
+
+		int tileRows = this.vsp.getNumtiles() / 
+			VmenuVSPeditor.DEFAULT_TILES_PER_ROW;
 		this.vspOverview = new VImage(
-				VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
-					(this.vsp.getTileSquarePixelSize()+2),
-				100 * VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
-					(this.vsp.getTileSquarePixelSize()+2), 
-				Color.BLACK );
+			VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
+				(this.vsp.getTileSquarePixelSize()+2),
+			tileRows *	(this.vsp.getTileSquarePixelSize()+2) , 
+			Color.BLACK );
 
 		this.tIndex = 0;
 		this.updatePreview();
