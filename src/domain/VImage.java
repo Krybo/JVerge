@@ -56,18 +56,20 @@ public class VImage implements Transferable
 		if( x < 1 )   { x = 1; }
 		if( y < 1 )   { y = 1; }
 		if( x > VImage.MAX_PX_X )
-			{ 
-			x = VImage.MAX_PX_X;
+			{
 			System.err.println("Warning Maximum VImage width capped "
-			+ "!  There may be somethign wrong with whatever"
-			+ "called this constructor.");
+				+ "!  There may be somethign wrong with what invoked "+
+				" VImage("+ Integer.toString(x)+","+
+				Integer.toString(y)+") constructor.");
+			x = VImage.MAX_PX_X;
 			}
 		if( y > VImage.MAX_PX_Y )
 			{
-			y = VImage.MAX_PX_Y;
 			System.err.println("Warning Maximum VImage height capped"
-			+ "!  There may be somethign wrong with whatever"
-			+ "called this constructor.");
+				+ "!  There may be somethign wrong with what invoked "+
+				" VImage("+ Integer.toString(x)+","+
+				Integer.toString(y)+") constructor.");
+			y = VImage.MAX_PX_Y;
 			}
 		this.width = x;
 		this.height = y;

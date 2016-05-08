@@ -34,6 +34,27 @@ public class ExtendedDataInputStream extends DataInputStream {
 		return s & 0xffff;
 	}
 	
+	/** Reads a sequence of chars into a char array. (returned)
+	 * (false) reverseOrder will put the first char into array index zero.
+	 * (true) reverseOrder will put the last char into array index zero. 
+	 * Krybo (May.2016) */
+	public char[] readCharSequence( int numberOfChars, 
+			boolean reverseOrder ) 	throws IOException
+		{
+		char[] rtn = new char[numberOfChars];
+		if( reverseOrder == false )
+			{
+			for( int n = 0; n < numberOfChars; n++ )
+				{ rtn[n] = super.readChar(); }
+			}
+		else
+			{
+			for( int n = numberOfChars-1; n >= 0; n-- )
+				{ rtn[n] = super.readChar(); }			
+			}
+		return(rtn);
+		}
+	
 	public int readUnsignedIntegerLittleEndian() throws IOException {
 		int i = Integer.reverseBytes(this.readInt());
 		return i & 0xffffffff;
@@ -58,6 +79,27 @@ public class ExtendedDataInputStream extends DataInputStream {
 
 	   // there is no such method as Double.reverseBytes( d );
    }		
+
+	/** Reads a sequence of bytes into a primative byte array. (returned)
+	 * (false) reverse : will put the first char into array index zero.
+	 * (true) reverse : will put the last char into array index zero. 
+	 * Krybo (May.2016)       */
+	public byte[] readUnsignedBytes( int count, boolean reverse ) 
+			throws IOException
+		{
+		byte[] rtn = new byte[count];
+		if( reverse == false )
+			{
+			for( int n = 0; n < count; n++ )
+				{	rtn[n] = super.readByte();	}
+			}
+		else
+			{
+			for( int n = count-1; n >= 0; n-- )
+				{	rtn[n] = super.readByte();	}			
+			}
+		return(rtn);
+		}
 	
     // http://mindprod.com/jgloss/unsigned.html
 	public int[] readCompressedUnsignedShorts() throws IOException {
@@ -85,8 +127,8 @@ public class ExtendedDataInputStream extends DataInputStream {
 	}
 
 	// Create an array of BufferedImages based on an array of pixels
-	public BufferedImage[] getBufferedImageArrayFromPixels(byte data[], int arraysize,
-			int xsize, int ysize) {
+	public BufferedImage[] getBufferedImageArrayFromPixels(
+			byte data[], int arraysize, int xsize, int ysize) {
 
 		BufferedImage[] ret = new BufferedImage[arraysize];
 		WritableRaster wr;

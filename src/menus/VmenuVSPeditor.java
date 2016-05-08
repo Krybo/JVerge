@@ -1563,7 +1563,10 @@ public class VmenuVSPeditor implements Vmenu
 		
 		javax.swing.JFileChooser fileChooser = 
 				new javax.swing.JFileChooser();
-		fileChooser.setApproveButtonText( "Save VSP" );
+		fileChooser.setToolTipText("Browse for a .vsp file to edit.");
+		fileChooser.setDialogTitle("Browse for a .vsp file to open");
+		fileChooser.setApproveButtonText( "Load VSP" );
+		fileChooser.setMultiSelectionEnabled(false);
 		fileChooser.setFileFilter( new FileNameExtensionFilter(
 				"Verge Sprite Palette", "vsp") );
 		fileChooser.setAutoscrolls( true );
@@ -1619,7 +1622,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.vspOverview = new VImage(
 			VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
 				(this.vsp.getTileSquarePixelSize()+2),
-			30 * VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
+			100 * VmenuVSPeditor.DEFAULT_TILES_PER_ROW *
 				(this.vsp.getTileSquarePixelSize()+2), 
 			Color.BLACK );
 
