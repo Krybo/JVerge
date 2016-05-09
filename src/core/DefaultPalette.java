@@ -1,6 +1,8 @@
 package core;
 
 import java.awt.Color;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 // verge.pal default v1, based on chr_file.cpp of VOPenchr
@@ -8,7 +10,14 @@ public class DefaultPalette {
 
 	class Palette {
 		int r, g, b;
-	}
+		public int getR()  { return(this.r); }
+		public int getG()  { return(this.g); }
+		public int getB()  { return(this.b); }
+		public Color getColor()  
+			{ return( new Color(this.r,this.g,this.b) ); }
+		public Color getColorTrans( int alpha255 )  
+			{ return( new Color(this.r,this.g,this.b,alpha255) ); }
+		}
 
 	static Palette pal[] = new Palette[256];
 	
@@ -50,7 +59,9 @@ public class DefaultPalette {
 		HashMap<Integer,Color> rtn = new HashMap<Integer,Color>();
 		for( Integer c = 0; c < (pal.length-1); c++ )
 			{
-			Color clr = new Color(pal[c].r, pal[c].g, pal[c].b, lucent);
+			Color clr = 
+				new Color( pal[c].getR(), 
+					pal[c].getG(), pal[c].getB(), lucent);
 			rtn.put(c, clr );
 			}
 		return(rtn);

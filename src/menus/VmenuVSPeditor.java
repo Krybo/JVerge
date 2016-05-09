@@ -5,6 +5,8 @@ import static core.Script.setMenuFocus;
 
 import java.awt.Color;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -13,6 +15,7 @@ import java.util.HashMap;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import persist.ExtendedDataOutputStream;
 import menus.VmiButton.enumMenuButtonCOLORS;
 import menus.VmiTextSimple.enumMenuStxtCOLORS;
 import core.Controls;
@@ -55,7 +58,9 @@ import domain.Vsp;
  * p
  * q
  * r		Rectangle	[Cntl] Wrapping rectangle
- * s	Save single tile		[Cntl] Save entire VSP
+ * s	HOT:			Saves working tile
+ * 		HOT [Cntl] 	Save entire VSP
+ * 		[Shift] 			Save Palette
  * t 	Toggle view of entire Tileset
  * u
  * v	Clipboard Paste : Single tile 
@@ -66,6 +71,7 @@ import domain.Vsp;
  * x	Clear, set tile to solid color
  * y
  * z	Undo		[Cntl] Redo
+ * ~	[Cntl]		Immediately Opens New Blank VSP
  * NP+		Increase areal size of certain tool functions
  * NP+		Decrease areal size of certain tool functions
  * 
@@ -200,12 +206,15 @@ public class VmenuVSPeditor implements Vmenu
 		vts01.setAction( getFunction(Script.class,"focusSystemMenu") );
 
 		VmiTextSimple vts02a = new VmiTextSimple("New VSP");
+		vts02a.setKeycode( 1538 );		// Cntl Tilda
 		vts02a.setAction( m2a );
 
 		VmiTextSimple vts02 = new VmiTextSimple("Save VSP");
+		vts02.setKeycode( 666 );		// Cntl S
 		vts02.setAction( m2 );
 		
 		VmiTextSimple vts02b = new VmiTextSimple("Load VSP");
+		vts02b.setKeycode( 610 );		// Cntl L
 		vts02b.setAction( m2b );
 		
 		VmiTextSimple vts03 = new VmiTextSimple("Edit Palette");
@@ -641,6 +650,15 @@ public class VmenuVSPeditor implements Vmenu
 						break;
 					}
 				break;
+				
+			case 83:			// [s] Save functions.
+				if( isShift == true )
+					{
+					this.savePalette();
+					break;
+					}
+				break; 
+				
 			case 86:		//  [v] - paste functions
 			
 				if( isCntl == true && isAlt == true )
@@ -1668,5 +1686,66 @@ public class VmenuVSPeditor implements Vmenu
 
 		return;
 		}
+
+	/** Select a file and save the color bar palette within it. */
+	public boolean savePalette( )
+		{
+		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+			File.separator + "Editor/" +
+			File.separator + "palette/" );
+		if( ! dirOut.exists() )
+			{		// Fail over to the directory where verge started.
+			if( ! dirOut.mkdir() )
+				{
+				dirOut = new File( VergeEngine.JVERGE_CWD.toString());
+				if( ! dirOut.exists() )
+					{ return(false); }
+			}	}
+
+		javax.swing.JFileChooser fileChooser = 
+				new javax.swing.JFileChooser();
+		fileChooser.setToolTipText("Browse for a .vpal file to edit.");
+		fileChooser.setDialogTitle("Browse for a .vpal file to open");
+		fileChooser.setApproveButtonText( "Save Palette" );
+		fileChooser.setApproveButtonToolTipText( "Save Palette" );
+		fileChooser.setMultiSelectionEnabled(false);
+		fileChooser.setFileFilter( new FileNameExtensionFilter(
+				"Verge Color Palette", "vpal") );
+		fileChooser.setAutoscrolls( true );
+		fileChooser.setCurrentDirectory( dirOut );
+		int returnVal = fileChooser.showSaveDialog(
+				VergeEngine.getGUI() );
+		if( returnVal == 1 )	//  load cancelled in GUI
+			{  return(false); }
+		
+		ExtendedDataOutputStream exout = null;
+		try {
+			OutputStream os = new FileOutputStream(
+					fileChooser.getSelectedFile()  );
+			exout = new ExtendedDataOutputStream(os);
+			exout.writeInt( this.clrs.size() );
+			for( Integer c : this.clrs.keySet() )
+				{
+				exout.writeByte((byte) this.clrs.get(c).getRed() % 256);
+				exout.writeByte((byte) this.clrs.get(c).getGreen() % 256);
+				exout.writeByte((byte) this.clrs.get(c).getBlue() % 256);
+				}
+			}
+		catch( Exception e )
+			{ return(false); }
+		finally {   
+			if( exout != null )
+				{	try { exout.close(); } catch(Exception e ) {}	}
+			}
+		return(true);
+		}
+	
+	/** Restore color bar palette from a file */
+	public boolean loadPalette( File outFile )
+		{
+		// TODO
+		return(true);
+		}
+
 	
 	}		// END CLASS
