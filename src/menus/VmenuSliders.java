@@ -401,7 +401,8 @@ public class VmenuSliders implements Vmenu
 				break;
 
 			default:
-				System.out.println(" unhandled menu keystroke ["
+				System.out.println(" VmenuSliders: "
+					+" unhandled menu keystroke ["
 					+ kc.toString() + " ]  Base <"
 					+ basecode.toString() + "> ");
 				break;

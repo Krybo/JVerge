@@ -5,6 +5,7 @@ import static core.Script.setMenuFocus;
 
 import java.awt.Color;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
 import menus.VmiButton.enumMenuButtonCOLORS;
 import menus.VmiTextSimple.enumMenuStxtCOLORS;
@@ -33,7 +35,7 @@ import domain.Vsp;
  * 
  * ----- Controls Overview --------
  * 
- * [0-9] 	Change color, cooresponding to palette bar.
+ * [0-9 and -] 	Change color, cooresponding to palette bar.
  * [cntl][backspace]	Exits menu regardless of focus
  * [Cntl Arrow-Right]	Previous Tile
  * [Cntl Arrow-Left]	Next Tile
@@ -53,14 +55,15 @@ import domain.Vsp;
  * k
  * l		Line		[Cntl] Wrapping line
  * m
- * n
+ * n	New		{main} 		New Tile: Clears tile to tool color 1
+ * 					{colorKey} 	Set the basic 8-unit color key.
  * o	Rotate Clockwise		[Cntl] Rotate CCW
  * p
  * q
  * r		Rectangle	[Cntl] Wrapping rectangle
  * s	HOT:			Saves working tile
- * 		HOT [Cntl] 	Save entire VSP
- * 		[Shift] 			Save Palette
+ * 		HOT [Cntl] 	Save entire VSP to a file
+ * 		[Shift] 			Save Palette to a file
  * t 	Toggle view of entire Tileset
  * u
  * v	Clipboard Paste : Single tile 
@@ -74,6 +77,8 @@ import domain.Vsp;
  * ~	[Cntl]		Immediately Opens New Blank VSP
  * NP+		Increase areal size of certain tool functions
  * NP+		Decrease areal size of certain tool functions
+ * Page-Up + Cntl			Next Color Key line
+ * Page-Down + Cntl		Previous Color Key line
  * 
  * @author Krybo
  *
@@ -88,7 +93,7 @@ public class VmenuVSPeditor implements Vmenu
 
 	// tile index: This is the current tile being edited.
 	private Integer tIndex = 0;
-	// The line the color palette is on.
+	// Active line the color palette is on.
 	private Integer cBarIndexSet = 0;
 
 	// The component guts.
@@ -259,34 +264,8 @@ public class VmenuVSPeditor implements Vmenu
 
 		this.sidebar.setColorContentAll( hmSideBarClrs );
 		this.sidebar.setFontAll(core.Script.fntLogicalScans14 );
-		
-		for( Integer b = 0; b < 11; b++ )
-			{
-			VmiButton cBtn = new VmiButton(42,42);
-			cBtn.setFrameThicknessPx(3);
-			cBtn.setCircular(true);
-			cBtn.setShadowThicknessPx(3, true);
-			
-			Color thiscolor = this.clrTrans;
-			if( b == 1 )	{ thiscolor = this.clr1st; }
-			if( b == 2 )	{ thiscolor = this.clr2nd; }
-			if( b >= 3 )	{ thiscolor = this.clrs.get(b-3); }
-			
-			cBtn.setColorComponent(
-					enumMenuButtonCOLORS.BODY_ACTIVE, 
-					thiscolor );
-			cBtn.setColorComponent(
-					enumMenuButtonCOLORS.BODY_INACTIVE, 
-					thiscolor );
-			cBtn.setColorComponent(
-					enumMenuButtonCOLORS.BODY_SELECTED, 
-					thiscolor );
-			cBtn.setColorComponent(
-					enumMenuButtonCOLORS.FRAME_OUTER, 
-					Color.GRAY );
 
-			this.colorkey.addItem(cBtn);
-			}
+		this.resetPalette();
 		
 		// Pull out these guages from the sub-menu, but keep
 		//     the functionality of the submenu.
@@ -530,6 +509,27 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				this.funcActivate();
 				break;
+				
+			case 33:		// Page-UP
+				if( isCntl == true )
+					{
+					this.nextCbarLine();
+					this.setColorEditorToCurrentColorKey();
+					break;
+					}
+				this.getControlItem().doControls(ext_keycode);
+				break;
+			
+			case 34:		// Page Down
+				if( isCntl == true )
+					{
+					this.prevCbarLine();
+					this.setColorEditorToCurrentColorKey();
+					break;
+					}
+				this.getControlItem().doControls(ext_keycode);
+				break;
+			
 			case 37: 		// ARROW-LEFT
 				this.getControlItem().doControls(ext_keycode);
 				if( this.cFocus == 1 )		// Control is in color keybar.
@@ -541,13 +541,6 @@ public class VmenuVSPeditor implements Vmenu
 					this.changeTile( -1 *
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
 					break;
-					}
-				if( isShift == true )   
-					{
-					// Intercept Shift+Up to transverse palette.
-					this.nextCbarLine();
-					this.setColorEditorToCurrentColorKey();
-					break; 
 					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
@@ -563,20 +556,14 @@ public class VmenuVSPeditor implements Vmenu
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
 					break;
 					}
-				if( isShift == true )   
-					{
-					// Intercept Shift+Up to transverse palette.
-					this.prevCbarLine();
-					this.setColorEditorToCurrentColorKey();
-					break; 
-					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
 			// Number keys do da buzinesss.
 			case 48:	case 49:  case 50:  case 51:  case 52:
-			case 53:	case 54:  case 55:  case 56:  case 57:
+			case 53:	case 54:  case 55:  case 56:  case 57: case 45:
 				int transform = basecode - 49;
 				if( transform == -1 )  { transform = 9; }
+				if( transform == -4 )  { transform = 10; }
 				if( this.cFocus == 1 ) 	// we are on color key
 					{
 					// Swaps colors, selected with #
@@ -650,7 +637,45 @@ public class VmenuVSPeditor implements Vmenu
 						break;
 					}
 				break;
-				
+
+			case 76:			// [l]  Load functions.
+				if( isCntl == true )  { break; }		// eaten by hotkey.
+				if( this.cFocus == 1 )
+					{
+					this.loadPalette();
+					break;
+					}
+				break;
+
+			case 78:			// [n] new
+				System.out.println("n pressed");
+				switch( this.cFocus )
+					{
+					case 1:		// New Basic Color Key
+						this.setBasicPalette();
+						break;
+					case 3:		// new Tile (replicate tile)
+						if( isCntl == true )
+							{
+							this.vsp.insertTile(this.tIndex, new VImage(
+								this.vsp.getTileSquarePixelSize(),
+								this.vsp.getTileSquarePixelSize(),
+								this.getColorkeySelectedColor() 
+								).getImage());
+							}
+						else 	{
+							this.vsp.insertReplicaTile(this.tIndex);
+							}
+						this.refresh();
+						this.updateMiniTileset();
+						this.loadWorkingTile();
+						break;
+					default:		// unused.
+						this.getControlItem().doControls(ext_keycode);
+						break;
+					}
+				break;
+
 			case 83:			// [s] Save functions.
 				if( isShift == true )
 					{
@@ -681,7 +706,33 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				this.handleTilePaste( core.Script.getClipboardVImage() );
 				break;
+		
+			case 127:		// [Delete] 
+				switch( this.cFocus )
+					{
+					case 1:
+						break;
+					default:
+						if( this.vsp.getNumtiles() <= 1 )	
+							{ break; }		// refuse to delete final tile.
+						this.vsp.spliceTile(this.tIndex);
+						if( this.tIndex == this.vsp.getNumtiles() )
+							{ this.tIndex--; }
+						this.refresh();
+						this.updateMiniTileset();
+						this.updatePreview();
+						this.loadWorkingTile();
+						break;
+					}
+				break;
+		
+			case 109:		// [Numpad - ]  remove tiles or colors.
+				break;
+		
 			default:
+				System.out.println(" VmenuVSPeditor: "
+						+ " delegated unhandled keystroke > "
+						+ Integer.toString(ext_keycode) );
 				this.getControlItem().doControls(ext_keycode);
 				break;
 			}
@@ -1154,6 +1205,8 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		HashMap<Integer,Color> hmTmp = 
 				new HashMap<Integer,Color>();
+		if( this.colorkey.getMenuItem(keyNum) == null )
+			{ return; }
 		Color c = this.colorkey.getMenuItem(keyNum).getColorComponent(
 				enumMenuButtonCOLORS.BODY_ACTIVE.value());
 		hmTmp.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(),  c );
@@ -1532,25 +1585,11 @@ public class VmenuVSPeditor implements Vmenu
 	/**  Does an file system object save of the current VSP data. */
 	private static boolean saveVSP( Vsp theTileSet )
 		{
+		if( VmenuVSPeditor.directoryCheck() == false )
+			{ return(false); }
 		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
-				File.separator + "Editor/");
-		// Must ensure sandbox is setup.
-		if( ! dirOut.exists() )
-			{
-			// Panic!  cannot make default dir to save data.
-			if( ! dirOut.mkdir() )
-				{ return(false); }
-			}
-		
-		dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
 				File.separator + "Editor/" +
 				File.separator + "vsp/" );
-		if( ! dirOut.exists() )
-			{
-			// Panic!  cannot make default dir to save data.
-			if( ! dirOut.mkdir() )
-				{ return(false); }
-			}
 		
 		javax.swing.JFileChooser fileChooser = 
 				new javax.swing.JFileChooser();
@@ -1572,15 +1611,11 @@ public class VmenuVSPeditor implements Vmenu
 	
 	private boolean loadVsp()
 		{
+		if( VmenuVSPeditor.directoryCheck() == false )
+			{ return(false); }
 		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
 				File.separator + "Editor/" +
 				File.separator + "vsp/" );
-		if( ! dirOut.exists() )
-			{		// Fail over to the directory where verge started.
-			dirOut = new File( VergeEngine.JVERGE_CWD.toString());
-			if( ! dirOut.mkdir() )
-				{ return(false); }
-			}
 
 		javax.swing.JFileChooser fileChooser = 
 				new javax.swing.JFileChooser();
@@ -1688,19 +1723,13 @@ public class VmenuVSPeditor implements Vmenu
 		}
 
 	/** Select a file and save the color bar palette within it. */
-	public boolean savePalette( )
+	private boolean savePalette( )
 		{
+		if( VmenuVSPeditor.directoryCheck() == false )
+			{ return(false); }
 		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
 			File.separator + "Editor/" +
 			File.separator + "palette/" );
-		if( ! dirOut.exists() )
-			{		// Fail over to the directory where verge started.
-			if( ! dirOut.mkdir() )
-				{
-				dirOut = new File( VergeEngine.JVERGE_CWD.toString());
-				if( ! dirOut.exists() )
-					{ return(false); }
-			}	}
 
 		javax.swing.JFileChooser fileChooser = 
 				new javax.swing.JFileChooser();
@@ -1741,11 +1770,148 @@ public class VmenuVSPeditor implements Vmenu
 		}
 	
 	/** Restore color bar palette from a file */
-	public boolean loadPalette( File outFile )
+	private boolean loadPalette( )
 		{
-		// TODO
+		if( VmenuVSPeditor.directoryCheck() == false )
+			{ return(false); }
+		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+				File.separator + "Editor/" +
+				File.separator + "palette/" );
+		
+		javax.swing.JFileChooser fileChooser = 
+				new javax.swing.JFileChooser();
+		fileChooser.setToolTipText("Browse for a .vpal file to open");
+		fileChooser.setDialogTitle("Browse for a .vpal file to open");
+		fileChooser.setApproveButtonText( "Open Palette" );
+		fileChooser.setApproveButtonToolTipText( "Open Palette" );
+		fileChooser.setMultiSelectionEnabled(false);
+		fileChooser.setFileFilter( new FileNameExtensionFilter(
+				"Verge Color Palette", "vpal") );
+		fileChooser.setAutoscrolls( true );
+		fileChooser.setCurrentDirectory( dirOut );
+		int returnVal = fileChooser.showOpenDialog(
+				VergeEngine.getGUI() );
+		if( returnVal == 1 )	//  load cancelled in GUI
+			{  return(false); }
+		
+		// Open and get first integer.   If failure >. bail out.
+		ExtendedDataInputStream exin = null;
+		int numcolors = 0;
+		try {
+			FileInputStream os = new FileInputStream(
+				fileChooser.getSelectedFile()  );
+			exin = new ExtendedDataInputStream(os);
+			numcolors = exin.readInt();
+			}
+		catch( Exception e) 
+			{
+			if( exin != null )
+				{	try { exin.close(); } catch(Exception ee ) { }	}
+			return(false); 
+			}
+
+		this.setBasicPalette();
+		int cr=0, cg=0, cb=0;
+		for( Integer n = 0; n < numcolors; n++ )
+			{		// read until expected # or we hit EOF
+			try {
+				cr = (int) exin.readUnsignedByte();
+				cg = (int) exin.readUnsignedByte();
+				cb = (int) exin.readUnsignedByte();
+				}
+			catch(Exception e ) { continue; }
+			Color c = new Color( cr, cg, cb);
+			this.clrs.put(n, c);
+			}
+
+		if( exin != null )
+			{	try { exin.close(); } catch(Exception e ) {}	}
+
+		this.resetPalette();
 		return(true);
 		}
 
+	private void setBasicPalette()
+		{
+		if( this.clrs == null )
+			{ this.clrs = new HashMap<Integer,Color>(); }
+		if( ! this.clrs.isEmpty() ) 
+			{ this.clrs.clear(); }
+		
+		this.clrs.put( 0, new Color(255,0,0) );
+		this.clrs.put( 1, new Color(0,255,0) );
+		this.clrs.put( 2, new Color(0,0,255) );
+		
+		this.clrs.put( 3, new Color(255,255,0) );
+		this.clrs.put( 4, new Color(255,1,255) );
+		this.clrs.put( 5, new Color(0,255,255) );
+		
+		this.clrs.put( 6, new Color(255,255,255) );
+		this.clrs.put( 7, new Color(127,127,127) );
+		this.clrs.put( 8, new Color(0,0,0) );
+
+		this.resetPalette();
+		return;
+		}
+	
+	/** Ensures a directory heiharchy exists for the editor's 
+	 * resources. */
+	private static boolean directoryCheck()
+		{
+		File dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+				File.separator + "Editor/" );
+		if( ! dirOut.exists() )	 { dirOut.mkdir(); }
+		if( ! dirOut.exists() )	 { return(false); }
+		
+		dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+				File.separator + "Editor/" +		
+				File.separator + "palette/" );
+		if( ! dirOut.exists() )	 { dirOut.mkdir(); }
+
+		dirOut = new File( VergeEngine.JVERGE_CWD.toString() +
+				File.separator + "Editor/" +		
+				File.separator + "vsp/" );
+		if( ! dirOut.exists() )	 { dirOut.mkdir(); }
+
+		return(true);
+		}
+
+	/** Sets all the buttons in the currently shown color key. */
+	private void resetPalette()
+		{
+		while( this.colorkey.countMenuItems() > 0 )
+			{ this.colorkey.removeItem(0); }
+		this.cBarIndexSet = 0;
+		for( Integer b = 0; b < 11; b++ )
+			{
+			VmiButton cBtn = new VmiButton(42,42);
+			cBtn.setFrameThicknessPx(3);
+			cBtn.setCircular(true);
+			cBtn.setShadowThicknessPx(3, true);
+			
+			Color thiscolor = this.clrTrans;
+			if( b == 1 )	{ thiscolor = this.clr1st; }
+			if( b == 2 )	{ thiscolor = this.clr2nd; }
+			if( b >= 3 )	{ thiscolor = this.clrs.get(b-3); }
+			
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE, 
+					thiscolor );
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.BODY_INACTIVE, 
+					thiscolor );
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.BODY_SELECTED, 
+					thiscolor );
+			cBtn.setColorComponent(
+					enumMenuButtonCOLORS.FRAME_OUTER, 
+					Color.GRAY );
+	
+			this.colorkey.addItem(cBtn);
+			}
+		return;
+		}
+	
+	
 	
 	}		// END CLASS

@@ -249,7 +249,8 @@ public class VmenuFree implements Vmenu
 				break;
 
 			default:
-				System.out.println(" unhandled menu keystroke ["
+				System.out.println( " VmenuFree: "
+						+ " unhandled menu keystroke ["
 						+ kc.toString() + " ]  Base <"
 						+ basecode.toString() + "> ");
 				break;

@@ -272,7 +272,8 @@ public class VmenuVertical implements Vmenu
 				// System.out.print(this.selectedIndex.toString() );
 				break;
 			default:
-				System.out.println(" unhandled menu keystroke ["
+				System.out.println(" VmenuVertical: "
+						+ " unhandled menu keystroke ["
 						+ kc.toString() + " ]  Base <"
 						+ basecode.toString() + "> ");
 				break;

@@ -202,7 +202,8 @@ public class VmenuHorizontal
 				this.playMenuSound(enumMenuEVENT.MOVE, 33);
 				break;
 			default:
-				System.out.println(" unhandled menu keystroke ["
+				System.out.println( " VmenuHorizontal: "
+						+ " unhandled menu keystroke ["
 						+ kc.toString() + " ]  Base <"
 						+ basecode.toString() + "> ");
 				break;

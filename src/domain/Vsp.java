@@ -677,6 +677,54 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	public BufferedImage [] getTiles() {
 		return tiles;
 		}
+
+	/** Permanently removes then returns target tile from the set. 
+	 * Krybo (may.2016) */
+	public BufferedImage spliceTile( int atIndex )
+		{
+		if( atIndex < 0 ) 					{ atIndex = 0; }
+		if( atIndex >= this.tiles.length )	{ atIndex = this.tiles.length-1; }
+		int newCount = this.tiles.length - 1;
+		BufferedImage rtn = 
+				VImage.ImageDeepCopy( this.tiles[atIndex] );
+		BufferedImage[] newTileSet=new BufferedImage[newCount];
+		int[] newFlipped = new int[newCount];
+		for( int n = 0; n < this.numtiles-1; n++ )
+			{
+			if( n >= atIndex )
+				{
+				newTileSet[n] = this.tiles[n+1];
+				newFlipped[n] = this.flipped[n+1];
+				}
+			else
+				{
+				newTileSet[n] = this.tiles[n];
+				newFlipped[n] = this.flipped[n];				
+				}
+			}
+		this.tiles = newTileSet;
+		this.flipped = newFlipped;
+		this.numtiles = this.tiles.length;
+		this.tileidx = new int[this.numtiles];
+		for( int n = 0; n < newCount; n++ )
+			{ this.tileidx[n] = n; }
+		// Check for animation disruption.
+		for( int a = 0; a < this.getNumAnimations(); a++ )
+			{
+			int a1 = this.anims[a].start;
+			int a2 = this.anims[a].finish;
+			int len = a2 - a1;
+			if( atIndex >= a1 && atIndex <= a2 )
+				{ 
+				this.anims[a].finish--;
+				if( len == 1 )
+					{
+					// TODO : handle this by removing the anim completely
+					System.err.println("WARN : last tile removed from " +
+							"Animation # "+Integer.toString(a) );
+			}	}	}
+		return(rtn);
+		}
 	
 	/**  Increases the size of the VSP by one.   Specify the new tiles image,
 	 * at the insertion index to fill the void.   Pushes up all tiles between
@@ -694,8 +742,11 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			newBImage = VImage.newResizedBufferedImage(newBImage, 
 					this.tileSize, this.tileSize );
 			}
+		// Prevent bad index values.
+		if( atIndex < 0 ) 					{ atIndex = 0; }
+		if( atIndex >= this.tiles.length )	{ atIndex = this.tiles.length-1; }
 		int newCount = this.tiles.length + 1;
-		BufferedImage[] newTileSet = new BufferedImage[newCount];
+		BufferedImage[] newTileSet=new BufferedImage[newCount];
 		int[] newFlipped = new int[newCount];
 		for( int n = 0; n < this.numtiles; n++ )
 			{
@@ -725,7 +776,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			{ this.tileidx[n] = n; }
 
 		// Check animation sequences for extension
-		for( int a = 0; a < this.anims.length; a++ )
+		for( int a = 0; a < this.getNumAnimations(); a++ )
 			{
 			int a1 = this.anims[a].start;
 			int a2 = this.anims[a].finish;
