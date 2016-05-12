@@ -146,7 +146,7 @@ public class VmenuVSPeditor implements Vmenu
 		// copy the VSP from the source.  So we do not edit it directly.
 		this.vsp = new Vsp( sourceTileSet );
 		this.sidebar = new VmenuVertical( 30, 60 );
-		this.colorEditor = new VmenuSliders( 16, 334, 128, 3, 
+		this.colorEditor = new VmenuSliders( 20, 380, 128, 3, 
 				false, true, true );
 		this.main = new VmenuButtonPalette(250, 60, 256, 256, 
 				VmenuVSPeditor.STANDARD_TSIZE, 
@@ -652,8 +652,25 @@ public class VmenuVSPeditor implements Vmenu
 				switch( this.cFocus )
 					{
 					case 1:		// New Basic Color Key
-						this.setBasicPalette();
+						if( isCntl == true )
+							{
+							this.setBasicPalette();
+							break;
+							}
+						// New palette color.
+						Integer targetidx = 
+							this.colorkey.getSelectedIndex();
+						if( targetidx >= 3 )
+							{
+							this.insertPaletteColor( (targetidx-3) 
+									+ (this.cBarIndexSet*8) );
+							}
+						else
+							{
+							this.insertPaletteColor( (this.cBarIndexSet*8) );
+							}
 						break;
+
 					case 3:		// new Tile (replicate tile)
 						if( isCntl == true )
 							{
@@ -710,9 +727,18 @@ public class VmenuVSPeditor implements Vmenu
 			case 127:		// [Delete] 
 				switch( this.cFocus )
 					{
-					case 1:
+					case 1:		// Delete current palette entry
+						Integer targetidx = 
+							this.colorkey.getSelectedIndex();
+						System.out.println("Delete Pal @ "+targetidx.toString());
+						if( targetidx >= 3 )
+							{
+							this.removePaletteColor( (targetidx-3) 
+									+ (this.cBarIndexSet*8) );
+							}
 						break;
-					default:
+
+					default:		// Delete a current tile from vsp.
 						if( this.vsp.getNumtiles() <= 1 )	
 							{ break; }		// refuse to delete final tile.
 						this.vsp.spliceTile(this.tIndex);
@@ -723,7 +749,7 @@ public class VmenuVSPeditor implements Vmenu
 						this.updatePreview();
 						this.loadWorkingTile();
 						break;
-					}
+						}
 				break;
 		
 			case 109:		// [Numpad - ]  remove tiles or colors.
@@ -1163,6 +1189,8 @@ public class VmenuVSPeditor implements Vmenu
 	private void setCbarLine( int lineIndex )
 		{
 		this.cBarIndexSet = lineIndex;
+		if( this.clrs.size() <= 8 )		// dude, theres only 1 line of colors!
+			{ this.cBarIndexSet = 0;  }
 		
 		int cbarsets = (this.clrs.size() >> 3);
 		if( this.cBarIndexSet > cbarsets )
@@ -1848,7 +1876,6 @@ public class VmenuVSPeditor implements Vmenu
 		
 		this.clrs.put( 6, new Color(255,255,255) );
 		this.clrs.put( 7, new Color(127,127,127) );
-		this.clrs.put( 8, new Color(0,0,0) );
 
 		this.resetPalette();
 		return;
@@ -1912,6 +1939,45 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 	
-	
+	/** Inserts an entry into the customizable palette.   Note that 
+	 * this is different then the color key bar object, which reads values
+	 * from the palette source and displays a 8-range-set of palette 
+	 * entries with a VmenuHorizontal filled with Circular Button objects. 
+	 * Erroneous palette index arguments are naturally bounded. */
+	private void insertPaletteColor( int palIndex )
+		{
+		Integer cnt = this.clrs.size();
+		if( palIndex < 0 ) 
+			{ palIndex = 0; }
+		if( palIndex > cnt-1 )
+			{ palIndex = cnt-1; }
+		this.clrs.put( new Integer(this.clrs.size()), new Color(0,0,0) );
+		for( Integer x = cnt; x >= palIndex; x-- )
+			{	this.clrs.put( x, this.clrs.get(x-1) );	}
+		this.clrs.put( palIndex, this.clr1st);
+		this.setCbarLine( this.cBarIndexSet );
+		return;
+		}
+
+	/** Removes a palette color at given index, shifting the remaining. */
+	private void removePaletteColor( int palIndex )
+		{
+		Integer cnt = this.clrs.size();
+		if( cnt <= 1 )  { return; }	// will not remove final color.
+		if( palIndex < 0 ) 
+			{ palIndex = 0; }
+		if( palIndex > cnt-1 )
+			{ palIndex = cnt-1; }
+		// Shift down.
+		for( Integer x = palIndex; x <= cnt-1; x++ )
+			{	this.clrs.put( x, this.clrs.get(x+1) );	}
+		this.clrs.remove(new Integer(cnt-1));	// pop off the end.
+		
+		while( (this.cBarIndexSet*8) > (this.clrs.size()-1) )
+			{  this.cBarIndexSet--; }
+		this.setCbarLine( this.cBarIndexSet );
+		return;
+		}
+
 	
 	}		// END CLASS
