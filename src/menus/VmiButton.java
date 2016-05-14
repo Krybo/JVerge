@@ -820,4 +820,13 @@ public class VmiButton implements Vmenuitem
 		return;
 		}
 
+	/**  Get relative X pixel position. 
+	 * Typicall zero if it is not referenced by anything. */
+	public int getXrel()
+		{ return(this.rx); }
+	/**  Get relative Y pixel position. 
+	 * Typicall zero if it is not referenced by anything. */
+	public int getYrel()
+		{ return(this.ry); }
+	
 	}

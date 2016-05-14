@@ -59,18 +59,23 @@ import domain.Vsp;
  * i		invert current cell, invert palette entry    [Cntl] invert tile
  * j
  * k
- * l		Line		[Cntl] Wrapping line
+ * l		Line				Toggle Line drawing mode.
+ * 					[Shift]   Toggle contiguous line mode.
+ * 				{ In Color key } :  Load palette file
+ * 			HOT	[Cntl]	Load entire VSP file from disk.
  * m
  * n	New		{main} 		New Tile: Clears tile to tool color 1
  * 					{colorKey} 	Set the basic 8-unit color key.
  * o	Rotate Clockwise		[Cntl] Rotate CCW
  * p
  * q
- * r		Rectangle	[Cntl] Wrapping rectangle
+ * r		Rectangle		Toggle Rectangle drawing mode.
+ * 						[Shift]   Contiguous rectangle mode
  * s	HOT:			Saves working tile
  * 		HOT [Cntl] 	Save entire VSP to a file
  * 		[Shift] 			Save Palette to a file
- * t 	Toggle view of entire Tileset
+ * t 	{ In color key }	Set item to transparent color.
+ * 		[Cntl]			Toggle view of entire Tileset
  * u
  * v	Clipboard Paste : Single tile 
  * 			[Shift] Insert tiles here
@@ -135,6 +140,11 @@ public class VmenuVSPeditor implements Vmenu
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
 	private static final int STANDARD_TSIZE = 16;
 
+	private int lineTool = -1;
+	private boolean lineContiguous = false;
+	private int rectTool = -1;
+	private boolean rectContiguous = false;	
+	
 	private boolean showHelp;
 	private static final int DEFAULT_TILES_PER_ROW = 16;
 	
@@ -162,6 +172,9 @@ public class VmenuVSPeditor implements Vmenu
 		//  hashmap of available colors at hand.
 		this.clrs = this.vPal.getAllColors(255);
 		
+		this.lineTool = -1;
+		this.lineContiguous = false;
+
 		// Fill out the menus here.
 		
 		this.clr1st = Color.WHITE;
@@ -251,7 +264,7 @@ public class VmenuVSPeditor implements Vmenu
 		vts07.setAction( m7 );
 		
 		VmiTextSimple vts08 = new VmiTextSimple("Show All Tiles");
-		vts08.setKeycode( 672 );
+		vts08.setKeycode( 674 );
 		vts08.setAction( m8 );
 		VmiTextSimple vts09 = new VmiTextSimple("Keyboard map");
 		vts09.setKeycode( 576 );
@@ -373,7 +386,6 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		
 		
-		
 		this.main.paint(target);
 		this.sidebar.paint(target);
 		this.colorkey.paint(target);
@@ -402,6 +414,50 @@ public class VmenuVSPeditor implements Vmenu
 				this.main.getY()+this.main.getHeight()+2, 
 				Color.BLACK );
 		
+		// Active Tool annotations
+		if( this.lineTool != -1 )
+			{
+			int lx = this.main.getMenuItemPxX( this.lineTool );
+			int ly = this.main.getMenuItemPxY( this.lineTool );
+			int z = this.vsp.getTileSquarePixelSize() / 2;
+			target.rect(lx, ly, lx+16, ly+16, Color.WHITE );
+			target.rect(lx-1, ly-1, lx+17, ly+17, Color.BLACK );
+			target.rect(lx-2, ly-2, lx+18, ly+18, Color.WHITE );
+			target.rect(lx-3, ly-3, lx+19, ly+19, Color.BLACK );
+			
+			int lx2 = this.main.getMenuItemPxX(
+					this.main.getSelectedIndex() );
+			int ly2 = this.main.getMenuItemPxY( 
+					this.main.getSelectedIndex());
+
+			target.line( lx+z, ly+z, lx2+z, ly2+z, Color.WHITE );
+			target.line( lx+z+1, ly+z, lx2+z+1, ly2+z, Color.WHITE );
+			target.line( lx+z, ly+z+1, lx2+z, ly2+z+1, Color.BLACK );
+			target.line( lx+z+1, ly+z+1, lx2+z+1, ly2+z+1, Color.BLACK );
+			}
+		
+		if( this.rectTool != -1 )
+			{
+			int lx = this.main.getMenuItemPxX( this.rectTool );
+			int ly = this.main.getMenuItemPxY( this.rectTool );
+			int z0 = this.vsp.getTileSquarePixelSize();
+			int z = z0 / 2;
+			int curIdx = this.main.getSelectedIndex();
+			target.rect(lx, ly, lx+16, ly+16, Color.WHITE );
+			target.rect(lx-1, ly-1, lx+17, ly+17, Color.BLACK );
+			target.rect(lx-2, ly-2, lx+18, ly+18, Color.WHITE );
+			target.rect(lx-3, ly-3, lx+19, ly+19, Color.BLACK );
+
+			int lx2 = this.main.getMenuItemPxX(curIdx );
+			int ly2 = this.main.getMenuItemPxY(curIdx); 
+			
+			target.rect(lx+z, ly+z, lx2+z, ly2+z, Color.WHITE );
+			target.rect(lx+z-1, ly+z-1, lx2+z+1, ly2+z+1, Color.BLACK );
+			target.rect(lx+z+1, ly+z+1, lx2+z-1, ly2+z-1, Color.BLACK );
+			}
+
+		
+		// Tile Selection preview.
 		for( int row = -1; row <= 1; row++ )
 			{	for( int col = -4; col <= 4; col++ )
 				{
@@ -420,7 +476,7 @@ public class VmenuVSPeditor implements Vmenu
 		target.rect(348, 378, 384, 414, Color.BLACK );
 		target.rect(347, 377, 385, 415, Color.WHITE );
 		target.rect(346, 376, 386, 416, Color.BLACK );
-			
+
 		if( this.showOverview )
 			{
 			target.tblit( 0, 0, 
@@ -429,7 +485,7 @@ public class VmenuVSPeditor implements Vmenu
 			target.blit( 200, 10, this.vspOverview );	
 			}
 
-		return(true);
+		return( true );
 		}		// End   paint()
 
 	public boolean doControls( Integer ext_keycode )
@@ -589,15 +645,38 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				if( this.cFocus == 3 )   // focus on main.
 					{
-					if( isCntl == true && isAlt == true )
+					// Time to draw a line for this color.
+					if( this.lineTool != -1 )
 						{
-						this.clearWorkignTile(this.getColorkeyColor(
-								transform) );
+						this.line( this.lineTool,
+							this.main.getSelectedIndex(),
+							this.getColorkeyColor(	transform) );
+						if( this.lineContiguous == true )
+							{ this.lineTool = this.main.getSelectedIndex(); }
 						break;
 						}
+					// Time to draw a rectangle for this color.
+					if( this.rectTool != -1 )
+						{
+						this.rect( this.rectTool,
+							this.main.getSelectedIndex(),
+							this.getColorkeyColor(	transform) );
+						if( this.rectContiguous == true )
+							{ this.rectTool = this.main.getSelectedIndex(); }
+						break;
+						}
+					// Clear tile to a solid color
+					if( isCntl == true && isAlt == true )
+						{
+						this.clearWorkignTile(
+								this.getColorkeyColor(	transform) );
+						break;
+						}
+					// "Dropper"  sets a color key from the current selected.
 					if( isCntl == true && isAlt == false && transform > 0 ) 
 						{
-						this.setColorkeyColor( transform, this.getColorCursorCell() );
+						this.setColorkeyColor( transform, 
+								this.getColorCursorCell());
 						break;
 						}
 					this.setCurrentCell( transform );
@@ -677,6 +756,19 @@ public class VmenuVSPeditor implements Vmenu
 					this.loadPalette();
 					break;
 					}
+				if( this.cFocus == 3 )		// Toggle Line mode
+					{
+					if( this.lineTool == -1 )	// mark starting point
+						{
+						this.lineTool = this.main.getSelectedIndex();
+						this.lineContiguous = isShift;
+						}
+					else			// actually create line. - reset mark.
+						{
+						this.lineTool = -1;
+						this.lineContiguous = false;
+						}
+					}
 				break;
 
 			case 78:			// [n] new
@@ -725,13 +817,35 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				break;
 
+			case 82: 		// [r]  Rectangles
+				if( this.cFocus != 3 )	{ break; }
+				if( this.rectTool == -1 )	// toggle rectangle tool marker
+					{
+					this.rectTool = this.main.getSelectedIndex();
+					this.rectContiguous = isShift;
+					}
+				else			// actually create line. - reset mark.
+					{
+					this.rectTool = -1;
+					this.rectContiguous = false;
+					}
+				break;
+
 			case 83:			// [s] Save functions.
 				if( isShift == true )
 					{
 					this.savePalette();
 					break;
 					}
-				break; 
+				break;
+				
+			case 84:		// [t]  transparency & tile viewer
+				if( isCntl == true )	{ break; }		// Eaten by hotkey
+				if( this.cFocus == 1 )
+					{	// Set selected color to transparent.
+					this.setColorkeySelectedColor(this.clrTrans);
+					}
+				break;
 				
 			case 86:		//  [v] - paste functions
 			
@@ -2103,5 +2217,24 @@ public class VmenuVSPeditor implements Vmenu
 		diff += Math.abs( c2.getBlue() - c1.getBlue() );
 		return(diff);
 		}
+
+	private void line( int index1, int index2, Color c )
+		{
+		VImage work = copyWorkingTile();
+		int z = this.vsp.getTileSquarePixelSize();
+		work.line( index1 % z, index1 / z, index2 % z, index2 / z, c);
+		this.loadWorkingImage(work);
+		return;
+		}
+
+	private void rect( int index1, int index2, Color c )
+		{
+		VImage work = copyWorkingTile();
+		int z = this.vsp.getTileSquarePixelSize();
+		work.rect( index1 % z, index1 / z, index2 % z, index2 / z, c);
+		this.loadWorkingImage(work);
+		return;
+		}
+
 
 	}		// END CLASS

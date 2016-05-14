@@ -1132,5 +1132,31 @@ public class VmenuButtonPalette implements Vmenu
 		}
 
 
+	public VmiButton getMenuItemAsButton(int index)
+		{
+		return( (VmiButton) this.hmButtons.get(index) );
+		}
+	
+	public int getMenuItemPxRelX( int index )
+		{
+		return( this.getMenuItemAsButton(index).getXrel() );
+		}
+	public int getMenuItemPxRelY( int index )
+		{
+		return( this.getMenuItemAsButton(index).getYrel() );
+		}
+
+	/** Returns the sum of the anchor X and the relative X pixel pos.  */
+	public int getMenuItemPxX( int index )
+		{
+		return( this.getMenuItemAsButton(index).getX().intValue()  
+				+ this.getMenuItemAsButton(index).getXrel() );
+		}
+	/** Returns the sum of the anchor Y and the relative Y pixel pos.  */
+	public int getMenuItemPxY( int index )
+		{
+		return( this.getMenuItemAsButton(index).getY().intValue()  
+				+ this.getMenuItemAsButton(index).getYrel() );
+		}
 	
 	}
