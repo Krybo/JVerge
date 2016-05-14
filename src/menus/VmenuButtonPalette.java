@@ -434,32 +434,77 @@ public class VmenuButtonPalette implements Vmenu
 				this.selectCenter();
 				redraw = true;
 				break;
+
+			case 100:		// NumPad 3
 			case 37: 		// ARROW-LEFT, move minus horizontal
 				if( isCntl == true || isShift == true  )   
 					{ break; }				
 				this.moveCol( -1 );
 				redraw = true;
 				break;
-			case 38: // ARROW-UP
+
+			case 104:		// NumPad 8
+			case 38:		// ARROW-UP
 				if( isCntl == true || isShift == true  )   
 					{ break; }
 				redraw = true;
 				this.moveRow( -1 );
 				this.playMenuSound(enumMenuEVENT.MOVE, 33);				
 				break;
-			case 39: // ARROW-RIGHT
+
+			case 102:		// NumPad 3
+			case 39:		// ARROW-RIGHT
 				if( isCntl == true || isShift == true  )   
 					{ break; }
 				this.moveCol( 1 );
 				redraw = true;
 				break;
-			case 40: // ARROW-DOWN
+
+			case 98:	// NumPad 2
+			case 40:	// ARROW-DOWN
 				if( isCntl == true || isShift == true  )   
 					{ break; }
 				redraw = true;				
 				this.moveRow( 1 );
 				this.playMenuSound(enumMenuEVENT.MOVE, 33);
 				break;
+
+			case 97:		// NumPad 1
+				if( isCntl == true || isShift == true  )   
+					{ break; }
+				redraw = true;				
+				this.moveRow( +1 );
+				this.moveCol( -1 );
+				this.playMenuSound(enumMenuEVENT.MOVE, 33);
+				break;
+			
+			case 99:		// NumPad 3
+				if( isCntl == true || isShift == true  )   
+					{ break; }
+				redraw = true;				
+				this.moveRow( +1 );
+				this.moveCol( +1 );
+				this.playMenuSound(enumMenuEVENT.MOVE, 33);
+				break;
+				
+			case 103:		// NumPad 7
+				if( isCntl == true || isShift == true  )   
+					{ break; }
+				redraw = true;				
+				this.moveRow( -1 );
+				this.moveCol( -1 );
+				this.playMenuSound(enumMenuEVENT.MOVE, 33);
+				break;
+
+			case 105:		// NumPad 9
+				if( isCntl == true || isShift == true  )   
+					{ break; }
+				redraw = true;				
+				this.moveRow( -1 );
+				this.moveCol( +1 );
+				this.playMenuSound(enumMenuEVENT.MOVE, 33);
+				break;
+
 			default:
 				System.out.println(" VmenuButtonPalette: " +
 					"unhandled menu keystroke ["

@@ -473,7 +473,7 @@ public class VImage implements Transferable
 		 * the source image. Clipping rectangles for the two images are completely independent. 
 		 * Rendering into one will render into the other.* If that is what you want to do, then this 
 		 * is the function you want to use. 
-		 * @deprecated Use {@link #imageShell(int,int,int,int)} instead
+		 * @deprecated Use {@link #getRegion(int,int,int,int)} instead
 		 */
 		public VImage setc(int x, int y, int w, int h) {
 			return imageShell(x, y, w, h);
@@ -614,7 +614,7 @@ public class VImage implements Transferable
 		 * Rendering into one will render into the other.* If that is what you want to do, then this 
 		 * is the function you want to use.
 		 * 
-		 *  @deprecated Does not work, not finished, Use ?  
+		 * @deprecated Use {@link #getRegion(int,int,int,int)} instead  
 		 */
 		public VImage imageShell(int x, int y, int w, int h) {
 			if (w+x > this.width || y+h > this.height)
@@ -707,6 +707,20 @@ public class VImage implements Transferable
 			int[] iA = new int[4];
 			this.getImage().getData().getPixel(x, y, iA );
 			return( new Color( iA[0], iA[1], iA[2], 255 ) );
+			}
+
+	/** translates a flat pixel index into an x/y and returns the 
+	 * pixel color at that x,y.  Passes through an alpha value range 0 to 255 
+	 * Krybo (may.2016) */
+		public Color getPixelColorAtIndex( int index, int alpha255 )
+			{
+			while( index < 0 )   { index += (this.width*this.height); }
+			while( index >= (this.width*this.height) )
+				{ index -= (this.width*this.height); }
+			int[] iA = new int[4];
+			this.getImage().getData().getPixel( index % this.width, 
+					index / this.width, iA );
+			return( new Color( iA[0], iA[1], iA[2], alpha255 ) );
 			}
 
 		public void silhouette(int x, int y, Color c, VImage src) {

@@ -12,7 +12,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -46,8 +48,12 @@ import domain.Vsp;
  * 			[Cntl] Copy entire Vsp tileset to clipboard without padding.
  * 			[Cntl+Shift]   Copy entire Vsp to clipboard with 1px padding
  * d	DEBUG: for now.
- * e	Focus tile edit.   [Cntl] Focus Palette bar.
+ * e	Focus tile edit.   
+ * 				[Cntl]	Focus Palette bar.
  * f		Flood fill Tool
+ * 				[Shift]	Use tool color 2 instead of Color 1
+ * 				[Cntl]   Fill with 26% tolerance
+ * 				[Alt]	Fill with 50% tolerance
  * g	Goto Tile #
  * h	Toggle Keyboard Help table.
  * i		invert current cell, invert palette entry    [Cntl] invert tile
@@ -536,6 +542,11 @@ public class VmenuVSPeditor implements Vmenu
 					{ this.setColorEditorToCurrentColorKey(); }
 				break;
 			case 38: 		// ARROW-UP
+				if( this.cFocus == 1 )
+					{
+					this.nextCbarLine();
+					break;
+					}
 				if( isCntl == true ) 
 					{
 					this.changeTile( -1 *
@@ -550,6 +561,11 @@ public class VmenuVSPeditor implements Vmenu
 					{ this.setColorEditorToCurrentColorKey(); }
 				break;
 			case 40: 		// ARROW-DOWN
+				if( this.cFocus == 1 )
+					{
+					this.prevCbarLine();
+					break;
+					}
 				if( isCntl == true ) 
 					{
 					this.changeTile( 
@@ -573,14 +589,15 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				if( this.cFocus == 3 )   // focus on main.
 					{
-					if( isCntl == true && basecode == 50 ) 
+					if( isCntl == true && isAlt == true )
 						{
-						this.setColorkeyColor(1, this.getColorCursorCell() );
+						this.clearWorkignTile(this.getColorkeyColor(
+								transform) );
 						break;
 						}
-					if( isCntl == true && basecode == 51 ) 
+					if( isCntl == true && isAlt == false && transform > 0 ) 
 						{
-						this.setColorkeyColor(2, this.getColorCursorCell() );
+						this.setColorkeyColor( transform, this.getColorCursorCell() );
 						break;
 						}
 					this.setCurrentCell( transform );
@@ -612,12 +629,27 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				// plain c copies only the working tile.
 				System.out.println("Working tile copied to clipboard.");
-				this.workingTileToVImage().copyImageToClipboard();
+				this.copyWorkingTile().copyImageToClipboard();
 				break;
 			case 68:		// [d] Debug (for now)
 //
 				this.toggleVspOverview();
 				break;
+
+			case 70:		// [f] : flood fill tool
+				if( this.cFocus != 3 )  { break; }
+				Color thisColor = this.clr1st;
+				int tolerance = 0;
+				if( isShift == true )  { thisColor = this.clr2nd; }
+				if( isCntl == true )	{ tolerance += 200; }
+				if( isAlt == true )		{ tolerance += 384; }
+				int selidx = this.main.getSelectedIndex();
+				this.floodFiller( 
+					selidx % this.vsp.getTileSquarePixelSize(),
+					selidx / this.vsp.getTileSquarePixelSize(), 
+					thisColor, tolerance );
+				break;
+
 			case 73:		//  [i] - invert function.
 				if( isCntl == true )		
 					{ this.invertAllCells(); break; }
@@ -1139,6 +1171,7 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
+
 /**  Loads up a vsp tile into the working data.
  * If there are problems... tile # 0 is loaded.
  * @param vspIdx   The vsp tile index to load.
@@ -1259,13 +1292,15 @@ public class VmenuVSPeditor implements Vmenu
 	/** Moves the data from the menu object to the actual VSP. */
 	private void saveWorkingTileAs( int vspIdx )
 		{
-		VImage output = this.workingTileToVImage();
+		VImage output = this.copyWorkingTile();
 		vsp.modifyTile( vspIdx, output.getImage() );
 		this.updatePreview();
 		}
 
-	// exports the current working tile to a VImage
-	private VImage workingTileToVImage()
+/** Snatches the colors in the working tile into a VImage.
+ * Opposite loadWorkingImage().  
+ * Probably inefficient, so donot abuse it. */
+	private VImage copyWorkingTile()
 		{
 		int z = vsp.getTileSquarePixelSize();
 		VImage output = new VImage( z,z );
@@ -1979,5 +2014,94 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
+	/** Set all pixels to a single color. */
+	private void clearWorkignTile( Color c )
+		{
+		HashMap<Integer,Color> hmC = 
+				new HashMap<Integer,Color>();
+		hmC.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(), c);
+		hmC.put(enumMenuButtonCOLORS.BODY_INACTIVE.value(), c);
+		hmC.put(enumMenuButtonCOLORS.BODY_SELECTED.value(), 
+				VmenuVSPeditor.invertColor(c) );
+		this.main.setColorAll( hmC );
+		return;
+		}
+
+	private void floodFiller( int x, int y, Color newColor, 
+			int diffThreshold )
+		{
+		Integer z  = this.vsp.getTileSquarePixelSize();
+		Integer s = z*z;
+		Integer i0 = (y * z) + x;
+		VImage work = copyWorkingTile();
+		Color targetColor = work.getPixelColor(x, y);
 	
+		//  Target color is same as replacement.   so do nothing.
+		if( targetColor.equals(newColor) )		{ return; } 
+
+		ArrayList<Integer> hm = new ArrayList<Integer>();
+			// (ex)clude - Keeps track of cells that have been examined.
+		ArrayList<Integer> ex = new ArrayList<Integer>();
+		hm.add(i0);
+		while( ! hm.isEmpty() )
+			{
+			Integer idx = hm.remove(0);
+
+			if( ! ex.isEmpty() && ex.contains(idx) == true )
+				{ continue; }		// Already did this one.
+			ex.add( idx );			// ok, but make sure we don't again.
+
+			// Analyze pixels at 4 adjacent sides of idx.
+			Integer pN = idx - z;
+			if( pN < 0 )		{ pN += s; }
+			Integer pE = idx + 1;
+			if( pE >= s )		{ pE -= s; }
+			Integer pS = idx + z;
+			if( pS >= s )		{ pS -= s; }
+			Integer pW = idx - 1;
+			if( pW < 0 )		{ pW += s; }
+
+					// If colors match.. add it for next pass.
+			if( VmenuVSPeditor.color3ComponentDifference( targetColor, 
+					work.getPixelColorAtIndex(pN, 255) ) <= diffThreshold 
+				&& ! ex.contains(pN) )
+					{	hm.add( pN );	}
+			if( VmenuVSPeditor.color3ComponentDifference( targetColor, 
+					work.getPixelColorAtIndex(pE, 255) ) <= diffThreshold 
+				&& ! ex.contains(pE) )
+					{	hm.add( pE );	}
+			if( VmenuVSPeditor.color3ComponentDifference( targetColor, 
+					work.getPixelColorAtIndex(pS, 255) ) <= diffThreshold 
+				&& ! ex.contains(pS) )
+					{	hm.add( pS );	}
+			if( VmenuVSPeditor.color3ComponentDifference( targetColor, 
+					work.getPixelColorAtIndex(pW, 255) ) <= diffThreshold
+				&& ! ex.contains(pW) ) 
+					{	hm.add( pW );	}
+
+			System.out.println( "DIFF : "+VmenuVSPeditor.color3ComponentDifference( targetColor, 
+					work.getPixelColorAtIndex(pW, 255) ) );
+			}
+
+		// finally, alter the pixels, then reset the workign image.
+		for( Integer i : ex )
+			{ work.setPixel( i % z, i / z, newColor ); }
+
+		this.loadWorkingImage(work);
+		System.out.println(" Flood Filled " + Integer.toString( ex.size())+
+				" pixels " );
+		return;
+		}
+	
+/** returns an integer that represents the absolute sum of the 
+ *     three component colors (RGB).  alpha is ignored. */
+	private static int color3ComponentDifference(Color c1, Color c2 )
+		{
+		int diff = 0;
+		diff += Math.abs( c2.getRed() - c1.getRed() );
+		diff += Math.abs( c2.getGreen() - c1.getGreen() );
+		diff += Math.abs( c2.getBlue() - c1.getBlue() );
+		return(diff);
+		}
+
 	}		// END CLASS
