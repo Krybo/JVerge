@@ -431,6 +431,20 @@ public class VImage implements Transferable
 					//flippedImage.setRGB(i, j, src.getRGB(src.getWidth()-i-1, src.getHeight()-j-1)); // Flip Both
 			return flippedImage;
 		}
+
+	/** Another option for a horizontal flip.   (Krybo May.2016) */
+		public void mirror()
+			{
+// SRC:	http://examples.javacodegeeks.com/desktop-java/awt/image/ 
+//			flipping-a-buffered-image:
+
+			AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+			tx.translate(-image.getWidth(null), 0);
+			AffineTransformOp op = new AffineTransformOp(tx, 
+					AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+			this.setImage( op.filter( this.getImage(), null ) ); 
+			return;
+			}
 		
 
 		
@@ -1489,8 +1503,9 @@ public class VImage implements Transferable
 		{
 		if( x >= this.width || x < 0  )  { return; }
 		if( y >= this.height || y < 0  )  { return; }
-		if( scaleX < 0 )  { scaleX = 0.0001f; }
-		if( scaleY < 0 )  { scaleY = 0.0001f; }
+		if( scaleX <= 0 )  { scaleX = 1.00f; }
+		if( scaleY <= 0 )  { scaleY = 1.00f; }
+
 		if( scaleX == 1.0f && scaleY == 1.0f && rotationRadians == 0.0f )
 			{ 
 			// Thsi reduces to a simple tblit

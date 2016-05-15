@@ -46,21 +46,21 @@ import domain.Vsp;
  * [Cntl Arrow-Right]	Previous Tile
  * [Cntl Arrow-Left]	Next Tile
  * a	Areal Random Spray
- * b	Circle		[Cntl] Wrapping Circle		[Shift]  Fill Circle.
+ * b	
  * c	Copy working tile to the clipboard
  * 			[Shift]  Copy working tile into tile group. 
  * 			[Cntl] Copy entire Vsp tileset to clipboard without padding.
  * 			[Cntl+Shift]   Copy entire Vsp to clipboard with 1px padding
  * d	DEBUG: for now.
- * e	Focus tile edit.   
+ * e	focus tile Editor   
  * 				[Cntl]	Focus Palette bar.
  * f		Flood fill Tool
  * 				[Shift]	Use tool color 2 instead of Color 1
  * 				[Cntl]   Fill with 26% tolerance
  * 				[Alt]	Fill with 50% tolerance
- * g	Goto Tile #
- * h	Toggle Keyboard Help table.
- * i		invert current cell, invert palette entry    [Cntl] invert tile
+ * g	Goto tile #
+ * h	keyboard Help table.
+ * i		Invert current cell, invert palette entry    [Cntl] invert tile
  * j
  * k
  * l		Line				Toggle Line drawing mode.
@@ -70,7 +70,10 @@ import domain.Vsp;
  * m
  * n	New		{main} 		New Tile: Clears tile to tool color 1
  * 					{colorKey} 	Set the basic 8-unit color key.
- * o	Rotate Clockwise		[Cntl] Rotate CCW
+ * o	rOtate 				Rotates clockwise
+ * 					[Cntl]	Rotate Counter-Clockwise
+ * 					[Alt]	Rotate 180 degrees
+ * 					[Shift]	Mirror / flip
  * p
  * q
  * r		Rectangle		Toggle Rectangle drawing mode.
@@ -855,6 +858,18 @@ public class VmenuVSPeditor implements Vmenu
 						this.getControlItem().doControls(ext_keycode);
 						break;
 					}
+				break;
+
+			case 79:		// [o]  rOtation and mirroring.
+				if( this.cFocus != 3 )		{ break; }
+				if( isCntl == true )
+					{ this.rotate( +1, false ); }
+				else if( isAlt == true )
+					{ this.rotate( +2, false ); }
+				else if( isShift == true )
+					{ this.rotate( 0, true ); }
+				else
+					{ this.rotate( -1, false ); } 
 				break;
 
 			case 82: 		// [r]  Rectangles
@@ -2336,5 +2351,15 @@ public class VmenuVSPeditor implements Vmenu
 				(px2x-px1x)*(px2x-px1x) ) );
 		}
 
+	/** Rotates the working tile in 90 degree "quadangles"  */
+	private void rotate( int QuadAngle, boolean mirror )
+		{
+		Double rads = (Math.PI / 2.0d) * new Double(QuadAngle);
+		VImage work = copyWorkingTile();
+		VImage tmp = VImage.rotateRadiansIntoNewImage(work,rads);
+		if( mirror == true ) { tmp.mirror(); }
+		this.loadWorkingImage( tmp );
+		return;		
+		}
 
 	}		// END CLASS
