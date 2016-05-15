@@ -37,7 +37,11 @@ import domain.Vsp;
  * 
  * ----- Controls Overview --------
  * 
- * [0-9 and -] 	Change color, cooresponding to palette bar.
+ * [0-9 and -] 	"Color Keys" Do Operations, corresponding to color bar.
+ * 		Unmodified		Change target cell in working tile to a color key
+ * 		[Cntl]			Change color key to current working cell. (dropper)
+ * 		[Alt + Shift]	Replace color at cursor with a color key
+ * 		[Alt + Cntl]		Change full working tile to a color key  
  * [cntl][backspace]	Exits menu regardless of focus
  * [Cntl Arrow-Right]	Previous Tile
  * [Cntl Arrow-Left]	Next Tile
@@ -81,7 +85,7 @@ import domain.Vsp;
  * 			[Shift] Insert tiles here
  * 			[Cntl] Single tile & save
  * 			[Cntl+Alt]  Re-paste entire VSP
- * w
+ * w	Circle
  * x	Clear, set tile to solid color
  * y
  * z	Undo		[Cntl] Redo
@@ -143,8 +147,9 @@ public class VmenuVSPeditor implements Vmenu
 	private int lineTool = -1;
 	private boolean lineContiguous = false;
 	private int rectTool = -1;
-	private boolean rectContiguous = false;	
-	
+	private boolean rectContiguous = false;
+	private int circleTool = -1;
+
 	private boolean showHelp;
 	private static final int DEFAULT_TILES_PER_ROW = 16;
 	
@@ -451,12 +456,33 @@ public class VmenuVSPeditor implements Vmenu
 			int lx2 = this.main.getMenuItemPxX(curIdx );
 			int ly2 = this.main.getMenuItemPxY(curIdx); 
 			
-			target.rect(lx+z, ly+z, lx2+z, ly2+z, Color.WHITE );
-			target.rect(lx+z-1, ly+z-1, lx2+z+1, ly2+z+1, Color.BLACK );
-			target.rect(lx+z+1, ly+z+1, lx2+z-1, ly2+z-1, Color.BLACK );
+			target.rect( lx+z, ly+z, lx2+z, ly2+z, Color.WHITE );
+			target.rect( lx+z-1, ly+z-1, lx2+z+1, ly2+z+1, Color.BLACK );
+			target.rect( lx+z+1, ly+z+1, lx2+z-1, ly2+z-1, Color.BLACK );
 			}
 
-		
+		if( this.circleTool != -1 )
+			{
+			int lx = this.main.getMenuItemPxX( this.circleTool );
+			int ly = this.main.getMenuItemPxY( this.circleTool );
+			int z0 = this.vsp.getTileSquarePixelSize();
+			int z = z0 / 2;
+			int curIdx = this.main.getSelectedIndex();
+			target.rect(lx, ly, lx+16, ly+16, Color.WHITE );
+			target.rect(lx-1, ly-1, lx+17, ly+17, Color.BLACK );
+			target.rect(lx-2, ly-2, lx+18, ly+18, Color.WHITE );
+			target.rect(lx-3, ly-3, lx+19, ly+19, Color.BLACK );
+
+			int lx2 = this.main.getMenuItemPxX(curIdx );
+			int ly2 = this.main.getMenuItemPxY(curIdx);
+			int radX = Math.abs( lx2 - lx );
+			int radY = Math.abs( ly2 - ly );
+
+			target.circle( lx+z, ly+z, radX-1, radY-1, Color.BLACK, target );
+			target.circle( lx+z, ly+z, radX+1, radY+1, Color.BLACK,target);
+			target.circle( lx+z, ly+z, radX, radY, Color.WHITE, target );
+			}
+
 		// Tile Selection preview.
 		for( int row = -1; row <= 1; row++ )
 			{	for( int col = -4; col <= 4; col++ )
@@ -665,11 +691,25 @@ public class VmenuVSPeditor implements Vmenu
 							{ this.rectTool = this.main.getSelectedIndex(); }
 						break;
 						}
+					if( this.circleTool != -1 )
+						{
+						this.circle( this.circleTool,
+								this.main.getSelectedIndex(),
+								this.getColorkeyColor(	transform) );
+						break;
+						}
 					// Clear tile to a solid color
-					if( isCntl == true && isAlt == true )
+					if( isCntl == true && isAlt == true && isShift == false)
 						{
 						this.clearWorkignTile(
 								this.getColorkeyColor(	transform) );
+						break;
+						}
+					//  Full tile Color Replacer
+					if( isCntl == false && isAlt == true && isShift == true)
+						{
+						this.replacer(this.getColorCursorCell(),
+							this.getColorkeyColor(transform)	);
 						break;
 						}
 					// "Dropper"  sets a color key from the current selected.
@@ -869,7 +909,15 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				this.handleTilePaste( core.Script.getClipboardVImage() );
 				break;
-		
+				
+			case 87: 		// [w]  Toggle Circle tool
+				if( this.cFocus != 3 )	{ break; }
+				if( this.circleTool == -1 )
+					{	this.circleTool = this.main.getSelectedIndex();	}
+				else			// actually create line. - reset mark.
+					{	this.circleTool = -1;	}
+				break;
+
 			case 127:		// [Delete] 
 				switch( this.cFocus )
 					{
@@ -1378,12 +1426,18 @@ public class VmenuVSPeditor implements Vmenu
 	/**  Applies color to one working pixel.  Given a color key number */
 	private void setCell( int cellIdx, int keyNum )
 		{
-		HashMap<Integer,Color> hmTmp = 
-				new HashMap<Integer,Color>();
 		if( this.colorkey.getMenuItem(keyNum) == null )
 			{ return; }
-		Color c = this.colorkey.getMenuItem(keyNum).getColorComponent(
-				enumMenuButtonCOLORS.BODY_ACTIVE.value());
+		this.setCell( cellIdx, 
+			this.colorkey.getMenuItem(keyNum).getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value() )	);
+		return;
+		}
+	/** Set a cell index in the main working tile to Color c. */
+	private void setCell( int cellIdx, Color c )
+		{
+		HashMap<Integer,Color> hmTmp = 
+				new HashMap<Integer,Color>();
 		hmTmp.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(),  c );
 		hmTmp.put(enumMenuButtonCOLORS.BODY_INACTIVE.value(), c);
 		hmTmp.put(enumMenuButtonCOLORS.BODY_SELECTED.value(), 
@@ -1391,6 +1445,8 @@ public class VmenuVSPeditor implements Vmenu
 		this.main.getMenuItem(cellIdx).setColorContent( hmTmp );
 		return;
 		}
+
+	
 	
 	private void setCurrentCell( int keyNum )
 		{	this.setCell( this.main.getSelectedIndex(), keyNum );	}
@@ -1518,9 +1574,23 @@ public class VmenuVSPeditor implements Vmenu
 	private VmiButton getCursorCell()
 		{	return( (VmiButton) this.main.getMenuItemSelected() );	}
 	private Color getColorCursorCell()
-		{ 
+		{
 		return( getCursorCell().getColorComponent(
 				enumMenuButtonCOLORS.BODY_ACTIVE.value()) ); 
+		}
+	/** Obtain the Color of any cell # in main area. */
+	private Color getColorCellIndex( int cellIndex )
+		{
+		if( cellIndex < 0 )   { cellIndex = 0; }
+		if( cellIndex > (this.vsp.getTileSquarePixelSize() * 
+				this.vsp.getTileSquarePixelSize()-1) ) 
+			{ 
+			cellIndex = (this.vsp.getTileSquarePixelSize() * 
+					this.vsp.getTileSquarePixelSize()-1); 
+			}
+		return( 
+			this.main.getMenuItemAsButton(cellIndex).getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value() )); 
 		}
 	
 	// Utilities for manipulating color key bar.
@@ -2234,6 +2304,36 @@ public class VmenuVSPeditor implements Vmenu
 		work.rect( index1 % z, index1 / z, index2 % z, index2 / z, c);
 		this.loadWorkingImage(work);
 		return;
+		}
+	
+	private void circle( int index1, int index2, Color c )
+		{
+		VImage work = copyWorkingTile();
+		int z = this.vsp.getTileSquarePixelSize();
+		work.circle( index1 % z, index1 / z, 
+				Math.abs( (index2 % z) - (index1 % z)), 
+				Math.abs( (index2 / z)-(index1 / z) ),
+				c, work);
+		this.loadWorkingImage(work);
+		return;
+		}
+
+	private void replacer( Color find, Color replace )
+		{
+		int z = this.vsp.getTileSquarePixelSize() * 
+					this.vsp.getTileSquarePixelSize();
+		for( int x = 0; x < z; x++ )
+			{
+			if( this.getColorCellIndex(x).equals(find) == true  )
+				{ this.setCell( x, replace ); }
+			}
+		return;
+		}
+
+	public static Double distance(int px1x, int px1y, int px2x, int px2y )
+		{
+		return( Math.sqrt( (px2y-px1y)*(px2y-px1y)+
+				(px2x-px1x)*(px2x-px1x) ) );
 		}
 
 
