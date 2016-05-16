@@ -20,6 +20,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
+import menus.Vmenuitem.enumMenuItemSTATE;
 import menus.VmiButton.enumMenuButtonCOLORS;
 import menus.VmiTextSimple.enumMenuStxtCOLORS;
 import core.Controls;
@@ -147,6 +148,9 @@ public class VmenuVSPeditor implements Vmenu
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
 	private static final int STANDARD_TSIZE = 16;
 
+	// related to editing tools
+	private int brushSize = 1;
+	private static final int MAX_BRS_SZ = 8;
 	private int lineTool = -1;
 	private boolean lineContiguous = false;
 	private int rectTool = -1;
@@ -180,10 +184,9 @@ public class VmenuVSPeditor implements Vmenu
 		//  hashmap of available colors at hand.
 		this.clrs = this.vPal.getAllColors(255);
 		
-		this.lineTool = -1;
-		this.lineContiguous = false;
+		this.disableAllTools();
 
-		// Fill out the menus here.
+		// Construct the sub-menu objects.
 		
 		this.clr1st = Color.WHITE;
 		this.clr2nd = Color.BLACK;
@@ -359,7 +362,7 @@ public class VmenuVSPeditor implements Vmenu
 			target.scaleblit(0, 0, 
 				target.getWidth(), target.height, this.bkgImg);
 			}
-
+		
 		// Update color editor status.
 		this.colorEditor.setHighlight( false );
 		if( this.cFocus != 2 )
@@ -379,21 +382,46 @@ public class VmenuVSPeditor implements Vmenu
 						this.sidebar.getX() + this.sidebar.getHeight() + 10,  
 						this.clrShader  );
 				break;
+
 			case 1:		// the color key bar.
 				target.rectfill( 58, 0, 636, 59, this.clrShader );
 				break;
+
 			case 2:		// Color Editor
 				target.rectfill( 4, 322, this.colorEditor.getWidthPx()+28, 
 					this.colorEditor.getHeightPx()+344, 
 					this.clrShader );
 				this.colorEditor.setHighlight(true);
 				break;
+
 			default:
 				target.rectfill( 240, 50, 516, 326, this.clrShader );
 				break;
 			}
-		
-		
+
+		// Large Brush mode.   Expand selected area.
+		if( this.brushSize > 1 )
+			{
+			this.main.setMultiSelect( true );
+			this.main.setAllButtonStates(enumMenuItemSTATE.NORMAL);
+			for( int by = 0; by < this.brushSize; by++ )
+				{ for( int bx = 0; bx < this.brushSize; bx++ )
+					{
+					int eIdx = this.main.getSelectedIndex() + 
+						(by*this.vsp.getTileSquarePixelSize() + bx);
+					if( eIdx > (this.vsp.getTileSquarePixelSize()
+								* this.vsp.getTileSquarePixelSize()-1) )
+						{
+						eIdx -= this.vsp.getTileSquarePixelSize()
+								* this.vsp.getTileSquarePixelSize();
+						}
+					this.main.getMenuItemAsButton(eIdx).setState(
+							enumMenuItemSTATE.SELECTED.value() );
+				}	}
+			}
+		else {  this.main.setMultiSelect( false ); }
+
+		// Paint the primary sub-menus objects.
 		this.main.paint(target);
 		this.sidebar.paint(target);
 		this.colorkey.paint(target);
@@ -659,6 +687,23 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
+
+			case 44:
+				if( this.lineTool != -1 || this.rectTool != -1 
+						|| this.circleTool != -1 )
+					{ break; }		// only functions in "brush" mode.
+				if( this.brushSize > 1 )
+					{ this.brushSize--; }
+				break;
+
+			case 46:
+				if( this.lineTool != -1 || this.rectTool != -1 
+						|| this.circleTool != -1 )
+					{ break; }		// only functions in "brush" mode.
+				if( this.brushSize < VmenuVSPeditor.MAX_BRS_SZ )
+					{ this.brushSize++; }
+				break;
+
 			// Number keys do da buzinesss.
 			case 48:	case 49:  case 50:  case 51:  case 52:
 			case 53:	case 54:  case 55:  case 56:  case 57: case 45:
@@ -720,6 +765,11 @@ public class VmenuVSPeditor implements Vmenu
 						{
 						this.setColorkeyColor( transform, 
 								this.getColorCursorCell());
+						break;
+						}
+					if( this.brushSize > 1 )
+						{
+						this.largeBrush( this.getColorkeyColor(transform) );
 						break;
 						}
 					this.setCurrentCell( transform );
@@ -801,13 +851,15 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				if( this.cFocus == 3 )		// Toggle Line mode
 					{
-					if( this.lineTool == -1 )	// mark starting point
+					if( this.lineTool == -1 )	// turn on. mark starting pt.
 						{
+						this.disableAllTools();
 						this.lineTool = this.main.getSelectedIndex();
 						this.lineContiguous = isShift;
 						}
 					else			// actually create line. - reset mark.
 						{
+						this.main.setSelectedIndex( this.lineTool );
 						this.lineTool = -1;
 						this.lineContiguous = false;
 						}
@@ -876,11 +928,13 @@ public class VmenuVSPeditor implements Vmenu
 				if( this.cFocus != 3 )	{ break; }
 				if( this.rectTool == -1 )	// toggle rectangle tool marker
 					{
+					this.disableAllTools();
 					this.rectTool = this.main.getSelectedIndex();
 					this.rectContiguous = isShift;
 					}
 				else			// actually create line. - reset mark.
 					{
+					this.main.setSelectedIndex(this.rectTool);
 					this.rectTool = -1;
 					this.rectContiguous = false;
 					}
@@ -901,7 +955,7 @@ public class VmenuVSPeditor implements Vmenu
 					this.setColorkeySelectedColor(this.clrTrans);
 					}
 				break;
-				
+
 			case 86:		//  [v] - paste functions
 			
 				if( isCntl == true && isAlt == true )
@@ -928,9 +982,15 @@ public class VmenuVSPeditor implements Vmenu
 			case 87: 		// [w]  Toggle Circle tool
 				if( this.cFocus != 3 )	{ break; }
 				if( this.circleTool == -1 )
-					{	this.circleTool = this.main.getSelectedIndex();	}
+					{
+					this.disableAllTools();
+					this.circleTool = this.main.getSelectedIndex();	
+					}
 				else			// actually create line. - reset mark.
-					{	this.circleTool = -1;	}
+					{
+					this.main.setSelectedIndex(this.circleTool);
+					this.circleTool = -1;
+					}
 				break;
 
 			case 127:		// [Delete] 
@@ -2360,6 +2420,36 @@ public class VmenuVSPeditor implements Vmenu
 		if( mirror == true ) { tmp.mirror(); }
 		this.loadWorkingImage( tmp );
 		return;		
+		}
+	
+	/** When [main] view is in multi-selection mode, colors c to all them */
+	private void largeBrush( Color c )
+		{
+		if( this.main.isMultiSelect() == false )
+			{ return; }
+		for( int x = 0; x < this.main.countMenuItems(); x++ )
+			{
+			if( this.main.getMenuItemAsButton(x).getState() == 
+					enumMenuItemSTATE.SELECTED.value() )
+				{
+				this.setCell( x, c );	
+			}	}
+		return;
+		}
+	
+	/** Use to break out of any tool mode.  Add any new tools to it. 
+	 * This will return the menus features to its entry state.   */
+	private void disableAllTools()
+		{
+		this.brushSize = 1;
+		this.lineTool = -1;
+		this.lineContiguous = false;
+		this.rectTool = -1;
+		this.rectContiguous = false;
+		this.circleTool = -1;
+		this.showHelp = false;
+		this.showOverview = false;
+		return;
 		}
 
 	}		// END CLASS

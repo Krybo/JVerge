@@ -28,6 +28,7 @@ public class VmenuButtonPalette implements Vmenu
 	private boolean isCircularButtons = false;
 	private boolean enableWrap = true;
 	private boolean autoCenter = true;
+	private boolean isMultiSelect = false;
 	
 
 	private Integer row = 3;
@@ -117,6 +118,7 @@ public class VmenuButtonPalette implements Vmenu
 		this.setEnableHelpBar(false);
 		this.isImgBackground = false;
 		this.setCircularButtons(false);
+		this.setMultiSelect(false);
 		
 		this.bkgImg = new VImage( this.w,this.h,
 				core.Script.Color_DEATH_MAGENTA);
@@ -624,17 +626,21 @@ public class VmenuButtonPalette implements Vmenu
 		{
 		if( this.selectedIndex == -1 )
 			{ return; }
-		
 		for( Integer n : this.hmButtons.keySet() )
 			{
 			Vmenuitem myvmi = this.hmButtons.get(n);
 
 			if( myvmi.isActive() == false )
 				{	continue;	}
+			// Do not monkey with the button states if in multi-select mode.
+			if( this.isMultiSelect == true )
+				{ 	continue; }
 			// Select the active item .. long as its not activated or disabled.
-			if( n == this.selectedIndex && 
-				myvmi.getState() != 2 && 
-				myvmi.getState() != 3 )
+			if( n == this.selectedIndex  
+				&& myvmi.getState() != 
+					enumMenuItemSTATE.ACTIVATED.value()
+				&& myvmi.getState() != 
+					enumMenuItemSTATE.DISABLED.value() )
 				{
 				myvmi.setState( enumMenuItemSTATE.SELECTED.value());
 				}
@@ -1157,6 +1163,21 @@ public class VmenuButtonPalette implements Vmenu
 		{
 		return( this.getMenuItemAsButton(index).getY().intValue()  
 				+ this.getMenuItemAsButton(index).getYrel() );
+		}
+
+	/** Does this palette allow multiple buttons to be in selected state? */
+	public boolean isMultiSelect()
+		{	return isMultiSelect;	}
+	/** Enable or disable multiple button selection states. */
+	public void setMultiSelect( boolean isMultiSelect )
+		{	this.isMultiSelect = isMultiSelect;	}
+	
+	/** Sets the state of all buttons to a solid enumMenuItemSTATE */
+	public void setAllButtonStates( enumMenuItemSTATE e )
+		{
+		for( Integer n : this.hmButtons.keySet() )
+			{	this.hmButtons.get(n).setState(e.value());	}
+		return;
 		}
 	
 	}
