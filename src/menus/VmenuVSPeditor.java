@@ -46,12 +46,14 @@ import domain.Vsp;
  * [cntl][backspace]	Exits menu regardless of focus
  * [Cntl Arrow-Right]	Previous Tile
  * [Cntl Arrow-Left]	Next Tile
- * a	Areal Random Spray
- * b	
+ * a	Airbrush, areal Random Spray Tool 3px
+ *				[Cntl]	High Density (10 px)
+ *				[Shift]	Sprays random colors. 
+ * b
  * c	Copy working tile to the clipboard
- * 			[Shift]  Copy working tile into tile group. 
- * 			[Cntl] Copy entire Vsp tileset to clipboard without padding.
- * 			[Cntl+Shift]   Copy entire Vsp to clipboard with 1px padding
+ * 				[Shift]  Copy working tile into tile group. 
+ * 				[Cntl] Copy entire Vsp tileset to clipboard without padding.
+ * 				[Cntl+Shift]   Copy entire Vsp to clipboard with 1px padding
  * d	DEBUG: for now.
  * e	focus tile Editor   
  * 				[Cntl]	Focus Palette bar.
@@ -151,6 +153,9 @@ public class VmenuVSPeditor implements Vmenu
 	// related to editing tools
 	private int brushSize = 1;
 	private static final int MAX_BRS_SZ = 8;
+	private int arealTool = -1;
+	private int arealToolDensity = 3;
+	private boolean arealToolCRandom = false;
 	private int lineTool = -1;
 	private boolean lineContiguous = false;
 	private int rectTool = -1;
@@ -492,10 +497,13 @@ public class VmenuVSPeditor implements Vmenu
 			target.rect( lx+z+1, ly+z+1, lx2+z-1, ly2+z-1, Color.BLACK );
 			}
 
-		if( this.circleTool != -1 )
+		// Areal and circle use the same annotation.
+		if( (this.circleTool != -1) ^ (this.arealTool != -1) )
 			{
-			int lx = this.main.getMenuItemPxX( this.circleTool );
-			int ly = this.main.getMenuItemPxY( this.circleTool );
+			int i = this.circleTool;
+			if( i == -1 )   { i = this.arealTool; }
+			int lx = this.main.getMenuItemPxX( i );
+			int ly = this.main.getMenuItemPxY( i );
 			int z0 = this.vsp.getTileSquarePixelSize();
 			int z = z0 / 2;
 			int curIdx = this.main.getSelectedIndex();
@@ -508,6 +516,12 @@ public class VmenuVSPeditor implements Vmenu
 			int ly2 = this.main.getMenuItemPxY(curIdx);
 			int radX = Math.abs( lx2 - lx );
 			int radY = Math.abs( ly2 - ly );
+				// Normalize to a true circle.
+			if( (this.arealTool != -1) && (radX != radY) )
+				{
+				if( radX > radY )   { radY = radX; }
+				if( radY > radX )   { radX = radY; }
+				}
 
 			target.circle( lx+z, ly+z, radX-1, radY-1, Color.BLACK, target );
 			target.circle( lx+z, ly+z, radX+1, radY+1, Color.BLACK,target);
@@ -719,6 +733,15 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				if( this.cFocus == 3 )   // focus on main.
 					{
+					Color cbarC = this.getColorkeyColor(	transform);
+					if( this.arealTool != -1 )
+						{
+						this.randomSpray( this.arealTool, 
+							this.main.getSelectedIndex(),
+							this.arealToolDensity, 
+							cbarC, this.arealToolCRandom  );
+						break;
+						}
 					// Time to draw a line for this color.
 					if( this.lineTool != -1 )
 						{
@@ -777,6 +800,27 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
+				
+			case 65: 		// [a]  Areal random spray tool toggle
+				if( this.cFocus != 3 )	{ break; }
+				if( this.arealTool == -1 )
+					{
+					this.disableAllTools();
+					if( isCntl == true )
+						{ this.arealToolDensity = 10; }
+					if( isShift == true ) 
+						{ this.arealToolCRandom = true; }
+					this.arealTool = this.main.getSelectedIndex();
+					}
+				else			// actually create line. - reset mark.
+					{
+					this.main.setSelectedIndex(this.arealTool);
+					this.arealTool = -1;
+					this.arealToolCRandom = false;
+					this.arealToolDensity = 3;
+					}
+				break;
+
 			case 67:		// [c] Copy
 				// tileset with padding.
 				if( isCntl == true && isShift == true )	
@@ -1511,6 +1555,10 @@ public class VmenuVSPeditor implements Vmenu
 	/** Set a cell index in the main working tile to Color c. */
 	private void setCell( int cellIdx, Color c )
 		{
+		int z = this.vsp.getTileSquarePixelSize();
+		while( cellIdx < 0 )  { cellIdx += (z*z); }
+		while( cellIdx >= (z*z) )  { cellIdx -= (z*z); }
+
 		HashMap<Integer,Color> hmTmp = 
 				new HashMap<Integer,Color>();
 		hmTmp.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(),  c );
@@ -2437,10 +2485,69 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 	
+	/** Picks random pixels within a radius between two working points.
+	 * Number of pixels to spray, color, and random color are options. */
+	private void randomSpray( int indexCenter, int index2,
+			int sprayCount, Color c, boolean randomColororizer )
+		{
+		int z = this.vsp.getTileSquarePixelSize();
+		
+		if( c == null && randomColororizer == false )
+			{ return; }		// Avoid NPE
+
+		while( indexCenter >= (z*z) )	{ indexCenter -= (z*z); }
+		while( indexCenter < 0 )			{ indexCenter += (z*z); }
+		while( index2 >= (z*z) )			{ index2 -= (z*z); }
+		while( index2 < 0 )				{ index2 += (z*z); }
+		
+		int lx = (indexCenter % z);
+		int ly = (indexCenter / z);
+		int lx2 = (index2 % z);
+		int ly2 = (index2 / z);
+
+		int radX = Math.abs( lx2 - lx );
+		int radY = Math.abs( ly2 - ly );
+		Double radius = new Double( radX );
+		if( radY > radX )	{ radius = new Double(radY); }
+
+		for( int pt = 0; pt < sprayCount; pt++ )
+			{
+			// Get a random angle and a random bounded radius
+			Double r = Math.random() * radius;
+			Double a = Math.random() * Math.PI * 2.0d;
+			int xDiff = new Double( Math.cos(a) * r ).intValue();
+			int yDiff = new Double( Math.sin(a) * r).intValue();
+			int targetIdx = indexCenter + ((yDiff*z)+xDiff);
+			if( randomColororizer == true )
+				{ 
+				this.setCell( targetIdx, 
+					VmenuVSPeditor.getColorRandom(1.0f) ); 
+				}
+			else	{ this.setCell( targetIdx, c); }
+			}
+		return;
+		}
+	
+	/** As implied... makes up a random color, 
+	 * with ensured alpha value (0-1.0f)   */
+	public static Color getColorRandom( float alpha )
+		{
+		if( alpha < 0.0f )   { alpha = 0.0f; }
+		if( alpha > 1.0f )   { alpha = 1.0f; }
+		return( new Color(
+				(float) Math.random(),
+				(float) Math.random(),
+				(float) Math.random(),
+				alpha) );
+		}
+	
 	/** Use to break out of any tool mode.  Add any new tools to it. 
 	 * This will return the menus features to its entry state.   */
 	private void disableAllTools()
 		{
+		this.arealTool = -1;
+		this.arealToolDensity = 3;
+		this.arealToolCRandom = false;
 		this.brushSize = 1;
 		this.lineTool = -1;
 		this.lineContiguous = false;
