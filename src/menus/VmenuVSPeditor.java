@@ -38,14 +38,15 @@ import domain.Vsp;
  * 
  * ----- Controls Overview --------
  * 
- * [0-9 and -] 	"Color Keys" Do Operations, corresponding to color bar.
+ * { 0-9 and - } 	"Color Keys" Do Operations, corresponding to color bar.
  * 		Unmodified		Change target cell in working tile to a color key
  * 		[Cntl]			Change color key to current working cell. (dropper)
  * 		[Alt + Shift]	Replace color at cursor with a color key
  * 		[Alt + Cntl]		Change full working tile to a color key  
  * [cntl][backspace]	Exits menu regardless of focus
- * [Cntl Arrow-Right]	Previous Tile
- * [Cntl Arrow-Left]	Next Tile
+ * {Arrow Keys}		Navigate menu - move cursor within submenus.
+ * 				[Cntl]	Navigate tileset
+ * 				[Shift]	Shift entire tile contents.
  * a	Airbrush, areal Random Spray Tool 3px
  *				[Cntl]	High Density (10 px)
  *				[Shift]	Sprays random colors. 
@@ -664,6 +665,11 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 			
 			case 37: 		// ARROW-LEFT
+				if( isShift == true )		// Shift working tile 1px left
+					{
+					this.wrapWorkingImage( -1, 0 );
+					break;
+					}
 				this.getControlItem().doControls(ext_keycode);
 				if( this.cFocus == 1 )		// Control is in color keybar.
 					{ this.setColorEditorToCurrentColorKey(); }
@@ -680,13 +686,25 @@ public class VmenuVSPeditor implements Vmenu
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
 					break;
 					}
+				if( isShift == true )   // Shift working tile 1px up
+					{
+					this.wrapWorkingImage( 0, +1 );
+					break;
+					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
+
 			case 39: 		// ARROW-RIGHT
+				if( isShift == true )	// Shift working tile 1px right
+					{
+					this.wrapWorkingImage( +1, 0 );
+					break;
+					}
 				this.getControlItem().doControls(ext_keycode);
 				if( this.cFocus == 1 )		// Control is in color keybar.
 					{ this.setColorEditorToCurrentColorKey(); }
 				break;
+
 			case 40: 		// ARROW-DOWN
 				if( this.cFocus == 1 )
 					{
@@ -697,6 +715,11 @@ public class VmenuVSPeditor implements Vmenu
 					{
 					this.changeTile( 
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
+					break;
+					}
+				if( isShift == true )	// Shift working tile 1px down
+					{
+					this.wrapWorkingImage( 0, -1 );
 					break;
 					}
 				this.getControlItem().doControls(ext_keycode);
@@ -849,7 +872,7 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 			case 68:		// [d] Debug (for now)
 //
-				this.toggleVspOverview();
+				this.wrapWorkingImage( 0, -1 );
 				break;
 
 			case 70:		// [f] : flood fill tool
@@ -2559,4 +2582,52 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
+	/** Swaps colors at two index in the working tile. */
+	private void colorSwap( int idx1, int idx2 )
+		{
+		Color tmp = this.getColorCellIndex(idx2);
+		this.setCell( idx2, this.getColorCellIndex(idx1) );
+		this.setCell( idx1, tmp );
+		return;
+		}
+	
+	private void wrapWorkingImage(int x, int y)
+		{
+		int z = this.vsp.getTileSquarePixelSize();
+		int z2 = z*z;
+		if( x > 0 )
+			{
+			for( int xs = z2-1; xs >= 0; xs-- )
+				{
+				if( (xs % z) == 0 )  { }
+				else { this.colorSwap( xs, xs-1); }
+				}
+			}
+		if( x < 0 )
+			{
+			for( int xs2 = 0; xs2 < z2; xs2++ )
+				{
+				if( (xs2 % z) == 15 )  {  }
+				else { this.colorSwap( xs2, xs2+1); }
+				}			
+			}
+		if( y > 0 )
+			{
+			for( int ys = z2-1; ys >= 0; ys-- )
+				{
+				if( ys < z  )  {  }
+				else { this.colorSwap( ys, ys-z ); }
+				}			
+			}
+		if( y < 0 )
+			{
+			for( int ys = 0; ys < z2; ys++ )
+				{
+				if( ys > (z2-z)  )  {  }
+				else { this.colorSwap( ys, ys+z); }
+				}
+			}
+		return;
+		}
+	
 	}		// END CLASS
