@@ -2623,7 +2623,7 @@ public class VmenuVSPeditor implements Vmenu
 			{
 			for( int ys = 0; ys < z2; ys++ )
 				{
-				if( ys > (z2-z)  )  {  }
+				if( ys >= (z2-z)  )  {  }
 				else { this.colorSwap( ys, ys+z); }
 				}
 			}
