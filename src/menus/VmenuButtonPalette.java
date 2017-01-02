@@ -1142,7 +1142,27 @@ public class VmenuButtonPalette implements Vmenu
 		{
 		return( (VmiButton) this.hmButtons.get(index) );
 		}
-	
+	public VmiButton[] getMenuItemAsButtonArray()
+		{
+		VmiButton[] mbs = new VmiButton[this.countMenuItems()];
+		int idx = 0;
+		for( Integer vb : this.hmButtons.keySet() )
+			{
+			mbs[idx] = (VmiButton) this.hmButtons.get(vb);
+			idx++;
+			}
+		return( mbs );
+		}
+	/** Sets data using a VmiButton array.  
+	 * This will clear all existing data before operation. */
+	public void getMenuItemAsButtonArray( VmiButton[] btns )
+		{
+		this.hmButtons.clear();
+		for( int idx = 0; idx < btns.length; idx++ )
+			{	this.hmButtons.put(new Integer(idx), btns[idx] );	}
+		return;
+		}
+
 	public int getMenuItemPxRelX( int index )
 		{
 		return( this.getMenuItemAsButton(index).getXrel() );
