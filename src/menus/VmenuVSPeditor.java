@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -109,6 +110,48 @@ import domain.Vsp;
 
 public class VmenuVSPeditor implements Vmenu
 	{
+	
+	
+	// Krybo: Jan.2017
+	// simple sub-class to hold the state information of the 
+	//   current tile pixel color array.
+	private class StateSaveMain
+		{
+		private Color[] theData;
+		private Integer tileSize = 16;
+		public StateSaveMain( int newTielSize )
+			{
+			this.tileSize = newTielSize;
+			this.theData = new Color[tileSize*tileSize];
+			for( int x = 0; x < tileSize*tileSize; x++ )
+				{
+				this.theData[x] = new Color(clrTrans.getRGB());
+				}
+			}
+
+		public StateSaveMain( VmiButton[] input )
+			{
+			this(input.length);
+			int counter = 0;
+			for( VmiButton vmbtn : input )
+				{
+				theData[counter] = vmbtn.getColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE.value() );
+				counter++;
+				}
+			}
+		
+		public StateSaveMain( )
+			{ this(16); }
+		
+		public int getArraySize()
+			{ return(this.tileSize); }
+		
+		public Color get( int index )
+			{	return(this.theData[index]);	}
+
+		}		// End state save main sub class
+
 	//    control focus:
 	//   This is a multi-menu, this index is like a tab-order, and
 	//   controls will use it to delegate to the active menu.
@@ -127,7 +170,7 @@ public class VmenuVSPeditor implements Vmenu
 	private VmenuSliders colorEditor = null;
 	private final DefaultPalette vPal = new DefaultPalette();
 	private HashMap<Integer,Color> clrs = null;
-	private final Color clrTrans = new Color(255,0,255,0);
+	protected final Color clrTrans = new Color(255,0,255,0);
 	private Color clr1st = Color.WHITE;
 	private Color clr2nd = Color.BLACK;
 	private VImage bkgImg = null;
@@ -168,8 +211,10 @@ public class VmenuVSPeditor implements Vmenu
 	private static final int DEFAULT_TILES_PER_ROW = 16;
 	// primative undo functionality.
 	private Stack<Object> undoStack = new Stack<Object>();
+	// undoLastOp : to prevent undoing repeated similar actions
+	private Integer undoLastOp = 0;   
 	private static final int MAX_UNDO = 10;
-	
+
 //	private static final long serialVersionUID = 6666410183698706332L;
 
 
@@ -177,7 +222,7 @@ public class VmenuVSPeditor implements Vmenu
 
 	public VmenuVSPeditor( Map sourceMap )
 		{	this(sourceMap.getTileSet());	}
-	
+
 	public VmenuVSPeditor( Vsp sourceTileSet )
 		{
 		this.focusID = Vmenu.getRandomID();
@@ -195,7 +240,6 @@ public class VmenuVSPeditor implements Vmenu
 		this.clrs = this.vPal.getAllColors(255);
 
 		this.undoStack =	new Stack<Object>();
-		this.undoStack.setSize( VmenuVSPeditor.MAX_UNDO );
 
 		this.disableAllTools();
 
@@ -748,7 +792,7 @@ public class VmenuVSPeditor implements Vmenu
 					{ this.brushSize++; }
 				break;
 
-			// Number keys do da buzinesss.
+			// the Number keys that do their bizz.
 			case 48:	case 49:  case 50:  case 51:  case 52:
 			case 53:	case 54:  case 55:  case 56:  case 57: case 45:
 				int transform = basecode - 49;
@@ -757,15 +801,16 @@ public class VmenuVSPeditor implements Vmenu
 				if( this.cFocus == 1 ) 	// we are on color key
 					{
 					// Swaps colors, selected with #
+					this.setUndoPoint( this.getColorPaletteCopy() , 1 );
 					this.swapColorKeyColor( 
 						this.colorkey.getSelectedIndex(), transform );
 					break;
 					}
 				if( this.cFocus == 3 )   // focus on main.
 					{
-					this.setUndoPoint( 
-						this.main.getMenuItemAsButtonArray() );
-					Color cbarC = this.getColorkeyColor(	transform);
+					// Sets a single pixel.
+					this.saveMainTileState( 2 );
+					Color cbarC = this.getColorkeyColor( transform );
 					if( this.arealTool != -1 )
 						{
 						this.randomSpray( this.arealTool, 
@@ -774,9 +819,10 @@ public class VmenuVSPeditor implements Vmenu
 							cbarC, this.arealToolCRandom  );
 						break;
 						}
-					// Time to draw a line for this color.
+					// Time to draw a line for selected color.
 					if( this.lineTool != -1 )
 						{
+						this.saveMainTileState( 3 );
 						this.line( this.lineTool,
 							this.main.getSelectedIndex(),
 							this.getColorkeyColor(	transform) );
@@ -787,6 +833,7 @@ public class VmenuVSPeditor implements Vmenu
 					// Time to draw a rectangle for this color.
 					if( this.rectTool != -1 )
 						{
+						this.saveMainTileState( 3 );
 						this.rect( this.rectTool,
 							this.main.getSelectedIndex(),
 							this.getColorkeyColor(	transform) );
@@ -794,8 +841,10 @@ public class VmenuVSPeditor implements Vmenu
 							{ this.rectTool = this.main.getSelectedIndex(); }
 						break;
 						}
+					// draw circles
 					if( this.circleTool != -1 )
 						{
+						this.saveMainTileState( 3 );
 						this.circle( this.circleTool,
 								this.main.getSelectedIndex(),
 								this.getColorkeyColor(	transform) );
@@ -804,13 +853,15 @@ public class VmenuVSPeditor implements Vmenu
 					// Clear tile to a solid color
 					if( isCntl == true && isAlt == true && isShift == false)
 						{
-						this.clearWorkignTile(
-								this.getColorkeyColor(	transform) );
+						this.saveMainTileState( 4 );
+						this.clearWorkingTile(
+							this.getColorkeyColor(	transform) );
 						break;
 						}
 					//  Full tile Color Replacer
 					if( isCntl == false && isAlt == true && isShift == true)
 						{
+						this.saveMainTileState( 5 );
 						this.replacer(this.getColorCursorCell(),
 							this.getColorkeyColor(transform)	);
 						break;
@@ -818,6 +869,7 @@ public class VmenuVSPeditor implements Vmenu
 					// "Dropper"  sets a color key from the current selected.
 					if( isCntl == true && isAlt == false && transform > 0 ) 
 						{
+						this.setUndoPoint( this.getColorPaletteCopy() , 6 );
 						this.setColorkeyColor( transform, 
 								this.getColorCursorCell());
 						break;
@@ -892,6 +944,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( isCntl == true )	{ tolerance += 200; }
 				if( isAlt == true )		{ tolerance += 384; }
 				int selidx = this.main.getSelectedIndex();
+				this.saveMainTileState( 8 );
 				this.floodFiller( 
 					selidx % this.vsp.getTileSquarePixelSize(),
 					selidx / this.vsp.getTileSquarePixelSize(), 
@@ -904,12 +957,14 @@ public class VmenuVSPeditor implements Vmenu
 				switch( this.cFocus )
 					{
 					case 1:		// Invert the color key.
+					this.setUndoPoint( this.getColorPaletteCopy() , 9 );
 						this.setColorkeySelectedColor( 
 							VmenuVSPeditor.invertColor(
 								this.getColorkeySelectedColor() ));
 						this.setColorEditorToCurrentColorKey();
 						break;
-					case 3:
+					case 3:		// invert a single cell
+					this.saveMainTileState( 9 );
 						this.invertSelectedCell();
 						this.setColorEditorToCursor();
 						break;
@@ -1022,6 +1077,7 @@ public class VmenuVSPeditor implements Vmenu
 					this.savePalette();
 					break;
 					}
+				// Note plain [s] triggers "save working tile" KC 664 {menu}
 				break;
 				
 			case 84:		// [t]  transparency & tile viewer
@@ -1620,9 +1676,13 @@ public class VmenuVSPeditor implements Vmenu
 				255 - in.getBlue(), in.getAlpha() ) );
 		}
 
-	/** Moves the data from the menu object to the actual VSP. */
+	/** Moves the data from the menu object to the actual VSP. 
+	 * Triggered by pressing [s] menus hotkey */
 	private void saveWorkingTileAs( int vspIdx )
 		{
+		if( vspIdx < 0 ) { return; }
+		if( vspIdx > this.vsp.getNumtiles() ) { return; }
+		this.setUndoPoint( new Vsp(this.vsp), 27 );
 		VImage output = this.copyWorkingTile();
 		vsp.modifyTile( vspIdx, output.getImage() );
 		this.updatePreview();
@@ -1749,10 +1809,26 @@ public class VmenuVSPeditor implements Vmenu
 			cellIndex = (this.vsp.getTileSquarePixelSize() * 
 					this.vsp.getTileSquarePixelSize()-1); 
 			}
+		
 		return( 
 			this.main.getMenuItemAsButton(cellIndex).getColorComponent(
 				enumMenuButtonCOLORS.BODY_ACTIVE.value() )); 
 		}
+	/* States the working tile as an array of colors */
+	private Color[] getColorTileState( )
+		{		
+		int cellsize = this.vsp.getTileSquarePixelSize() * 
+				this.vsp.getTileSquarePixelSize(); 
+		Color[] maindata = new Color[cellsize];
+		for( int x = 0; x < cellsize; x++ )
+			{
+			maindata[x] = this.main.getMenuItemAsButton(
+				x).getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value() );			
+			}
+		return( maindata );
+		}
+
 	
 	// Utilities for manipulating color key bar.
 	
@@ -1761,6 +1837,18 @@ public class VmenuVSPeditor implements Vmenu
 		this.clrs.put( paletteIndex, c );
 		this.setCbarLine( this.cBarIndexSet );
 		return;
+		}
+	
+	/* Returns a newly instantiated copy of the color palette  */
+	private HashMap<Integer,Color> getColorPaletteCopy()
+		{
+		HashMap<Integer,Color> cp = new HashMap<Integer,Color>();
+		for( int x : this.clrs.keySet() )
+			{
+			Color nc = new Color( this.clrs.get(x).getRGB() );
+			cp.put( new Integer(x), nc );
+			}
+		return(cp);
 		}
 
 	private VmiButton getSelectedColorkey()
@@ -1793,7 +1881,7 @@ public class VmenuVSPeditor implements Vmenu
 	/** Directly Change a color keybar setting. */
 	private void setColorkeyColor( int colorKeySlotNumber, Color c )
 		{
-		this.setUndoPoint(this.clrs);
+		this.setUndoPoint( this.getColorPaletteCopy() , 11 );
 		if( colorKeySlotNumber == 1 )
 			{ this.clr1st = c;   }
 		if( colorKeySlotNumber == 2 )
@@ -1825,7 +1913,7 @@ public class VmenuVSPeditor implements Vmenu
 	/** In one function, inverts all cells in the main area. */
 	private void invertAllCells()
 		{
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
+		this.saveMainTileState( 16 );
 		for( int vmi = 0; vmi < this.main.countMenuItems(); vmi++ )
 			{
 			HashMap<Integer,Color> hmTmp = 
@@ -1852,7 +1940,7 @@ public class VmenuVSPeditor implements Vmenu
 	
 	private void swapColorKeyColor( int slot1, int slot2 )
 		{
-		this.setUndoPoint(this.clrs);
+		this.setUndoPoint( this.getColorPaletteCopy() , 12 );
 		if( slot2 == 0 )  { return; }	// cannot swap with static trans c
 		if( slot1 == slot2 )	{ return; }		// no point.
 		Color tmp = this.getColorkeyColor( slot1 );
@@ -1902,7 +1990,7 @@ public class VmenuVSPeditor implements Vmenu
 				System.err.println("Refused to inport 1 tile VSP");
 				return(false); 
 				}
-			this.setUndoPoint( new Vsp(this.vsp) );
+			this.setUndoPoint( new Vsp(this.vsp), 23 );
 			System.out.println("Clipboard paste in no-padding form x "+
 				tcx.toString() + " y " + tcy.toString() );
 			for( int iy = 0; iy < tcy; iy++ )
@@ -1925,7 +2013,7 @@ public class VmenuVSPeditor implements Vmenu
 				System.err.println("Refused to inport 1 tile VSP");
 				return(false); 
 				}
-			this.setUndoPoint( new Vsp(this.vsp) );
+			this.setUndoPoint( new Vsp(this.vsp), 24 );
 			System.out.println("Clipboard paste in padded form   x "+
 				tcx.toString() + " y " + tcy.toString() );
 			for( int iy = 0; iy < tcy; iy++ )
@@ -1954,7 +2042,7 @@ public class VmenuVSPeditor implements Vmenu
 	private void handleTileInsert( VImage clipboardVImage )
 		{
 		if( clipboardVImage == null )	{ return; }
-		this.setUndoPoint( new Vsp(this.vsp) );
+		this.setUndoPoint( new Vsp(this.vsp), 25 );
 		VImage parts[] = VImage.splitIntoTiles( clipboardVImage,
 				0, 0, this.vsp.getTileSquarePixelSize() );
 		for( int n = (parts.length-1); n >= 0; n-- )
@@ -2111,7 +2199,7 @@ public class VmenuVSPeditor implements Vmenu
 
 	private void newVsp()
 		{
-		this.setUndoPoint( new Vsp(this.vsp) );
+		this.setUndoPoint( new Vsp(this.vsp), 26 );
 		// Make a blank "dummy" VSP.
 		this.vsp = new Vsp(
 				VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
@@ -2248,7 +2336,7 @@ public class VmenuVSPeditor implements Vmenu
 
 	private void setBasicPalette()
 		{
-		this.setUndoPoint(this.clrs);
+		this.setUndoPoint( this.getColorPaletteCopy() , 13 );
 		if( this.clrs == null )
 			{ this.clrs = new HashMap<Integer,Color>(); }
 		if( ! this.clrs.isEmpty() ) 
@@ -2334,7 +2422,7 @@ public class VmenuVSPeditor implements Vmenu
 	 * Erroneous palette index arguments are naturally bounded. */
 	private void insertPaletteColor( int palIndex )
 		{
-		this.setUndoPoint( this.clrs );
+		this.setUndoPoint( this.getColorPaletteCopy() , 14 );
 		Integer cnt = this.clrs.size();
 		if( palIndex < 0 ) 
 			{ palIndex = 0; }
@@ -2353,7 +2441,7 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		Integer cnt = this.clrs.size();
 		if( cnt <= 1 )  { return; }	// will not remove final color.
-		this.setUndoPoint( this.clrs );
+		this.setUndoPoint( this.getColorPaletteCopy() , 15 );
 		if( palIndex < 0 ) 
 			{ palIndex = 0; }
 		if( palIndex > cnt-1 )
@@ -2370,9 +2458,9 @@ public class VmenuVSPeditor implements Vmenu
 		}
 
 	/** Set all pixels to a single color. */
-	private void clearWorkignTile( Color c )
+	private void clearWorkingTile( Color c )
 		{
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
+		this.saveMainTileState( 17 );
 		if( c == null )
 			{ c = this.clrTrans; }
 		HashMap<Integer,Color> hmC = 
@@ -2388,7 +2476,6 @@ public class VmenuVSPeditor implements Vmenu
 	private void floodFiller( int x, int y, Color newColor, 
 			int diffThreshold )
 		{
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
 		if( newColor == null )
 			{ newColor = this.clrTrans; }
 		Integer z  = this.vsp.getTileSquarePixelSize();
@@ -2467,7 +2554,6 @@ public class VmenuVSPeditor implements Vmenu
 
 	private void line( int index1, int index2, Color c )
 		{
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
 		VImage work = copyWorkingTile();
 		int z = this.vsp.getTileSquarePixelSize();
 		work.line( index1 % z, index1 / z, index2 % z, index2 / z, c);
@@ -2477,7 +2563,6 @@ public class VmenuVSPeditor implements Vmenu
 
 	private void rect( int index1, int index2, Color c )
 		{
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
 		VImage work = copyWorkingTile();
 		int z = this.vsp.getTileSquarePixelSize();
 		work.rect( index1 % z, index1 / z, index2 % z, index2 / z, c);
@@ -2487,7 +2572,6 @@ public class VmenuVSPeditor implements Vmenu
 	
 	private void circle( int index1, int index2, Color c )
 		{
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
 		VImage work = copyWorkingTile();
 		int z = this.vsp.getTileSquarePixelSize();
 		work.circle( index1 % z, index1 / z, 
@@ -2501,7 +2585,6 @@ public class VmenuVSPeditor implements Vmenu
 	private void replacer( Color find, Color replace )
 		{
 		if( find == null || replace == null )	{ return; }
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
 		int z = this.vsp.getTileSquarePixelSize() * 
 					this.vsp.getTileSquarePixelSize();
 		for( int x = 0; x < z; x++ )
@@ -2521,7 +2604,7 @@ public class VmenuVSPeditor implements Vmenu
 	/** Rotates the working tile in 90 degree "quadangles"  */
 	private void rotate( int QuadAngle, boolean mirror )
 		{
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
+		this.saveMainTileState( 18 );
 		Double rads = (Math.PI / 2.0d) * new Double(QuadAngle);
 		VImage work = copyWorkingTile();
 		VImage tmp = VImage.rotateRadiansIntoNewImage(work,rads);
@@ -2535,7 +2618,7 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if( this.main.isMultiSelect() == false )
 			{ return; }
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
+		this.saveMainTileState( 20 );
 		for( int x = 0; x < this.main.countMenuItems(); x++ )
 			{
 			if( this.main.getMenuItemAsButton(x).getState() == 
@@ -2556,7 +2639,7 @@ public class VmenuVSPeditor implements Vmenu
 		if( c == null && randomColororizer == false )
 			{ return; }		// Avoid NPE
 
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
+		this.saveMainTileState( 21 );
 		
 		while( indexCenter >= (z*z) )	{ indexCenter -= (z*z); }
 		while( indexCenter < 0 )			{ indexCenter += (z*z); }
@@ -2631,10 +2714,12 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 	
+	/*  Undo functionality methods */
+	
 	private void wrapWorkingImage(int x, int y)
 		{
 		if( x == 0 && y == 0 )	{ return; }
-		this.setUndoPoint( this.main.getMenuItemAsButtonArray() );
+		this.saveMainTileState( 22 );
 		int z = this.vsp.getTileSquarePixelSize();
 		int z2 = z*z;
 		if( x > 0 )
@@ -2679,40 +2764,144 @@ public class VmenuVSPeditor implements Vmenu
 	 * 	  --- Any Hard changes to the VSP tileset.
 	 * @param obj  One of the above three. - as clones.
 	 */
-	private void setUndoPoint( Object obj )
+	private void setUndoPoint( Object obj, Integer optype )
 		{
+			// Discard previous similar operation.
+		if( this.undoLastOp == optype && this.undoStack.size() > 0 )
+			 { return; }
+		// Stack is too big...discard oldest.
+		if( this.undoStack.size() > VmenuVSPeditor.MAX_UNDO )
+			{ this.undoStack.remove(0); }
 		this.undoStack.push(obj);
+		this.undoLastOp = optype;
+		System.out.println(" Set undo operation # "+optype.toString() +
+			"  Stack @ "+ Integer.toString( this.undoStack.size() ));
 		return;
 		}
 
+	/*  Pops the undo stack and sends last item to the undo func */
 	private void undo()
 		{
-		if( this.undoStack.isEmpty() )		{ return; }
+		if( this.undoStack.isEmpty() )		
+			{
+			System.out.println( 
+				"Undo attempted but undo stack is empty." );
+			return; 
+			}
+		int t1 = this.undoStack.size();
 		Object tmp = this.undoStack.pop();
+		int t2 = this.undoStack.size();
+
+		System.out.println("UNDO now ["+Integer.toString(t2)+
+				"]   reduced from "+
+				Integer.toString(t1));
+		
 		// Analyze tmp and set the redo accordingly.
 		this.doUndo(tmp);
 		return;
 		}
 
 	/** This can either be an undo or redo.. the given object is 
-	 * type-interrogated, then restored, overwritting the current contents.*/
+	 * type name interrogated, then restored, overwritting the current 
+	 * working contents. 
+	 * 
+	 *  The following 3 object restore ops are supported:
+	 *  1)  Working tile change  (menus.VmenuVSPeditor StateSaveMain) 
+	 *  2)  Color Palette change  (HashMap<Integer,Color>)
+	 *  3)  hard VSP tile save  {domain.vsp)
+	 *  
+	 *    Any other object found on the undo stack will be thrown out
+	 *    
+	 *  */
 	private void doUndo( Object obj )
 		{
 		if( obj == null )	{ return; }
-		System.out.println( "Undone operation with: " + obj.getClass().getName() );
+		String theClassName = 
+			new String( obj.getClass().getName() );
+		String theClassCName = 
+			new String( obj.getClass().getCanonicalName() );
 		
-		if( obj.getClass().getName().endsWith(".HashMap") == true )
+		System.out.println( "Start Undo proc operation: " + theClassName +
+			" ( " + theClassCName + " ) " );
+		if( obj instanceof HashMap )
 			{
-			
-			}
-		if( obj.getClass().getName().endsWith("") == true )
+			HashMap hmObj = (HashMap) obj;
+			if( hmObj.containsKey( new Integer(0) ) )
+				{
+				Object tmpVal = hmObj.get(new Integer(0));
+				String itsName = 
+					new String( tmpVal.getClass().getName() );
+				
+				// At this point, we can assume this is a color palette save
+				if( itsName.compareTo("java.awt.Color") == 0  )
+					{
+					try {
+						// Surpress.. because we have already
+						//    done sufficient checks above for types
+						// 	Given limited variation of undo functional types
+						@SuppressWarnings("unchecked")
+						HashMap<Integer,Color> reconst =
+							(HashMap<Integer,Color>) hmObj;
+						Integer testSize = reconst.size();
+						// Restore color bar. - copy key value pairs.					
+						this.clrs.clear();
+						for( Integer x : reconst.keySet() )
+							{ 
+							Color cx = new Color( reconst.get(x).getRGB() );
+							this.setColorPaletteEntry(x, cx);
+//							this.clrs.put( x, cx ); 
+							}
+						System.out.println(" Undo ColorBar::  "+
+							"HashMap with value type : "+itsName.toString()
+							+"  with "+testSize.toString()+" Entries");
+						return;
+						}
+					catch( Exception e )
+						{
+						System.out.println(
+							" ERROR, ignored unexpected Undo object");
+						return;
+						}
+
+					}
+				}
+			}	// End HashMap type resolution.
+		
+		//	Tile set change undo
+		if( theClassName.compareTo(
+				"domain.Vsp") == 0 && 
+			theClassCName.compareTo(
+				"domain.Vsp" ) == 0 )
 			{
-			
+			this.vsp = new Vsp( (Vsp) obj );
+			this.updatePreview();
+			this.loadTile( this.tIndex );
 			}
-		if( obj.getClass().getName().endsWith("") == true )
+
+		// restore a snapshot of the tile data - reload it.
+		if( theClassName.compareTo(
+				"menus.VmenuVSPeditor$StateSaveMain") == 0 && 
+			theClassCName.compareTo(
+				"menus.VmenuVSPeditor.StateSaveMain" ) == 0 )
 			{
+			StateSaveMain ssm = (StateSaveMain) obj;
+			// Check for size compatibility
+			if( this.main.countMenuItems() != ssm.getArraySize() )
+				{ 
+				System.out.println(" Discarded undo - Incompatible size");
+				}
+
+			for( int idx = 0; idx < ssm.getArraySize(); idx++ )
+				{
+				VmiButton tmpBtn = 
+					(VmiButton) this.main.getMenuItem(idx);
+				tmpBtn.setColorComponent( enumMenuButtonCOLORS.BODY_ACTIVE, 
+						ssm.get(idx) );
+				}
 			
+			System.out.println(" restored state of tile data.");
 			}
+
 		return;
 		}
 	
@@ -2721,4 +2910,18 @@ public class VmenuVSPeditor implements Vmenu
 		this.doUndo(null);
 		}
 
+	/* pushes the colors from the main tile editor into the undo stack.
+	  A subclass needed to be created in order to differentiate the tile
+	  cell colors from the color palette array. */
+	private void saveMainTileState( int actionClassifier )
+		{
+		StateSaveMain ssm = new StateSaveMain(
+			this.main.getMenuItemAsButtonArray() );
+		setUndoPoint( ssm, actionClassifier );
+		return;
+		}
+	
+	public Color getTransparentColor()
+		{ return(this.clrTrans); }
+	
 	}		// END CLASS
