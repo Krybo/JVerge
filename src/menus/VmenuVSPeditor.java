@@ -211,6 +211,8 @@ public class VmenuVSPeditor implements Vmenu
 	private static final int DEFAULT_TILES_PER_ROW = 16;
 	// primative undo functionality.
 	private Stack<Object> undoStack = new Stack<Object>();
+	private Stack<Object> redoStack = new Stack<Object>();
+	private Object unredoLastOp = null;
 	// undoLastOp : to prevent undoing repeated similar actions
 	private Integer undoLastOp = 0;   
 	private static final int MAX_UNDO = 10;
@@ -685,7 +687,7 @@ public class VmenuVSPeditor implements Vmenu
 				return( true );
 			case 10: 		// ENTER KEY <CONFIRM>
 				// xfer control to the color editor to directly modify this cell.
-				if( this.cFocus == 3 && isCntl == true && isShift == true )
+				if( this.cFocus == 3 && isCntl == true && isShift == true)
 					{
 					this.setColorEditorToCursor();
 					this.cFocus = 2;
@@ -695,7 +697,7 @@ public class VmenuVSPeditor implements Vmenu
 				this.funcActivate();
 				break;
 				
-			case 33:		// Page-UP
+			case 33:		// [Page-UP]
 				if( isCntl == true )
 					{
 					this.nextCbarLine();
@@ -715,7 +717,7 @@ public class VmenuVSPeditor implements Vmenu
 				this.getControlItem().doControls(ext_keycode);
 				break;
 			
-			case 37: 		// ARROW-LEFT
+			case 37: 		// ARROW-[LEFT]
 				if( isShift == true )		// Shift working tile 1px left
 					{
 					this.wrapWorkingImage( -1, 0 );
@@ -1043,7 +1045,7 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				break;
 
-			case 79:		// [o]  rOtation and mirroring.
+			case 79:		// [o]  r[o]tation and mirroring.
 				if( this.cFocus != 3 )		{ break; }
 				if( isCntl == true )
 					{ this.rotate( +1, false ); }
@@ -1127,7 +1129,10 @@ public class VmenuVSPeditor implements Vmenu
 
 			case 90:		// [z] Undo and Redo.
 				if( isCntl == true )
-					{  this.undo();  }
+					{ 
+					this.undo();  
+					break;
+					}
 				this.redo();
 				break;
 
@@ -1345,7 +1350,8 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		}
 
-	/** Intercepts (Enter key) to be handled differently by sub-menu */
+	/**  Processes Enter key actions.
+	 *  Intercepts (Enter key) to be handled differently by focus */
 	private void funcActivate()
 		{
 		switch( this.cFocus )
@@ -1367,19 +1373,34 @@ public class VmenuVSPeditor implements Vmenu
 					this.gG.getValue(), this.gB.getValue(), 255 );
 				if( this.editColorInPlace == true )
 					{	// Directly edit the cursor cell.
+					this.cFocus = 3;
+					this.editColorInPlace = false;
+					Color oc = this.getCursorCell().getColorComponent( 
+						enumMenuButtonCOLORS.BODY_ACTIVE.value() );
+					if( oc.getRGB() == nc.getRGB() )
+						{	// Value actually was not changed....  cancel.
+						break;
+						}
+
+					this.saveMainTileState( 7 );
 					this.getCursorCell().setColorComponent(
 						enumMenuButtonCOLORS.BODY_ACTIVE , nc );
 					this.getCursorCell().setColorComponent(
 						enumMenuButtonCOLORS.BODY_INACTIVE , nc);
 					this.getCursorCell().setColorComponent(
 						enumMenuButtonCOLORS.BODY_SELECTED , nc);
-					this.editColorInPlace = false;
-					this.cFocus = 3;
+					
 					break;
 					}
 				// Else - we return it to the palette.
 				this.cFocus = 1;
+				
 				int cidx = this.getSelectedColorkeyCIDX();
+				// Actually abort..... color wasn't changed.
+				if( nc.getRGB() == this.clrs.get(cidx).getRGB() ) 
+					{ break; }
+
+				this.setUndoPoint( this.getColorPaletteCopy() , 28 );
 
 				HashMap<Integer,Color> hmTmp = 
 					new HashMap<Integer,Color>();
@@ -1390,9 +1411,9 @@ public class VmenuVSPeditor implements Vmenu
 				hmTmp.put(
 					enumMenuButtonCOLORS.BODY_SELECTED.value(),nc); 						 
 				this.colorkey.getMenuItemSelected().setColorContent(
-						hmTmp );
+					hmTmp );
 				if( cidx != -1 )
-					{ this.clrs.put(cidx, nc); }
+					{ this.clrs.put( cidx, nc ); }
 				break;
 
 			default:		// If unhandled, the sub menu object itself will.
@@ -2767,7 +2788,8 @@ public class VmenuVSPeditor implements Vmenu
 	private void setUndoPoint( Object obj, Integer optype )
 		{
 			// Discard previous similar operation.
-		if( this.undoLastOp == optype && this.undoStack.size() > 0 )
+		if( (optype > 0) && (this.undoLastOp == optype) && 
+				this.undoStack.size() > 0 )
 			 { return; }
 		// Stack is too big...discard oldest.
 		if( this.undoStack.size() > VmenuVSPeditor.MAX_UNDO )
@@ -2797,13 +2819,14 @@ public class VmenuVSPeditor implements Vmenu
 				Integer.toString(t1));
 		
 		// Analyze tmp and set the redo accordingly.
-		this.doUndo(tmp);
+		this.doUndo(tmp , true );
 		return;
 		}
 
 	/** This can either be an undo or redo.. the given object is 
 	 * type name interrogated, then restored, overwritting the current 
-	 * working contents. 
+	 * working contents.    The second arg. tells weither to add a
+	 * redo operation to that separate stack.
 	 * 
 	 *  The following 3 object restore ops are supported:
 	 *  1)  Working tile change  (menus.VmenuVSPeditor StateSaveMain) 
@@ -2813,7 +2836,7 @@ public class VmenuVSPeditor implements Vmenu
 	 *    Any other object found on the undo stack will be thrown out
 	 *    
 	 *  */
-	private void doUndo( Object obj )
+	private void doUndo( Object obj , boolean setRedo )
 		{
 		if( obj == null )	{ return; }
 		String theClassName = 
@@ -2843,6 +2866,15 @@ public class VmenuVSPeditor implements Vmenu
 						HashMap<Integer,Color> reconst =
 							(HashMap<Integer,Color>) hmObj;
 						Integer testSize = reconst.size();
+						if( testSize < 1 )  { return; }
+						if( setRedo )
+							{
+							this.redoStack.push( 
+								this.getColorPaletteCopy() );
+							this.unredoLastOp = obj;
+							System.out.println(" ** Set redo point");
+							}
+
 						// Restore color bar. - copy key value pairs.					
 						this.clrs.clear();
 						for( Integer x : reconst.keySet() )
@@ -2851,6 +2883,7 @@ public class VmenuVSPeditor implements Vmenu
 							this.setColorPaletteEntry(x, cx);
 //							this.clrs.put( x, cx ); 
 							}
+			 
 						System.out.println(" Undo ColorBar::  "+
 							"HashMap with value type : "+itsName.toString()
 							+"  with "+testSize.toString()+" Entries");
@@ -2873,9 +2906,16 @@ public class VmenuVSPeditor implements Vmenu
 			theClassCName.compareTo(
 				"domain.Vsp" ) == 0 )
 			{
+			if( setRedo )
+				{
+				this.redoStack.push( new Vsp(this.vsp) );
+				this.unredoLastOp = obj;
+				}
+
 			this.vsp = new Vsp( (Vsp) obj );
 			this.updatePreview();
 			this.loadTile( this.tIndex );
+			this.unredoLastOp = obj; 
 			}
 
 		// restore a snapshot of the tile data - reload it.
@@ -2884,6 +2924,15 @@ public class VmenuVSPeditor implements Vmenu
 			theClassCName.compareTo(
 				"menus.VmenuVSPeditor.StateSaveMain" ) == 0 )
 			{
+			
+			if( setRedo )
+				{
+				this.redoStack.push( new StateSaveMain(
+					this.main.getMenuItemAsButtonArray() )  );
+				// This is used later if Redo is used.
+				this.unredoLastOp = obj;
+				}
+
 			StateSaveMain ssm = (StateSaveMain) obj;
 			// Check for size compatibility
 			if( this.main.countMenuItems() != ssm.getArraySize() )
@@ -2898,16 +2947,34 @@ public class VmenuVSPeditor implements Vmenu
 				tmpBtn.setColorComponent( enumMenuButtonCOLORS.BODY_ACTIVE, 
 						ssm.get(idx) );
 				}
-			
+ 
 			System.out.println(" restored state of tile data.");
 			}
 
 		return;
 		}
-	
+
+
 	private void redo()
 		{
-		this.doUndo(null);
+		if( this.redoStack.isEmpty() )   
+			{ return; }
+		System.out.println( "REDO: " + Integer.toString( this.redoStack.size()) + 
+			" on stack " );
+		// Take an object from the redo.. put it back on undo.
+		Object o = this.redoStack.pop();
+		
+		this.doUndo( o , false );		// fires the redo operation.
+		
+		// put the last undo operation back onto its stack.
+		if( this.unredoLastOp != null )
+			{
+			Object oo = this.unredoLastOp; 
+			this.setUndoPoint( oo, 0 );
+			}
+
+//		this.undoStack.push(o);
+		return;
 		}
 
 	/* pushes the colors from the main tile editor into the undo stack.
