@@ -193,7 +193,7 @@ public class VmenuVSPeditor implements Vmenu
 
 	private VImage preview = null;
 	private VImage vspOverview = null;
-	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
+	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.24f);
 	private static final int STANDARD_TSIZE = 16;
 
 	// related to editing tools
@@ -398,7 +398,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.colorEditor.setStatusBarObject(clrEdHelp);
 		this.colorEditor.setGuageHeight( 12 );
 		this.colorEditor.setHighlight(false);
-		
+
 		// -- finish up
 
 		this.bkgImg = null;
@@ -455,7 +455,9 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 1:		// the color key bar.
-				target.rectfill( 58, 0, 636, 59, this.clrShader );
+//				target.rectfill( 58, 1, 636, 59, this.clrShader );
+				target.rectfill( 50, 1, target.getWidth()-102 , 59,
+						this.clrShader );
 				break;
 
 			case 2:		// Color Editor
@@ -469,6 +471,31 @@ public class VmenuVSPeditor implements Vmenu
 				target.rectfill( 240, 50, 516, 326, this.clrShader );
 				break;
 			}
+		
+		// Small info panel in upper right.
+		target.rectfill( target.getWidth()-100, 0, target.getWidth()-2 , 40,
+				Color.BLACK );
+		target.rect( target.getWidth()-100, 0, target.getWidth()-2 , 40,
+				Color.WHITE );
+		target.printString( target.getWidth()-95, 12, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"Pal: " + Integer.toString( this.cBarIndexSet ) );
+		target.printString( target.getWidth()-50, 12, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				 Integer.toString( this.clrs.size() >> 3 ) );
+		target.printString( target.getWidth()-95, 24, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"UN: "+Integer.toString(this.undoStack.size()));
+		target.printString( target.getWidth()-50, 24, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"RE: " +Integer.toString(this.redoStack.size()) );
+		target.printString( target.getWidth()-95, 36, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"T#  "+Integer.toString(this.tIndex) );
+		target.printString( target.getWidth()-37, 36, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				Integer.toString(this.vsp.getNumtiles()-1) );
+
 
 		// Large Brush mode.   Expand selected area.
 		if( this.brushSize > 1 )
@@ -2230,6 +2257,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		// Post-load - must restore some internals to a fresh state.
 
+		this.clearUndoRedo();
 		this.tIndex = 0;
 		this.editColorInPlace = false;
 		this.showOverview = false;
@@ -2274,6 +2302,7 @@ public class VmenuVSPeditor implements Vmenu
 			tileRows *	(this.vsp.getTileSquarePixelSize()+2) , 
 			Color.BLACK );
 
+		this.clearUndoRedo();
 		main.refresh();
 		this.loadTile( this.tIndex );
 		this.updatePreview();
@@ -2989,7 +3018,6 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
-
 	private void redo()
 		{
 		if( this.redoStack.isEmpty() )   
@@ -3012,6 +3040,14 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
+	private void clearUndoRedo()
+		{
+		this.undoStack.clear();
+		this.redoStack.clear();
+		this.unredoLastOp = null;
+		return;
+		}
+	
 	/* pushes the colors from the main tile editor into the undo stack.
 	  A subclass needed to be created in order to differentiate the tile
 	  cell colors from the color palette array. */
