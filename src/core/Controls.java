@@ -653,7 +653,7 @@ public class Controls implements
 //	Controls.menusKeyStack.add(-1);
 		return(MENU_OPEN);
 		}
-	
+
 	/**  Switches engine controls into Input mode. 
 	 * Prepares variables for a new input.
 	 */
@@ -678,7 +678,7 @@ public class Controls implements
 		Controls.inputMsg = theCaption;
 		return;
 		}
-	
+
 	/**  This is called when an input dialog is finished and closed.
 	 * 
 	 * @param keep true to retain the input, false to throw it out (cancel)
@@ -688,6 +688,7 @@ public class Controls implements
 		if( Controls.INPUT_MODE == false )
 			{ return; }
 		Controls.INPUT_MODE = false;
+		System.out.println("Input mode EXIT");
 		if( keep )
 			{
 //			System.out.println(" saved user INPUT : "+
@@ -695,10 +696,20 @@ public class Controls implements
 
 			Controls.INPUT.put( Controls.inputID,
 					Controls.inputbuffer.toString() );
+			// Krybo (Feb.2017)
+			// send control pulse (keycode zero) to all menus as they  
+			// may need an out of cycle update due to the new input.
+			if( core.VergeEngine.Vmm.delegateControl( 0, false ) > 0 )
+				{ 
+				Integer nUpdated = 
+					core.VergeEngine.Vmm.paintMenus(false);
+				System.out.println(" Input pulse caused "+
+					nUpdated.toString()+	" menus to be refreshed." );
+				}
 			}
 		return;
 		}
-	
+
 		/**	This may be used to return String-type input back to 
 		 *     the originating menuitem.
 		 * @param menusId the menu id
@@ -707,7 +718,7 @@ public class Controls implements
 		{
 		if( ! Controls.INPUT.containsKey( menusId )  )
 			{	return(new String(""));	}
-		return( Controls.INPUT.remove(menusId) );
+		return( Controls.INPUT.remove( menusId ) );
 		}
 
 	/**	Export the Long id keyset from the input stash.

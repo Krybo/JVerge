@@ -736,6 +736,7 @@ public class VmiTextSimple implements Vmenuitem
 	 */
 	public void processInput( String input )
 		{
+		// "Backs up" existing data.
 		if( this.textItems.containsKey( this.mode ) )
 			{
 			String dat = this.textItems.get( this.mode );

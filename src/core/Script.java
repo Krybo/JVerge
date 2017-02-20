@@ -5,15 +5,6 @@ import static core.Controls.*;
 import static core.VergeEngine.Vmm;	// The Verge menu manager.
 import core.JVCL;
 
-
-
-
-
-
-
-
-
-
 //import java.awt.AlphaComposite;
 //import java.awt.Font;
 //import java.awt.Image;
@@ -1642,6 +1633,14 @@ public class Script {
 		return resizedImage;
 	    }
 
+	/* Delegator to the core function that obtains input from
+	 * menu items by ID.  */
+	public static String getInput( Long menuID )
+		{
+		return( core.Controls.obtain_input(menuID) );
+		}
+	
+	
 		// Freezes the engine until a key is released.
 	public static void waitKeyUp( int keycode )
 		{

@@ -363,9 +363,9 @@ public class GUI extends JFrame implements ActionListener, ItemListener, Compone
 		updateFPS();
 		}
 
-		// Krybo (2014-09-18) inserted code dealign with map zone to this routine.
-		// This can be used to "hijack" the original [screen] draw process
-		//  and draw a different image to the screen.
+	// Krybo (2014-09-18) inserted code dealing with map zone to this routine.
+	// This can be used to "hijack" the original [screen] draw process
+	//  and draw a different image to the screen.
 	public static void updateGUI( domain.VImage theSource) 
 		{
 		if(Script.TEST_SIMULATION)

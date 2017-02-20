@@ -2,6 +2,7 @@ package menus;
 
 import static core.Script.getFunction;
 import static core.Script.setMenuFocus;
+import static core.Script.getInput;
 
 import java.awt.Color;
 import java.io.File;
@@ -189,7 +190,7 @@ public class VmenuVSPeditor implements Vmenu
 	private VmiGuageInt gR;
 	private VmiGuageInt gG;
 	private VmiGuageInt gB;
-	
+
 	private VImage preview = null;
 	private VImage vspOverview = null;
 	private final Color clrShader = new Color(0.0f,0.0f,0.0f,0.20f);
@@ -216,6 +217,10 @@ public class VmenuVSPeditor implements Vmenu
 	// undoLastOp : to prevent undoing repeated similar actions
 	private Integer undoLastOp = 0;   
 	private static final int MAX_UNDO = 10;
+	
+	//  Add menu ID's to this to cause the input to be scanned
+	//   See  method  processInputs()
+	private Stack<Long> inputIDstack = new Stack<Long>();
 
 //	private static final long serialVersionUID = 6666410183698706332L;
 
@@ -273,6 +278,7 @@ public class VmenuVSPeditor implements Vmenu
 		Method m6 = null;
 		Method m7 = null;
 		Method m8 = null;
+		Method mIn1 = null;
 		try {
 			m2 = VmenuVSPeditor.class.getDeclaredMethod(
 				"saveCurrentVSP",  new Class[]{} );
@@ -292,6 +298,8 @@ public class VmenuVSPeditor implements Vmenu
 				"saveWorkingTile",  new Class[]{} );
 			m8 = VmenuVSPeditor.class.getDeclaredMethod( 
 				"toggleVspOverview",  new Class[]{} );
+			mIn1 = VmenuVSPeditor.class.getDeclaredMethod( 
+				"delegateInput",  VmiInputInteger.class );
 
 			} catch( Exception e ) 	{ e.printStackTrace(); }
 
@@ -336,13 +344,17 @@ public class VmenuVSPeditor implements Vmenu
 		VmiTextSimple vts08 = new VmiTextSimple("Show All Tiles");
 		vts08.setKeycode( 674 );
 		vts08.setAction( m8 );
-		VmiTextSimple vts09 = new VmiTextSimple("Keyboard map");
+		VmiTextSimple vts09 = new VmiTextSimple("Controls Help");
 		vts09.setKeycode( 576 );
 //		vts07.setAction( m7 );
 
 		VmiInputInteger vmiIn01 = new VmiInputInteger( 
 				"<GoTo Tile #> ", "Enter VSP Tile number (INT)", 	0, 0 );
 		vmiIn01.setKeycode( 568 );
+		vmiIn01.setAction( mIn1 );
+//		vmiIn01.setActionArgs( new Object[]{new Integer(1)} );
+		vmiIn01.setActionArgs( new Object[]{vmiIn01} );
+		this.inputIDstack.push( vmiIn01.getId() );
 
 		this.sidebar.addItem( vts01 );	this.sidebar.addItem( vts02a );
 		this.sidebar.addItem( vts02 );	this.sidebar.addItem(vts02b);
@@ -613,8 +625,13 @@ public class VmenuVSPeditor implements Vmenu
 		return( true );
 		}		// End   paint()
 
+	
 	public boolean doControls( Integer ext_keycode )
 		{
+		// Checks all appropriate fields for incoming input
+		if( this.processInputs() > 0 ) 
+			{ return(true); }
+
 		Integer basecode = Controls.extcodeGetBasecode(ext_keycode);
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
 		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
@@ -646,7 +663,7 @@ public class VmenuVSPeditor implements Vmenu
 				Vmenu.getHotKeyMethodArgs( this.colorEditor, ext_keycode ) );
 			return( true ); 
 			}
-
+		
 		// normal key overrides.
 		switch( basecode )
 			{
@@ -662,6 +679,8 @@ public class VmenuVSPeditor implements Vmenu
 				this.setColorPaletteEntry(0, 
 						core.Script.Color_DEATH_MAGENTA);
 				break;
+			case 0:		// silent passthrough - meant to do nothing.
+				return(true);
 			case 101:
 			case 8: 		// BACKSPACE <CANCEL> - change focus.
 				this.playMenuSound(enumMenuEVENT.CANCEL, 33);
@@ -1574,12 +1593,17 @@ public class VmenuVSPeditor implements Vmenu
  */
 	private void loadTile( int vspIdx )
 		{
+		System.out.println( " load tile # "+Integer.toString(vspIdx) );
 		if( this.vsp.checkTile(vspIdx) == false )
 			{  vspIdx = 0; }
+		this.tIndex = vspIdx;
 		VImage t = new VImage( this.vsp.getTileSquarePixelSize(),
 			this.vsp.getTileSquarePixelSize() );
 		t.setImage( this.vsp.getTiles()[vspIdx] );
 		this.loadWorkingImage(t);
+		this.setColorEditorToCursor();
+		this.updatePreview();
+		this.updatePreview();
 		return;
 		}
 
@@ -1590,16 +1614,27 @@ public class VmenuVSPeditor implements Vmenu
 		this.updatePreview();
 		}
 
+	/* Changes the displayed working tile by a offset */
 	private void changeTile( int indexDiff )
 		{
-		this.tIndex += indexDiff;
-		while( this.tIndex >= this.vsp.getNumtiles() )
-			{ this.tIndex -= this.vsp.getNumtiles(); }
-		while( this.tIndex < 0 )
-			{ this.tIndex += this.vsp.getNumtiles(); }
+		int toNum = this.tIndex + indexDiff;
+		while( toNum >= this.vsp.getNumtiles() )
+			{ toNum -= this.vsp.getNumtiles(); }
+		while( toNum < 0 )
+			{ toNum += this.vsp.getNumtiles(); }
+
+		this.changeTileAbs(toNum);
+		return;
+		}
+	
+	/* Changes the displayed working tile to exact vsp index */
+	private void changeTileAbs( int index )
+		{
+		this.tIndex = index;
+		if( this.tIndex < 0 )   { this.tIndex = 0; }
+		if( this.tIndex >= this.vsp.getNumtiles() )   
+			{ this.tIndex = this.vsp.getNumtiles()-1; }
 		this.loadTile( this.tIndex );
-		this.setColorEditorToCursor();
-		this.updatePreview();
 		return;
 		}
 	
@@ -2915,7 +2950,6 @@ public class VmenuVSPeditor implements Vmenu
 			this.vsp = new Vsp( (Vsp) obj );
 			this.updatePreview();
 			this.loadTile( this.tIndex );
-			this.unredoLastOp = obj; 
 			}
 
 		// restore a snapshot of the tile data - reload it.
@@ -2938,6 +2972,7 @@ public class VmenuVSPeditor implements Vmenu
 			if( this.main.countMenuItems() != ssm.getArraySize() )
 				{ 
 				System.out.println(" Discarded undo - Incompatible size");
+				return;
 				}
 
 			for( int idx = 0; idx < ssm.getArraySize(); idx++ )
@@ -2990,5 +3025,49 @@ public class VmenuVSPeditor implements Vmenu
 	
 	public Color getTransparentColor()
 		{ return(this.clrTrans); }
+
+	/*   INPUT ROUTINES */
+	
+	/* Note, input is not asyncronous, This method ends and puts JVerge
+		into input mode.   Another routine needs to
+ 		be sniffing for input entry and applying the payloads.  */
+	public static void delegateInput( VmiInputInteger in )
+		{
+		in.doInput();
+		return;
+		}
+
+
+	/**  This routine will check all menu items with ID's 
+	 * added to the inputIDstack member for incoming input.
+	 * It will then proceed to use these input functionally on a case
+	 * by case basis..   Best to put at top of doControls() method. */
+	private Integer processInputs()
+		{		
+		Integer rslt = 0;
+		int n = this.inputIDstack.size();
+		for( int x = 0; x < n; x++ )	// Scan each input field.
+			{
+			VmiSimpleInput vsi = (VmiSimpleInput) 
+				this.sidebar.getMenuItemByID( this.inputIDstack.get(x) );
+			String theInput = getInput( vsi.getId() );	
+			if( theInput.equals("") )   { continue; }
+			else { rslt++; }
+
+			// here, specific inputs are put to use 
+			switch( x )
+				{
+				case 0:  	//  This is "goto tile #"
+					int tilenum = Integer.parseInt(theInput);
+					this.changeTileAbs( tilenum );
+//					System.out.println( " Got INPUT " + theInput );
+					break;
+				default:
+					System.out.println("Input caught but not utilized");
+					break;
+				}				
+			}
+		return(rslt);
+		}
 	
 	}		// END CLASS
