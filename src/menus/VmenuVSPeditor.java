@@ -979,9 +979,9 @@ public class VmenuVSPeditor implements Vmenu
 				System.out.println("Working tile copied to clipboard.");
 				this.copyWorkingTile().copyImageToClipboard();
 				break;
+
 			case 68:		// [d] Debug (for now)
-//
-				this.wrapWorkingImage( 0, -1 );
+				this.debugColor();
 				break;
 
 			case 70:		// [f] : flood fill tool
@@ -1415,6 +1415,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 2:		// Color Editor - Save color, back to palette.
+				int cidx = this.getSelectedColorkeyCIDX();
+				// TODO: perhaps alpha this shouldn't be hard set
 				Color nc = new Color( this.gR.getValue(), 
 					this.gG.getValue(), this.gB.getValue(), 255 );
 				if( this.editColorInPlace == true )
@@ -1423,7 +1425,7 @@ public class VmenuVSPeditor implements Vmenu
 					this.editColorInPlace = false;
 					Color oc = this.getCursorCell().getColorComponent( 
 						enumMenuButtonCOLORS.BODY_ACTIVE.value() );
-					if( oc.getRGB() == nc.getRGB() )
+					if( (oc == null) || ( oc.getRGB() == nc.getRGB() ) )
 						{	// Value actually was not changed....  cancel.
 						break;
 						}
@@ -1440,8 +1442,10 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				// Else - we return it to the palette.
 				this.cFocus = 1;
+
+				if( this.clrs.get(cidx) == null ) 
+					{  break;  }
 				
-				int cidx = this.getSelectedColorkeyCIDX();
 				// Actually abort..... color wasn't changed.
 				if( nc.getRGB() == this.clrs.get(cidx).getRGB() ) 
 					{ break; }
@@ -3104,6 +3108,19 @@ public class VmenuVSPeditor implements Vmenu
 				}				
 			}
 		return(rslt);
+		}
+	
+	private void debugColor( )
+		{
+		Color c = 
+			this.main.getMenuItemSelected().getColorComponent( 
+				enumMenuButtonCOLORS.BODY_ACTIVE.value() );
+		
+		System.out.println( " Alpha: " + Integer.toString( c.getAlpha() )
+			+ " RGB " + Integer.toString( c.getRGB() ) + 
+			" Trans: " + Integer.toString( c.getTransparency() )	);
+	
+		return;
 		}
 	
 	}		// END CLASS

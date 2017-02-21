@@ -715,12 +715,14 @@ public class VImage implements Transferable
 			//error("Non implemented function: setclip");
 		}
 		
-		// Grabs the Color at a specified pixel.  in triple-float + alpha .
+		// Composes and returns the Color at a specified pixel.  in triple-float + alpha .
 		public Color getPixelColor(int x, int y)
 			{
 			int[] iA = new int[4];
 			this.getImage().getData().getPixel(x, y, iA );
-			return( new Color( iA[0], iA[1], iA[2], 255 ) );
+			//  Krybo (Feb.2017)  bug?  why force alpha to 255?			
+			//	return( new Color( iA[0], iA[1], iA[2], 255 ) );
+			return( new Color( iA[0], iA[1], iA[2], iA[3] ) );
 			}
 
 	/** translates a flat pixel index into an x/y and returns the 
