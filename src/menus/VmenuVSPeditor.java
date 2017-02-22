@@ -42,14 +42,14 @@ import domain.Vsp;
  * ----- Controls Overview --------
  * 
  * { 0-9 and - } 	"Color Keys" Do Operations, corresponding to color bar.
- * 		Unmodified		Change target cell in working tile to a color key
- * 		[Cntl]			Change color key to current working cell. (dropper)
+ * 		Unmodified		Change target cell in working tile to respective color
+ * 		[Cntl]			"dropper"  copy working cell color into color bar.
  * 		[Alt + Shift]	Replace color at cursor with a color key
  * 		[Alt + Cntl]		Change full working tile to a color key  
  * [cntl][backspace]	Exits menu regardless of focus
  * {Arrow Keys}		Navigate menu - move cursor within submenus.
- * 				[Cntl]	Navigate tileset
- * 				[Shift]	Shift entire tile contents.
+ * 				[Cntl]	Change working tile - Navigate tileset
+ * 				[Shift]	Shift around entire tile contents.
  * a	Airbrush, areal Random Spray Tool 3px
  *				[Cntl]	High Density (10 px)
  *				[Shift]	Sprays random colors. 
@@ -769,14 +769,17 @@ public class VmenuVSPeditor implements Vmenu
 					this.wrapWorkingImage( -1, 0 );
 					break;
 					}
-				this.getControlItem().doControls(ext_keycode);
 				if( this.cFocus == 1 )		// Control is in color keybar.
-					{ this.setColorEditorToCurrentColorKey(); }
-				break;
-			case 38: 		// ARROW-UP
-				if( this.cFocus == 1 )
 					{
-					this.nextCbarLine();
+					this.setColorEditorToCurrentColorKey();
+					}
+				this.getControlItem().doControls(ext_keycode);
+				break;
+
+			case 38: 		// ARROW-UP
+				if( isShift == true )   // Shift working tile 1px up
+					{
+					this.wrapWorkingImage( 0, +1 );
 					break;
 					}
 				if( isCntl == true ) 
@@ -785,10 +788,9 @@ public class VmenuVSPeditor implements Vmenu
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
 					break;
 					}
-				if( isShift == true )   // Shift working tile 1px up
+				if( this.cFocus == 1 )
 					{
-					this.wrapWorkingImage( 0, +1 );
-					break;
+					this.nextCbarLine();
 					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
@@ -799,15 +801,17 @@ public class VmenuVSPeditor implements Vmenu
 					this.wrapWorkingImage( +1, 0 );
 					break;
 					}
-				this.getControlItem().doControls(ext_keycode);
 				if( this.cFocus == 1 )		// Control is in color keybar.
-					{ this.setColorEditorToCurrentColorKey(); }
+					{
+					this.setColorEditorToCurrentColorKey();
+					}
+				this.getControlItem().doControls(ext_keycode);
 				break;
 
 			case 40: 		// ARROW-DOWN
-				if( this.cFocus == 1 )
+				if( isShift == true )	// Shift working tile 1px down
 					{
-					this.prevCbarLine();
+					this.wrapWorkingImage( 0, -1 );
 					break;
 					}
 				if( isCntl == true ) 
@@ -816,10 +820,9 @@ public class VmenuVSPeditor implements Vmenu
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
 					break;
 					}
-				if( isShift == true )	// Shift working tile 1px down
+				if( this.cFocus == 1 )
 					{
-					this.wrapWorkingImage( 0, -1 );
-					break;
+					this.prevCbarLine();
 					}
 				this.getControlItem().doControls(ext_keycode);
 				break;
