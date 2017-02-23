@@ -3115,6 +3115,7 @@ public class VmenuVSPeditor implements Vmenu
 	
 	private void debugColor( )
 		{
+		
 		Color c = 
 			this.main.getMenuItemSelected().getColorComponent( 
 				enumMenuButtonCOLORS.BODY_ACTIVE.value() );
@@ -3122,6 +3123,8 @@ public class VmenuVSPeditor implements Vmenu
 		System.out.println( " Alpha: " + Integer.toString( c.getAlpha() )
 			+ " RGB " + Integer.toString( c.getRGB() ) + 
 			" Trans: " + Integer.toString( c.getTransparency() )	);
+		System.out.println(" NUM ANIM: "+
+			Integer.toString( this.vsp.getNumAnimations()) );
 	
 		return;
 		}

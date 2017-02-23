@@ -24,6 +24,25 @@ import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
 import core.Script;
 
+/**   VERGE SPRITE PALETTE
+ * 
+ * A JVerge implementation of VSP.   A tile set index used to provide tiles 
+ * for its sprite based maps.  Each Verge map is required to be 
+ * associated with a VSP, even a blank map.
+ * 
+ * The traditional tile size for Verge is 16x16 pixels and this takes default.
+ * 
+ * The VSP was designed to be flexable and support non-standard 
+ *     tile sizes, but this is not yet realized.
+ *
+ * Supports rudimentary animations by defining a linear stretch of tiles
+ *     given a start and end tile number - with four animation directional
+ *     play modes.
+ * 
+ * @author Rapheal_esper, Krybo
+ *
+ */
+
 public class Vsp 
 	{
 	public static final int  VID_BYTESPERPIXEL	=	3;
@@ -1177,7 +1196,94 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		}
 
 
+	// Krybo (Feb.2017)  added accessors for animations
+	public int getAnimStart( int animationIndex )
+		{
+		if( animationIndex < 0 )
+			{ return(-1); }
+		if( animationIndex > this.anims.length )
+			{ return(-1); }
+		return( this.anims[animationIndex].start );
+		}
+	public int getAnimEnd( int animationIndex )
+		{
+		if( animationIndex < 0 )
+			{ return(-1); }
+		if( animationIndex > this.anims.length )
+			{ return(-1); }
+		return( this.anims[animationIndex].finish );
+		}
+	public int getAnimDelay( int animationIndex )
+		{
+		if( animationIndex < 0 )
+			{ return(-1); }
+		if( animationIndex > this.anims.length )
+			{ return(-1); }
+		return( this.anims[animationIndex].delay );
+		}
+	public int getAnimMode( int animationIndex )
+		{
+		if( animationIndex < 0 )
+			{ return(-1); }
+		if( animationIndex > this.anims.length )
+			{ return(-1); }
+		return( this.anims[animationIndex].mode );
+		}			
+	public String getAnimName( int animationIndex )
+		{
+		if( animationIndex < 0 )
+			{ return(null); }
+		if( animationIndex > this.anims.length )
+			{ return(null); }
+		return( this.anims[animationIndex].name );
+		}
 	
+	// set Methods for modifying animations
+	public boolean setAnimStart( int animationIndex, int newStart )
+		{
+		if( animationIndex < 0 || animationIndex > this.anims.length )
+			{ return(false); }
+		if( newStart < 0 || newStart >= this.numtiles ) 
+			{  return(false); }
+		this.anims[animationIndex].start = newStart; 
+		return(true);
+		}
+	public boolean setAnimFinish( int animationIndex, int newFinish )
+		{
+		if( animationIndex < 0 || animationIndex > this.anims.length )
+			{ return(false); }
+		if( newFinish < 0 || newFinish >= this.numtiles ) 
+			{  return(false); }
+		this.anims[animationIndex].finish = newFinish; 
+		return(true);
+		}
+	public boolean setAnimDelay( int animationIndex, int delay )
+		{
+		if( animationIndex < 0 || animationIndex > this.anims.length )
+			{ return(false); }
+		if( delay < 0  ) 
+			{  return(false); }
+		this.anims[animationIndex].delay = delay; 
+		return(true);
+		}
+	public boolean setAnimMode( int animationIndex, int mode )
+		{
+		if( animationIndex < 0 || animationIndex > this.anims.length )
+			{ return(false); }
+		if( mode < 0 || mode > 3 ) 
+			{  return(false); }
+		this.anims[animationIndex].mode = mode; 
+		return(true); 
+		}
+	public boolean setAnimName( int animationIndex, String name )
+		{
+		if( animationIndex < 0 || animationIndex > this.anims.length )
+			{ return(false); }
+		if( name.isEmpty() || name == null  ) 
+			{  return(false); }
+		this.anims[animationIndex].name = name; 
+		return(true); 
+		}
 	
 	/* ===========  Sub Classes ================== */
 	
