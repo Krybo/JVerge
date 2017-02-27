@@ -121,7 +121,9 @@ public class Vsp
 		}
 
 
-	public Vsp(URL urlpath) {
+	/** Creates a Vsp object from a file system unit.  */
+	public Vsp(URL urlpath) 
+		{
 		try {
 			this.load(urlpath.openStream());
 		} catch (FileNotFoundException fnfe) {
@@ -149,6 +151,10 @@ public class Vsp
 		this.tileSize		= cp.getTileSquarePixelSize();
 		this.version		= cp.getVersion();
 	
+//	System.out.println( "DEBUG: vsp.anims Before = " + 
+//		Integer.toString( this.anims.length )  + 
+//		"  Importing : "+ Integer.toString( cp.getNumAnimations() ) );
+
 		// Slightly more complicated Object-based components.
 		if( cp.getNumAnimations() > 0  )
 			{ 
@@ -1037,6 +1043,8 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	private byte[] getObsPixels()
 		{	return( this.obsPixels ); 	}
 
+	/** Warning:  return value is base 1, not 0 
+	 * A return value of 0 means there really are no animation data. */
 	public int getNumAnimations()
 		{
 		if( this.anims == null )	{ return(0); }
@@ -1285,6 +1293,63 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		return(true); 
 		}
 	
+	/** Query if an animation exists.   Arg index is base 0 */
+	public boolean checkAnimExistsByIndex( int index )
+		{
+		if( this.anims == null )
+			{ return(false); }
+		if( this.anims[index] == null )
+			{ return(false); }
+		if( index >= this.anims.length  )
+			{ return(false); }
+		return(true);
+		}
+	
+	public boolean checkAnimExists( int startTileNum )
+		{
+		for( Animation a : this.anims )
+			{
+			if( a.start == startTileNum )
+				{	return(true);	}
+			}
+		return(false);
+		}
+
+	public int addAnimation(
+		int firstTile, int lastTile, int delay, int mode, String desc )
+		{
+		this.anims.clone();
+		Animation[] anims2 = new Animation[ this.anims.length +1];
+		for( int x = 0; x < this.anims.length +1; x++ )
+			{
+			anims2[x] = this.anims[x];
+			}
+
+		anims2[this.anims.length + 1] =
+			new Animation( firstTile, lastTile, delay, mode);
+		anims2[this.anims.length + 1].name = desc;
+
+		this.anims = anims2;
+		return( this.anims.length+1 );
+		}
+	
+	/** Removes an animation from the array - returns it */
+	public Animation deleteAnimation( int animationNum )
+		{
+		Animation[] newset = new Animation[ this.anims.length-1];
+		Animation rslt = new Animation();
+		int newIdx = 0;
+		for( int x = 0; x < this.anims.length; x++ )
+			{
+			if( x == animationNum )   
+				{ rslt = this.anims[x];  continue; }
+			newIdx++;
+			newset[newIdx] = this.anims[x];
+			}
+		this.anims = newset;
+		return(rslt);
+		}
+
 	/* ===========  Sub Classes ================== */
 	
 	
@@ -1308,6 +1373,30 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			this.finish = 0;
 			this.mode = 0;
 			this.delay = 0;
+			return;
+			}
+		
+		/** Construct a new animation sequence. (anim)
+		 * Sequences are defined by two integers and the resulting 
+		 * animation includes all tiles in between.   There are four
+		 * modes that dictate how the frames switch.
+		 * 
+		 * @param first     VSP tile {@link #Vsp(int, int, int, int) where the anim. starts
+		 * @param last      VSP tile # where the sequence ends 
+		 * @param delay    (units?) between frames
+		 * @param mode    "Direction" of sequence:
+		 * 0	ANIM_MODE_FORWARD  		 
+		 * 1	ANIM_MODE_BACKWARD  
+		 * 2	ANIM_MODE_RANDOM  
+		 * 3	ANIM_MODE_PINGPONG  
+		 */
+		public Animation( int first, int last, int delay, int mode )
+			{
+			this.name = new String("");
+			this.start = first;
+			this.finish = last;
+			this.mode = mode;
+			this.delay = delay;
 			return;
 			}
 	

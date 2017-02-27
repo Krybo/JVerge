@@ -114,7 +114,7 @@ public class VmiButton implements Vmenuitem
 		{
 		this.id = Vmenuitem.getRandomID();
 		
-		this.rx = 0;		this.ry = 0;
+		this.rx = relX;		this.ry = relY;
 		this.ax = posX;	this.ay = posY;
 		this.w = width;	this.h = height;
 		this.keycode = -1;

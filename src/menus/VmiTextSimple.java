@@ -166,17 +166,6 @@ public class VmiTextSimple implements Vmenuitem
 
 		return;
 		}
-
-	public boolean changeMode(Integer theModeNumber )
-		{
-			// in this type of menuitem, the mode is linked to what text string
-			//  is shown,  so check for the data.
-		if( theModeNumber > this.textItems.size() || theModeNumber < 0 )
-			{ this.mode = 0;  return(false); }
-		this.mode = theModeNumber;
-		this.calcDims();
-		return(true);
-		}
 	
 	public VmiTextSimple( String text, int relX, int relY )
 		{
@@ -191,6 +180,16 @@ public class VmiTextSimple implements Vmenuitem
 
 
 	
+	public boolean changeMode(Integer theModeNumber )
+		{
+			// in this type of menuitem, the mode is linked to what text string
+			//  is shown,  so check for the data.
+		if( theModeNumber > this.textItems.size() || theModeNumber < 0 )
+			{ this.mode = 0;  return(false); }
+		this.mode = theModeNumber;
+		this.calcDims();
+		return(true);
+		}
 	
 	public void setFont( Font f )
 		{

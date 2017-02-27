@@ -153,9 +153,15 @@ public class VmenuVSPeditor implements Vmenu
 
 		}		// End state save main sub class
 
-	//    control focus:
-	//   This is a multi-menu, this index is like a tab-order, and
-	//   controls will use it to delegate to the active menu.
+	/*   control focus:
+	  This is a multi-menu, this index is like a tab-order, and
+	  controls will use it to delegate control to the active menu.
+	  0 = SideBar
+	  1 = Color Key Bar
+	  2 = Color Editor
+	  3 = Main Drawing panel
+	  4 = Animation ed.
+	  */
 	private Integer cFocus = 0;
 
 	// tile index: This is the current tile being edited.
@@ -222,6 +228,8 @@ public class VmenuVSPeditor implements Vmenu
 	//   See  method  processInputs()
 	private Stack<Long> inputIDstack = new Stack<Long>();
 
+	private VmenuAnimationEd animEd;
+	
 //	private static final long serialVersionUID = 6666410183698706332L;
 
 
@@ -293,7 +301,7 @@ public class VmenuVSPeditor implements Vmenu
 			m5 = VmenuVSPeditor.class.getDeclaredMethod(
 				"nextTile",  new Class[]{} );
 			m6 = VmenuVSPeditor.class.getDeclaredMethod(
-				"prevTile",  new Class[]{} );
+				"goAnimationEd",  new Class[]{} );
 			m7 = VmenuVSPeditor.class.getDeclaredMethod(
 				"saveWorkingTile",  new Class[]{} );
 			m8 = VmenuVSPeditor.class.getDeclaredMethod( 
@@ -329,14 +337,15 @@ public class VmenuVSPeditor implements Vmenu
 		vts04.setAction( m4 );
 		vts04.setActionArgs( new Object[]{new Integer(3)} );
 
-		VmiTextSimple vts05 = new VmiTextSimple("Next Tile");
+		VmiTextSimple vts05 = new VmiTextSimple("Obstructions");
 		vts05.setKeycode( 314 );
 		vts05.setAction( m5 );
 		
-		VmiTextSimple vts06 = new VmiTextSimple("Prev. Tile");
+		// The target child ID is set below after Anim. menu is constructed..
+		VmiTextSimple vts06 = new VmiTextSimple("Animations");
 		vts06.setKeycode( 298 );
 		vts06.setAction( m6 );
-		
+
 		VmiTextSimple vts07 = new VmiTextSimple("Save Tile");
 		vts07.setKeycode( 664 );
 		vts07.setAction( m7 );
@@ -344,6 +353,7 @@ public class VmenuVSPeditor implements Vmenu
 		VmiTextSimple vts08 = new VmiTextSimple("Show All Tiles");
 		vts08.setKeycode( 674 );
 		vts08.setAction( m8 );
+
 		VmiTextSimple vts09 = new VmiTextSimple("Controls Help");
 		vts09.setKeycode( 576 );
 //		vts07.setAction( m7 );
@@ -420,6 +430,14 @@ public class VmenuVSPeditor implements Vmenu
 		
 		this.loadTile( this.tIndex );
 
+		this.animEd = new VmenuAnimationEd( this.vsp, 
+				this.main.getX(), this.main.getY() );
+		this.animEd.setParentID( this.focusID, true );
+		this.animEd.setVisible(true);
+		this.animEd.setActive(true);
+		this.sidebar.getMenuItem(8).setChildID( 
+			this.animEd.getFocusId() );
+
 		return;
 		}
 
@@ -447,7 +465,7 @@ public class VmenuVSPeditor implements Vmenu
 			// Draw a shading box behind the active sub-menus
 		switch( this.cFocus )
 			{
-			case 0:
+			case 0:		// Sidebar
 				target.rectfill( this.sidebar.getX() - 10, this.sidebar.getY()-10,
 						this.sidebar.getX() + this.sidebar.getWidth() + 10, 
 						this.sidebar.getX() + this.sidebar.getHeight() + 10,  
@@ -520,10 +538,27 @@ public class VmenuVSPeditor implements Vmenu
 		else {  this.main.setMultiSelect( false ); }
 
 		// Paint the primary sub-menus objects.
-		this.main.paint(target);
-		this.sidebar.paint(target);
-		this.colorkey.paint(target);
-		this.colorEditor.paint(target);
+		
+		this.sidebar.paint( target );
+		this.colorkey.paint( target );
+		this.colorEditor.paint( target );
+		
+		// Either paint the main editor or the animation editor
+		if( this.cFocus == 4 )
+			{ this.animEd.paint( target ); }
+		else 
+			{
+			// Main Editor & its frame.
+			this.main.paint( target );
+			target.rect( this.main.getX()-2, this.main.getY()-2, 
+				this.main.getX()+this.main.getWidth()+1, 
+				this.main.getY()+this.main.getHeight()+1, 
+				Color.WHITE );
+			target.rect( this.main.getX()-3, this.main.getY()-3, 
+				this.main.getX()+this.main.getWidth()+2, 
+				this.main.getY()+this.main.getHeight()+2, 
+				Color.BLACK );
+			}
 		
 		// Tile real-size 3x3 Preview
 		int puX = 176;
@@ -538,15 +573,7 @@ public class VmenuVSPeditor implements Vmenu
 					this.preview);  
 				} }
 
-		// Main frame.
-		target.rect( this.main.getX()-2, this.main.getY()-2, 
-				this.main.getX()+this.main.getWidth()+1, 
-				this.main.getY()+this.main.getHeight()+1, 
-				Color.WHITE );
-		target.rect( this.main.getX()-3, this.main.getY()-3, 
-				this.main.getX()+this.main.getWidth()+2, 
-				this.main.getY()+this.main.getHeight()+2, 
-				Color.BLACK );
+
 		
 		// Active Tool annotations
 		if( this.lineTool != -1 )
@@ -691,6 +718,11 @@ public class VmenuVSPeditor implements Vmenu
 			return( true ); 
 			}
 		
+		// If the animation editor is ON -- copy all controls to it.
+		// Control processing continues below, so be careful of dups.
+		if( this.cFocus == 4 ) 
+			{ this.animEd.doControls(ext_keycode); }
+
 		// normal key overrides.
 		switch( basecode )
 			{
@@ -709,6 +741,7 @@ public class VmenuVSPeditor implements Vmenu
 			case 0:		// silent passthrough - meant to do nothing.
 				return(true);
 			case 101:
+				break;
 			case 8: 		// BACKSPACE <CANCEL> - change focus.
 				this.playMenuSound(enumMenuEVENT.CANCEL, 33);
 				switch ( this.cFocus )
@@ -732,6 +765,9 @@ public class VmenuVSPeditor implements Vmenu
 
 				return( true );
 			case 10: 		// ENTER KEY <CONFIRM>
+				// 	Already delegated to animation menu.
+				if( this.cFocus == 4 )
+					{  break; }	
 				// xfer control to the color editor to directly modify this cell.
 				if( this.cFocus == 3 && isCntl == true && isShift == true)
 					{
@@ -1512,7 +1548,6 @@ public class VmenuVSPeditor implements Vmenu
 
 		try { 			// 	call the method. and prey
 //			this.myAction.invoke(null);
-
 	        if( ( action.getModifiers() & Modifier.STATIC) 
 	     		   == Modifier.STATIC  )
 	     	   { action.invoke( null, args ); }
@@ -1520,9 +1555,9 @@ public class VmenuVSPeditor implements Vmenu
 	     	   {
 	     	   boolean localTest = false;
 	     	   for( Method mTest : this.getClass().getDeclaredMethods() )
-	     		   {
+	     		   {	     		   
 	     		   if( mTest.getName().equals( action.getName() ))
-	     			   { localTest = true; }
+	     			   {  localTest = true;  }
 	     		   }
 	     	   if( localTest == false )		
 	     		   {
@@ -2254,13 +2289,15 @@ public class VmenuVSPeditor implements Vmenu
 			return(false);
 			}
 
-		System.out.println(   " Loading VSP with : " +
+		System.out.println(   " Loading VSP ( " +
+				testUrl.getFile() + " )  " +
 			Integer.toString( newguy.getNumtiles() ) + " tiles.   " + 
 			Integer.toString( newguy.getNumObsTiles() ) + " obs  " +
 			Integer.toString( newguy.getNumAnimations() ) + " anims "
 			);
 		
 		this.vsp = newguy;
+		this.animEd.changeVsp( this.vsp );
 
 		// Post-load - must restore some internals to a fresh state.
 
@@ -3126,6 +3163,16 @@ public class VmenuVSPeditor implements Vmenu
 		System.out.println(" NUM ANIM: "+
 			Integer.toString( this.vsp.getNumAnimations()) );
 	
+		return;
+		}
+
+	/** Focuses controls to the animation editor Sub Menu. */
+	public void goAnimationEd( )
+		{
+		this.cFocus = 4;
+		this.animEd.setVisible( true );
+		this.animEd.setActive( true );
+		this.animEd.doControls( 0 );	// Send update pulse
 		return;
 		}
 	
