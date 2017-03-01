@@ -53,7 +53,7 @@ import domain.Vsp;
  * a	Airbrush, areal Random Spray Tool 3px
  *				[Cntl]	High Density (10 px)
  *				[Shift]	Sprays random colors. 
- * b
+ * b	Toggle Obstruction Editing.
  * c	Copy working tile to the clipboard
  * 				[Shift]  Copy working tile into tile group. 
  * 				[Cntl] Copy entire Vsp tileset to clipboard without padding.
@@ -74,7 +74,7 @@ import domain.Vsp;
  * 					[Shift]   Toggle contiguous line mode.
  * 				{ In Color key } :  Load palette file
  * 			HOT	[Cntl]	Load entire VSP file from disk.
- * m
+ * m	Toggle Ani[m]ation Mode
  * n	New		{main} 		New Tile: Clears tile to tool color 1
  * 					{colorKey} 	Set the basic 8-unit color key.
  * o	rOtate 				Rotates clockwise
@@ -104,6 +104,8 @@ import domain.Vsp;
  * NP+		Decrease areal size of certain tool functions
  * Page-Up + Cntl			Next Color Key line
  * Page-Down + Cntl		Previous Color Key line
+ * Left Bracket [		When editing animations - Imports Start Tile
+ * Right Bracket ]		When editing animations - Imports End Tile
  * 
  * @author Krybo
  *
@@ -299,9 +301,9 @@ public class VmenuVSPeditor implements Vmenu
 			m4 = VmenuVSPeditor.class.getDeclaredMethod(
 				"focusSubMenuIndex",  Integer.class );
 			m5 = VmenuVSPeditor.class.getDeclaredMethod(
-				"nextTile",  new Class[]{} );
+				"toggleObsEdit",  new Class[]{} );
 			m6 = VmenuVSPeditor.class.getDeclaredMethod(
-				"goAnimationEd",  new Class[]{} );
+				"toggleAnimationEd",  new Class[]{} );
 			m7 = VmenuVSPeditor.class.getDeclaredMethod(
 				"saveWorkingTile",  new Class[]{} );
 			m8 = VmenuVSPeditor.class.getDeclaredMethod( 
@@ -338,12 +340,12 @@ public class VmenuVSPeditor implements Vmenu
 		vts04.setActionArgs( new Object[]{new Integer(3)} );
 
 		VmiTextSimple vts05 = new VmiTextSimple("Obstructions");
-		vts05.setKeycode( 314 );
+		vts05.setKeycode( 528 );
 		vts05.setAction( m5 );
-		
+
 		// The target child ID is set below after Anim. menu is constructed..
 		VmiTextSimple vts06 = new VmiTextSimple("Animations");
-		vts06.setKeycode( 298 );
+		vts06.setKeycode( 616 );
 		vts06.setAction( m6 );
 
 		VmiTextSimple vts07 = new VmiTextSimple("Save Tile");
@@ -805,6 +807,11 @@ public class VmenuVSPeditor implements Vmenu
 					this.wrapWorkingImage( -1, 0 );
 					break;
 					}
+				if( isCntl == true ) 
+					{
+					this.prevTile();
+					break;
+					}
 				if( this.cFocus == 1 )		// Control is in color keybar.
 					{
 					this.setColorEditorToCurrentColorKey();
@@ -835,6 +842,11 @@ public class VmenuVSPeditor implements Vmenu
 				if( isShift == true )	// Shift working tile 1px right
 					{
 					this.wrapWorkingImage( +1, 0 );
+					break;
+					}
+				if( isCntl == true ) 
+					{
+					this.nextTile();
 					break;
 					}
 				if( this.cFocus == 1 )		// Control is in color keybar.
@@ -1249,6 +1261,21 @@ public class VmenuVSPeditor implements Vmenu
 						}
 				break;
 		
+			case 91:		// left bracket
+				if( this.cFocus == 4 )
+					{
+					this.animEd.importTileTarget( 
+						this.tIndex, true );
+					}
+				break;
+			case 93:		// right bracket
+				if( this.cFocus == 4 )
+					{
+					this.animEd.importTileTarget( 
+						this.tIndex, false );
+					}
+				break;
+				
 			case 109:		// [Numpad - ]  remove tiles or colors.
 				break;
 		
@@ -3166,10 +3193,22 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
-	/** Focuses controls to the animation editor Sub Menu. */
-	public void goAnimationEd( )
+	/** Sends editor into obstruction edit mode. 
+	 * Changes tile navigator and uses another selectedIndex */
+	public void toggleObsEdit()
 		{
-		this.cFocus = 4;
+		// TODO: do this.
+		System.out.println("OBSTRUCTION EDITOR.");
+		return;
+		}
+	
+	/** Focuses controls to the animation editor Sub Menu. */
+	public void toggleAnimationEd( )
+		{
+		if( this.cFocus != 4 )
+			{	this.cFocus = 4;	}
+		else
+			{	this.cFocus = 1;	}
 		this.animEd.setVisible( true );
 		this.animEd.setActive( true );
 		this.animEd.doControls( 0 );	// Send update pulse

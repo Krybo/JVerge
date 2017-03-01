@@ -334,9 +334,11 @@ public class VImage implements Transferable
 			}
 		}
 
-		public void blit(int x, int y, VImage src) {
-			this.blit(x, y, src.image);
-		}
+		public void blit(int x, int y, VImage src ) 
+			{
+			if( src == null )	{ return; }
+			this.blit( x, y, src.image );
+			}
 		public void blit(int x, int y, Image src) { // [Rafael, the Esper] Always opaque
 			if(currentLucent < 255) {
 				Graphics2D g2d = (Graphics2D) getImage().getGraphics();

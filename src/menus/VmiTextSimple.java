@@ -428,8 +428,20 @@ public class VmiTextSimple implements Vmenuitem
 		}
 
 	public void setIconContent(HashMap<Integer, VImage> imageItems)
-		{	
+		{
 		this.iconItems = imageItems;
+		this.calcDims();
+		return;
+		}
+	
+	/** Sets the same VImage to all known Vmenuitem states. */
+	public void setIconContent( VImage img )
+		{
+		this.iconItems.put(enumMenuItemSTATE.NORMAL.value(), img);
+		this.iconItems.put(enumMenuItemSTATE.ACTIVATED.value(), img);
+		this.iconItems.put(enumMenuItemSTATE.DISABLED.value(), img);
+		this.iconItems.put(enumMenuItemSTATE.SELECTED.value(), img);
+		this.iconItems.put(enumMenuItemSTATE.STATELESS.value(), img);
 		this.calcDims();
 		return;
 		}
