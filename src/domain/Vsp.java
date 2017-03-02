@@ -1332,7 +1332,20 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		this.anims = anims2;
 		return( this.anims.length+1 );
 		}
-	
+
+
+	public static String animationModeToString( Integer mode )
+		{
+		switch( mode )
+			{
+			case 0:  return("Standard");
+			case 1:  return("Reversed");
+			case 2:  return("Random");
+			case 3:  return("Oscillate");
+			default:  return("error");
+			}
+		}
+
 	/** Removes an animation from the array - returns it */
 	public Animation deleteAnimation( int animationNum )
 		{
