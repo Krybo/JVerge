@@ -27,6 +27,7 @@ public class VmenuAnimationEd implements Vmenu
 	private String curDesc = new String("No Description");
 	private boolean isActive = false;
 	private boolean isVisible = false;
+	private final Integer MAX_DELAY = new Integer(9999);
 
 	private int vmFocus;		// Keyboard control focus
 	private int animNum;	// Current working animation index.
@@ -59,7 +60,16 @@ public class VmenuAnimationEd implements Vmenu
 	private final Color clrTrans = new Color(255,0,255,0);
 	private final Color clrHlight = new Color(128,0,64, 64 );
 	
-	
+	// Use this to quickly set commonly used values in the Delay (ms) box
+	private final Integer[] delayLevels = 
+		{
+		new Integer(5),    new Integer(10),
+		new Integer(25),  new Integer(50),
+		new Integer(100), new Integer(250),
+		new Integer(500),  new Integer(1000)
+		};
+	private int delayLevel = 0;
+
 	/**  Constructor - only need a VSP object to draw animations from */
 	public VmenuAnimationEd( Vsp vspData, int leftX, int topY )
 		{
@@ -273,18 +283,23 @@ public class VmenuAnimationEd implements Vmenu
 						break;
 					case 6:
 						this.curDesc = new String("No Description");
+						this.isModified = true;
 						break;
 					case 7:
 						this.curStart = 0;
+						this.isModified = true;
 						break;
 					case 8:
 						this.curEnd = 0;
+						this.isModified = true;
 						break;
 					case 9:
 						this.curDelay = 0;
+						this.isModified = true;
 						break;
 					case 10:
 						this.curMode = 0;
+						this.isModified = true;
 						break;
 					default:
 						break;
@@ -320,45 +335,48 @@ public class VmenuAnimationEd implements Vmenu
 			//     directly into the input boxes.  Funky conversions needed.
 			case 48:	case 49:  case 50:  case 51:  case 52:
 			case 53:	case 54:  case 55:  case 56:  case 57: case 45:
-				if( this.vmFocus == 0 )
+				int transform = basecode - 48;
+				if( transform == -1 )  { transform = 9; }
+				if( transform == -4 )  { transform = 10; }
+
+				if(  (this.vmFocus == 0)  && 
+					(this.theVsp.getNumAnimations() > 0)  )
 					{
-					Integer rtn = this.normalizeIntegerInput(
-						this.getMenuItem(this.vmFocus), "Animation # ", 
-						Character.toString ( (char) basecode.intValue() ),
-						0, this.theVsp.getNumAnimations()-1 );
-					if( rtn == -1 )
+					this.animNum = this.animNum * 10 + transform;
+					if( this.animNum > this.theVsp.getNumAnimations() )
 						{ 
-						System.out.println( "NUMERIC INPUT REJECTED.");
+						this.animNum = this.theVsp.getNumAnimations()-1; 
 						}
-					if( this.vmFocus == 7 )
-						{ this.curStart = rtn; }
-					if( this.vmFocus == 8 )
-						{ this.curEnd = rtn; }
-					if( this.vmFocus == 9 )
-						{ this.curDelay = rtn; }
-					if( this.vmFocus == 10 )
-						{ this.curMode = rtn; }
-					break;
+					this.loadAnimation( this.animNum );
+					this.isModified = false;
 					}
-				if( this.vmFocus > 6 && this.vmFocus < 11) 
+				if( this.vmFocus == 7 )
 					{
-					Integer rtn;
-						rtn = this.normalizeIntegerInput(
-							this.getMenuItem(this.vmFocus),"",
-							Character.toString ( (char) basecode.intValue()),
-							0, null);
-					if( rtn == -1 )
-						{ 
-						System.out.println( "NUMERIC INPUT REJECTED.");
-						}
-					if( this.vmFocus == 7 )
-						{ this.curStart = rtn; }
-					if( this.vmFocus == 8 )
-						{ this.curEnd = rtn; }
-					if( this.vmFocus == 9 )
-						{ this.curDelay = rtn; }
-					if( this.vmFocus == 10 )
-						{ this.curMode = rtn; }
+					this.curStart = this.curStart * 10 + transform;
+					if( this.curStart > this.theVsp.getNumtiles() )
+						{ this.curStart = this.theVsp.getNumtiles(); }
+					this.isModified = true;
+					}
+				if( this.vmFocus == 8 )
+					{
+					this.curEnd = this.curEnd * 10 + transform;
+					if( this.curEnd > this.theVsp.getNumtiles() )
+						{ this.curEnd = this.theVsp.getNumtiles(); }
+					this.isModified = true;
+					}
+				if( this.vmFocus == 9 )
+					{
+					this.curDelay = this.curDelay * 10 + transform;
+					if( this.curDelay > this.MAX_DELAY )
+						{ this.curDelay = this.MAX_DELAY; }
+					this.isModified = true;
+					}
+				if( this.vmFocus == 10 )
+					{
+					this.curMode = transform;
+					if( this.curMode > 3 )
+						{  this.curMode = 3; }
+					this.isModified = true;
 					}
 				break;
 			
@@ -788,13 +806,21 @@ public class VmenuAnimationEd implements Vmenu
 				break;
 			case 3:  break;
 			case 4:  break;
-			case 5:  break;
+			case 5:
+				this.saveCurrentSettings();
+				break;
 			case 6:
 				this.vmitDesc.doInput();
 				break;
 			case 7:  break;
 			case 8:  break;
-			case 9:  break;
+			case 9:
+				this.delayLevel++;
+				if( this.delayLevel > 7 )
+					{ this.delayLevel = 0; }
+				this.curDelay = this.delayLevels[ this.delayLevel ];
+				this.isModified = true;
+				break;
 			case 10:
 				this.changeMode(+1);
 				break;
@@ -803,66 +829,6 @@ public class VmenuAnimationEd implements Vmenu
 		return;
 		}
 	
-	/** Utility function that deals with altering input box values. */
-	private Integer normalizeIntegerInput( VmiTextSimple vmi, 
-			String label, String input, 
-			Integer minBound, Integer maxBound )
-		{
-		// TODO:  Redo this to only add to the this.curX members.
-		
-		String filteredInput = input.replaceAll("[^0-9]","");
-		Integer result = 0;
-		String rebuild;
-		if( filteredInput.length() <= 0 )
-			{ return(-1); }
-		try {
-			String existing = vmi.getText();
-			existing = existing.replaceAll( label ,"");
-			existing = existing.replaceAll( "[^0-9]" ,"");
-			if( existing.isEmpty() )
-				{ existing = "0"; }
-			
-			rebuild = existing + filteredInput;
-			rebuild = rebuild.replaceAll( "^0*" ,"" );
-			// unique oppertunity here to obtain a number
-			// Convert to int to ensure bounds.
-			if( rebuild.isEmpty() || rebuild.equals("") || rebuild == null )
-				{ rebuild = new String("0");  }
-			Integer val = Integer.parseInt( rebuild );
-			if( minBound != null && val < minBound )
-				{ val = minBound; }
-			if( maxBound != null && val > maxBound )
-				{ val = maxBound; }
-			result = val;
-			rebuild = label + " " + Integer.toString(val);
-			}
-		catch( Exception e )
-			{
-			e.printStackTrace();
-			return(-1);
-			}
-
-		vmi.setText(rebuild);
-		this.isModified = true;
-		return(result);	
-		}
-
-	/** attempts to cast a Vmenuitem and pass it a number. 
-	 * The casting may fail.  Safer to use the alternative method.  */
-	private Integer normalizeIntegerInput( Vmenuitem vmi, 
-		String label, String input,
-		Integer minBound, Integer maxBound )
-		{
-		VmiTextSimple tmp = null;
-		try {
-			tmp = (VmiTextSimple) vmi;
-			}  
-		catch( Exception e )	// If there is anything wrong.. bail.
-			{ return(-1); }
-		return( this.normalizeIntegerInput( tmp, label, input, 
-			minBound, maxBound ) );
-		}
-
 	/**  Used by parent menus to change tile inputs.
 	 * second argument == true means the start tile
 	 * second argument == false means the end tile  */
@@ -873,14 +839,21 @@ public class VmenuAnimationEd implements Vmenu
 		
 		if( startOrEnd )
 			{
-			this.curStart = tileIndex; 
+			this.curStart = tileIndex;
+			if( this.curStart < 0 )
+				{ this.curStart = 0; }
+			if( this.curStart > this.theVsp.getNumtiles() )
+				{ this.curStart = this.theVsp.getNumtiles(); }
 			}
 		else
 			{
 			this.curEnd = tileIndex;
-			this.vmitEnd.setIconContent( 
-				this.theVsp.getTileAsVImage( tileIndex) );
+			if( this.curEnd < 0 )
+				{ this.curEnd = 0; }
+			if( this.curEnd > this.theVsp.getNumtiles() )
+				{ this.curEnd = this.theVsp.getNumtiles(); }
 			}
+		this.isModified = true;
 		return;
 		}
 	
@@ -902,6 +875,30 @@ public class VmenuAnimationEd implements Vmenu
 			{ this.curMode += 4; }
 		while( this.curMode > 3 )
 			{ this.curMode -= 4; }
+		this.isModified = true;
+		return;
+		}
+	
+	private void saveCurrentSettings()
+		{
+		if( this.theVsp.getNumAnimations() == 0 )
+			{
+			this.theVsp.addAnimation( this.curStart, this.curEnd, 
+				this.curDelay, this.curMode, this.curDesc );
+			this.isModified = false;
+			return;
+			}
+
+		this.theVsp.setAnimStart( this.animNum, this.curStart );
+		this.theVsp.setAnimFinish( this.animNum, this.curEnd );
+		this.theVsp.setAnimDelay( this.animNum, this.curDelay );
+		this.theVsp.setAnimMode( this.animNum, this.curMode );
+		this.theVsp.setAnimName( this.animNum, this.curDesc );
+
+		this.isModified = false;
+		this.vmFocus = 4;
+		System.out.println(" Saved Animation # " +
+				Integer.toString( this.animNum ));
 		return;
 		}
 	
