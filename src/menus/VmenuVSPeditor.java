@@ -695,7 +695,9 @@ public class VmenuVSPeditor implements Vmenu
 
 			// Eat hotkeys in specific order.
 			// These get priority over regular controls.
-		if( Vmenu.hasHotKey( this.sidebar, ext_keycode) == true )
+			// Disable this when in animation edit.
+		if( this.cFocus != 4 &&
+			Vmenu.hasHotKey( this.sidebar, ext_keycode) == true )
 			{
 			this.exec( Vmenu.getHotKeyMethod( this.sidebar, ext_keycode ),
 				Vmenu.getHotKeyMethodArgs( this.sidebar, ext_keycode ) );
@@ -782,6 +784,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 				
 			case 33:		// [Page-UP]
+				if( this.cFocus == 4 )
+					{ break; }
 				if( isCntl == true )
 					{
 					this.nextCbarLine();
@@ -792,6 +796,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 			
 			case 34:		// Page Down
+				if( this.cFocus == 4 )
+					{ break; }
 				if( isCntl == true )
 					{
 					this.prevCbarLine();
@@ -1032,6 +1038,7 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 68:		// [d] Debug (for now)
+				if( this.cFocus == 4 ) { break; }
 				this.debugColor();
 				break;
 
@@ -1097,6 +1104,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 78:			// [n] new
+				if( this.cFocus == 4 )
+					{ break; }
 				System.out.println("n pressed");
 				switch( this.cFocus )
 					{
@@ -1144,6 +1153,7 @@ public class VmenuVSPeditor implements Vmenu
 
 			case 79:		// [o]  r[o]tation and mirroring.
 				if( this.cFocus != 3 )		{ break; }
+				if( this.cFocus != 4 )		{ break; }
 				if( isCntl == true )
 					{ this.rotate( +1, false ); }
 				else if( isAlt == true )
@@ -1171,6 +1181,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 83:			// [s] Save functions.
+				if( this.cFocus == 4 )
+					{ break; }
 				if( isShift == true )
 					{
 					this.savePalette();
@@ -1233,7 +1245,9 @@ public class VmenuVSPeditor implements Vmenu
 				this.redo();
 				break;
 
-			case 127:		// [Delete] 
+			case 127:		// [Delete]
+				if( this.cFocus == 4 )
+					{ break; }
 				switch( this.cFocus )
 					{
 					case 1:		// Delete current palette entry

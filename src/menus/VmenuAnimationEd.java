@@ -294,7 +294,7 @@ public class VmenuAnimationEd implements Vmenu
 						this.isModified = true;
 						break;
 					case 9:
-						this.curDelay = 0;
+						this.curDelay = 1;
 						this.isModified = true;
 						break;
 					case 10:
@@ -305,7 +305,15 @@ public class VmenuAnimationEd implements Vmenu
 						break;
 					}
 				break;
-				
+			
+			case 33:		// [PAGE-UP]
+				this.loadNextAnimation();
+				break;
+
+			case 34:		// [PAGE-DOWN]
+				this.loadPrevAnimation();
+				break;
+
 			// Left and right controls are more descrete due to menu layout
 			//  3 sets of buttons can be jumped to.
 			case 37: 		// ARROW-[LEFT]
@@ -330,7 +338,36 @@ public class VmenuAnimationEd implements Vmenu
 			case 40: 		// ARROW-[DOWN]
 				this.changeSelectedIndex(+1);
 				break;
-			
+
+			case 68:		// [d]  jump to delay
+				this.vmFocus = 9;
+				break;
+
+			case 69:		// [e]  jump to delay
+				this.vmFocus = 8;
+				break;
+
+			case 78:		// [n] move control to name (description) input
+				this.vmFocus = 6;
+				break;
+
+			case 79:		// [o] Goto Mode edit
+				this.vmFocus = 10;
+				break;
+
+			case 83:		// [s]  Goto Start # edit.
+				this.vmFocus = 7;
+				break;
+
+			case 61:		// [+] or NP+    add animation.
+			case 107:
+				this.funcActivate( 3 );
+				break;
+
+			case 127:		// [Delete] same as rmov button.
+				this.funcActivate( 4);
+				break;
+				
 			// Numbers keystrokes in this menu will be inserted
 			//     directly into the input boxes.  Funky conversions needed.
 			case 48:	case 49:  case 50:  case 51:  case 52:
@@ -492,8 +529,16 @@ public class VmenuAnimationEd implements Vmenu
 	 * set into the text menu items.  */
 	public void refresh()
 		{
-		this.vmitAnimNumber.setText(
-			"Animation # " + Integer.toString( this.animNum)  );
+		if( this.theVsp.getNumAnimations() == 0 )
+			{
+			this.vmitAnimNumber.setText(
+				" Empty " );
+			}
+		else
+			{
+			this.vmitAnimNumber.setText(
+				"Animation # " + Integer.toString( this.animNum)  );
+			}
 		this.vmitBegin.setText( this.curStart.toString() );
 		this.vmitEnd.setText( this.curEnd.toString() );
 		this.vmitDelay.setText( this.curDelay.toString() );
@@ -793,10 +838,13 @@ public class VmenuAnimationEd implements Vmenu
 		return;
 		}
 
+	private void funcActivate( )
+		{	this.funcActivate( this.vmFocus );	}
+	
 	// Handle Executive functions for each button / input.
-	private void funcActivate()
+	private void funcActivate( int fakeFocusCode )
 		{
-		switch( this.vmFocus )
+		switch( fakeFocusCode )
 			{
 			case 1:
 				this.loadPrevAnimation();
@@ -804,8 +852,22 @@ public class VmenuAnimationEd implements Vmenu
 			case 2:
 				this.loadNextAnimation();
 				break;
-			case 3:  break;
-			case 4:  break;
+			case 3:		// Add new animation from current settings.
+				int n = this.theVsp.addAnimation( this.curStart, 
+					this.curEnd, this.curDelay, this.curMode, this.curDesc);
+				if( n == 1 )	{  this.animNum = 0; } 
+				System.out.println(" Added animation # "+
+						Integer.toString(n));
+				break;
+			case 4:		// Remove current animation
+				if( this.theVsp.getNumAnimations() <= 0 )
+					{ break; }
+				if( this.theVsp.getNumAnimations() == 1 )
+					{ this.vmFocus = 3; }
+				this.theVsp.deleteAnimation( this.animNum );
+				if( this.animNum >= this.theVsp.getNumAnimations()-1 )
+					{ this.animNum = this.theVsp.getNumAnimations() - 1; }
+				break;
 			case 5:
 				this.saveCurrentSettings();
 				break;

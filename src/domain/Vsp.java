@@ -1318,19 +1318,26 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	public int addAnimation(
 		int firstTile, int lastTile, int delay, int mode, String desc )
 		{
-		this.anims.clone();
-		Animation[] anims2 = new Animation[ this.anims.length +1];
-		for( int x = 0; x < this.anims.length +1; x++ )
+//		this.anims.clone();
+		Animation[] anims2;
+		int newAddition = -1;
+			// There may be no animations... so start with 1
+		if( this.anims == null || this.anims.length == 0 )
+			{	newAddition = 1;	}
+		else
+			{ 	newAddition = this.anims.length + 1; }
+		anims2 = new Animation[ newAddition ];
+		for( int x = 0; x < newAddition-1; x++  )
 			{
 			anims2[x] = this.anims[x];
 			}
 
-		anims2[this.anims.length + 1] =
-			new Animation( firstTile, lastTile, delay, mode);
-		anims2[this.anims.length + 1].name = desc;
-
+		anims2[ newAddition - 1 ] =
+			new Animation( firstTile, lastTile, delay, mode );
+		anims2[ newAddition - 1 ].name = desc;
+		// Swap in new animation arrays.
 		this.anims = anims2;
-		return( this.anims.length+1 );
+		return( newAddition );
 		}
 
 
@@ -1352,12 +1359,12 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		Animation[] newset = new Animation[ this.anims.length-1];
 		Animation rslt = new Animation();
 		int newIdx = 0;
-		for( int x = 0; x < this.anims.length; x++ )
+		for( int x = 0; x < this.anims.length - 1; x++ )
 			{
 			if( x == animationNum )   
 				{ rslt = this.anims[x];  continue; }
-			newIdx++;
 			newset[newIdx] = this.anims[x];
+			newIdx++;
 			}
 		this.anims = newset;
 		return(rslt);
