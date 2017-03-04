@@ -64,6 +64,9 @@ public class VmenuConfirmPrompt implements Vmenu
 		return;
 		}
 
+	public boolean animate( VImage target )
+		{ return false; }
+	
 	public boolean paint(VImage target )
 		{
 		int targetWidth = target.width;

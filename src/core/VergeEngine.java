@@ -15,20 +15,6 @@ import static domain.Entity.SOUTH;
 import static domain.Entity.SW;
 import static domain.Entity.WEST;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
@@ -864,12 +850,22 @@ public class VergeEngine extends Thread
 			log(" --------------------------------------------------------------" );
 			log("Entering Area: " + mapname);
 			
-			// Game Map Loop
-			while(!done) {
+			// *** Game Master Engine Loop ***
+
+			Long mainLoopTimer = System.nanoTime();
+			Long mainLoopTickNs = new Long(0);
+			while(!done) 
+				{
 				updateControls();
+				
 				//TimedProcessEntities();
 				while (!die) 
 					{
+					mainLoopTickNs = System.nanoTime() - mainLoopTimer;
+					mainLoopTimer += mainLoopTickNs;
+					// Handles lean, high frequency menu layer updates.
+					Vmm.highFreqProcessor( mainLoopTickNs );
+
 					updateControls();
 
 					if(virtualScreen==null) {

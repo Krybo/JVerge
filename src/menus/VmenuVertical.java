@@ -78,6 +78,9 @@ public class VmenuVertical implements Vmenu
 		return;
 		}
 
+	public boolean animate( VImage target )
+		{ return false; }
+	
 	public boolean paint(VImage target)
 		{
 		// System.out.println("VerticalMenu draw called.");

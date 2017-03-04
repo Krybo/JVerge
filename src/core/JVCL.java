@@ -834,7 +834,8 @@ public class JVCL
 		}
 
 	/**  Draws the Vmenu object attached to a given layer --
-	 * onto the given layer.   Does nothing if there is no attachment. 
+	 * onto the given layer.   Does nothing if there is no attachment.
+	 * Usually handled by VmenuManager 
 	 * 
 	 * @param vcLayerNum	The VClayer number
 	 */
@@ -845,6 +846,22 @@ public class JVCL
 		if( this.vcl.get( vcLayerNum ).vm == null )
 			{ return; }
 		this.vcl.get( vcLayerNum ).vm.paint( 
+			this.vcl.get( vcLayerNum ) );
+		this.requiresUpdate = true;
+		return;
+		}
+
+	/** Run Vmenu animation routine (once) that is 
+	 * attached to a specified layer.  Usually handled by VmenuManager
+	 * @param vcLayerNum	The VClayer number
+	 * */
+	public void JVCmenuAnimateAttached( int vcLayerNum )
+		{
+		if( ! this.vcl.get( vcLayerNum).active )	
+			{ return; }
+		if( this.vcl.get( vcLayerNum ).vm == null )
+			{ return; }
+		this.vcl.get( vcLayerNum ).vm.animate( 
 			this.vcl.get( vcLayerNum ) );
 		this.requiresUpdate = true;
 		return;

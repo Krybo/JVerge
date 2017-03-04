@@ -423,6 +423,9 @@ public class VmiDataTable implements Vmenuitem
 		{ return; }
 
 
+	public boolean animate( VImage target )
+		{ return false; }
+	
 	/**  Draws the contents of this menuitem Data table onto 
 	 *    the provided VImage
 	 */

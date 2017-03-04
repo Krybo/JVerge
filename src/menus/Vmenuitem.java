@@ -63,6 +63,18 @@ public interface Vmenuitem
 	
 	// Method to draw the item.
 	public void paint(VImage target);
+	
+	/** Special animated drawing content.   Is called on a pre-specified 
+	 * Frequency by the VmenuManager.  Do not make animation too
+	 * intricate as blocks that take significantly long will 
+	 * quickly impact performance, depending on frequency and intricacy.
+	 * Animated items can be expected to "draw over" what is done
+	 *   by the lower frequency paint() method.
+	 * @param target  a VImage reference to draw on.
+	 * @return boolean success or fail.
+	 */
+	public boolean animate( VImage target );
+	
 	// mode # For internal use
 	public boolean changeMode(Integer theModeNumber );
 

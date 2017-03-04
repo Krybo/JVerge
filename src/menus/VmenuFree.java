@@ -96,6 +96,9 @@ public class VmenuFree implements Vmenu
 		return;
 		}
 
+	public boolean animate( VImage target )
+		{ return false; }
+	
 	public boolean paint(VImage target)
 		{
 		if (this.isVisible == false)

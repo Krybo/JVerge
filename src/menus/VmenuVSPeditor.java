@@ -445,6 +445,12 @@ public class VmenuVSPeditor implements Vmenu
 
 
 	/** ---------------- Interface methods --------------------  */
+
+	public boolean animate( VImage target )
+		{
+		if( this.cFocus != 4 )	{ return(false); }
+		return( this.animEd.animate(target) ); 
+		}
 	
 	public boolean paint( VImage target )
 		{

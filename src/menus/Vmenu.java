@@ -63,6 +63,18 @@ public interface Vmenu
 	 * @return boolean success or fail.
 	 */
 	public boolean paint( VImage target );
+
+	/** Special animated drawing content.   Is called on a pre-specified 
+	 * Frequency by the VmenuManager.  Do not make animation too
+	 * intricate as blocks that take significantly long will 
+	 * quickly impact performance, depending on frequency and intricacy.
+	 *  ** Vmenu implementations need to delegate the .animate
+	 *     calls down to their sub-menus and Vmenuitem's
+	 * Krybo: Mar.2017
+	 * @param target  a VImage reference to draw on.
+	 * @return boolean success or fail.
+	 */
+	public boolean animate( VImage target );
 	
 	/**
 	 * Control handler,  handles "signals" passed to the menu by external

@@ -183,6 +183,9 @@ public class VmenuSliders implements Vmenu
 		}
 
 
+	public boolean animate( VImage target )
+		{ return false; }
+	
 	public boolean paint( VImage target )
 		{
 		if( target == null )			{ return(false); }

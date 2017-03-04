@@ -273,6 +273,9 @@ public class VmiTextSimple implements Vmenuitem
 	public Method getAction()
 		{ 	return( this.myAction ); 	}
 
+	public boolean animate( VImage target )
+		{ return false; }
+	
 	public void paint( VImage target )
 		{	this.paint( target, this.state ); 	}	 // paint in normal state.
 

@@ -35,10 +35,30 @@ public class VMenuManager
 	private static Font inFont = core.Script.fntCONSOLE;
 	private Color backdropColor = new Color( 0.0f,0.0f,0.0f,0.5f );
 	private float backdropAlpha = 0.5f;
+	private boolean reverseOrder = false; 
+	private JVCL targetLayerStack = null;
+	
 	protected static HashMap<Long,Long> hmLinkList =
 			new HashMap<Long,Long>();
 	private static VImage MENU_BKG = null;
-	private JVCL targetLayerStack = null;
+	// Animation control  Key,value <Menu Id, Frequency (ns) >
+	private HashMap<Long,Long> hmAnimationpFreq = 
+			new HashMap<Long,Long>();
+	private HashMap<Long,Long> hmAnimationpClock = 
+			new HashMap<Long,Long>();
+	public static final Long ANIM_ONE_SECOND = 
+			new Long(1000000000L);
+	public static final Long ANIM_THREE_SECOND = 
+			new Long(3000000000L);
+	public static final Long ANIM_FIVE_SECOND = 
+			new Long(5000000000L);
+	public static final Long ANIM_QUARTER_SECOND = 
+			new Long(250000000L);
+	public static final Long ANIM_HALF_SECOND = 
+			new Long(500000000L);
+	public static final Long ANIM_TENTH_SECOND = 
+			new Long(100000000L);
+	
 
 
 	public VMenuManager(  )
@@ -399,6 +419,7 @@ public class VMenuManager
 	public Integer paintMenus( boolean reverseOrder )
 		{
 		Integer rslt = 0;
+		this.reverseOrder = reverseOrder;	// remember this. 
 		this.targetLayerStack.JVCclearAllLayers();
 		int st = 2;
 		int end = this.targetLayerStack.getLayerCount();
@@ -446,7 +467,13 @@ public class VMenuManager
 		return(rslt);
 		}
 	public Integer paintMenus()
-		{ return(this.paintMenus(false)); }
+		{ return(this.paintMenus( this.reverseOrder )); }
+	
+	/** Control the order in which the drawing layers are 
+	 * painted.   Normal order = the lowest layer first.  
+	 * Reverse order draws highest layer first.  */
+	public void setMenuPaintOrder( boolean reverseOrder )
+		{  this.reverseOrder = reverseOrder;  return; }
 
 	public synchronized JVCL getJVCL()
 		{ return(this.targetLayerStack); }
@@ -659,4 +686,120 @@ public class VMenuManager
 		return;
 		}
 
+
+	/** The engine calls this method to invoke privileged 
+	 * 	menus to refresh constantly at the engine master clock.  
+	 *          (as fast as possible).
+	 *   Normally, menus paint only upon getting Input. 
+	 *   
+	 *    Use ONLY on menus that need animations and other high 
+	 *    frequency refresh - as doing too much within this
+	 *    feature WILL slow down your game easily.
+	 *    
+	 *    * Be careful to revoke these privilegeds for items that are 
+	 * not actively being viewed !  
+	 * Krybo: Mar.2017 */
+	public void highFreqProcessor( Long tickNs )
+		{
+		if( this.hmAnimationpFreq.isEmpty() ) 
+			{ return; }
+		for( Long id : hmAnimationpFreq.keySet() )
+			{
+			this.hmAnimationpClock.put( id, 
+				this.hmAnimationpClock.get( id ) - tickNs );
+			boolean needsUpdate = false;
+			while( this.hmAnimationpClock.get( id ) < 0 )
+				{	// Wind down the clock.
+				this.hmAnimationpClock.put( id, 
+					this.hmAnimationpClock.get( id ) +
+					this.hmAnimationpFreq.get(id) );
+				needsUpdate = true;
+				}
+			// Do ANIMATION ACTION (once)
+			if( needsUpdate )
+				{
+//				System.out.println( "highFreqProcessor   "+tickNs.toString() +
+//						" id = " + id.toString() );
+				Integer rslt = 0;
+				int st = 2;
+				int end = this.targetLayerStack.getLayerCount();
+
+				for( Long lookfor : this.focus )
+					{
+					boolean stop = false;
+			
+					if( this.reverseOrder == false )
+						{
+						for( int x = st; x < end; x++ )
+							{
+							if( stop == true )  { continue; }
+							if( lookfor == 
+						this.targetLayerStack.JVCmenuGetMenuFocusID(x) )
+								{
+							this.targetLayerStack.JVCmenuAnimateAttached(x);;
+								stop = true;
+								rslt++;
+								}
+							}
+						}
+					else
+						{
+						for( int x = (end-1); x >= st; x-- )
+							{
+							if( stop == true )  { continue; }
+							if( lookfor == 
+						this.targetLayerStack.JVCmenuGetMenuFocusID(x)  )
+								{
+							this.targetLayerStack.JVCmenuAnimateAttached(x);;
+								stop = true;
+								rslt++;
+								}
+							}				
+						}
+					}
+				}	// End animation action.
+			}
+		return;
+		}
+
+	/** Privileges a menu or menuitem with given ID to allow
+	 * it to animate at high frequency, given in 2nd argument:
+	 * nanoseconds per frame 
+	 * Returns true if a pre-existing value was replaced, else false if new.*/
+	public boolean setAnimated( Long menuId, Long FrequencyNs )
+		{
+		boolean rslt = false;
+		if( this.hmAnimationpFreq.containsKey(menuId) )
+			{ rslt = true; }
+		this.hmAnimationpFreq.put( menuId, FrequencyNs );
+		this.hmAnimationpClock.put(menuId, new Long(0) );
+		return(rslt);
+		}
+	/** Stops the animation of given menuId 
+	 * returns true if it was actually found and removed.  */
+	public boolean revokeAnimated( Long menuId )
+		{
+		if( ! this.hmAnimationpFreq.containsKey(menuId) )
+			{ return(false); }
+		this.hmAnimationpClock.remove( menuId );
+		this.hmAnimationpFreq.remove( menuId );
+		return(true);
+		}
+
+	public void resetAnimationTimers()
+		{
+		for( Long id : hmAnimationpClock.keySet() )
+			{
+			this.hmAnimationpClock.put(id, new Long(0) );
+			}
+		}
+
+	public void resetAnimationTimers( Long id )
+		{
+		this.hmAnimationpClock.put( id, new Long(0) );
+		return;
+		}
+
 	}
+
+

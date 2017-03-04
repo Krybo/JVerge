@@ -24,6 +24,7 @@ public class VmenuAnimationEd implements Vmenu
 	private Integer curEnd = 0;
 	private Integer curDelay = 0;
 	private Integer curMode = 0;
+	private Long totalFrames = new Long(0);
 	private String curDesc = new String("No Description");
 	private boolean isActive = false;
 	private boolean isVisible = false;
@@ -36,7 +37,9 @@ public class VmenuAnimationEd implements Vmenu
 	// Timers used for display of animations.
 	private final Long animTimerInit = System.nanoTime();
 	private Long animTimer = new Long( animTimerInit );
+		// The animation duration in nanosec.s
 	private Long timerAnimDuration = new Long(0);
+		// 	A aingle frame duration in nanosec.s under current settings.
 	private Long timerFrameDuration = new Long(0);
 
 	private VmiButton btnDone;
@@ -110,6 +113,75 @@ public class VmenuAnimationEd implements Vmenu
 		return;
 		}
 
+	public boolean animate( VImage target )
+		{
+		
+		if( (this.timerFrameDuration > 0) && (this.timerAnimDuration > 0) )
+			{
+			Long curFrameNns = 
+				(System.nanoTime() - this.animTimerInit) % 
+					this.timerAnimDuration;
+			Long frameNum;
+			switch( this.curMode )
+				{
+				case 1:	// reverse Mode
+					frameNum = (this.totalFrames - 1L) - 
+						new Long( curFrameNns / this.timerFrameDuration);
+					break;
+				case 2:	// Random Mode
+					Double tmpRdm = this.totalFrames * Math.random();
+					frameNum = new Long(tmpRdm.longValue());
+					break;
+				case 3:	// Oscillate mode
+					Long tmpFrameNum = 
+						new Long( curFrameNns / this.timerFrameDuration);
+					Long norm = 
+						new Long(this.curEnd - this.curStart );
+					Long normDiff = norm - tmpFrameNum;
+					if( normDiff < 0 )	// "after the hump"
+						{ frameNum = norm + normDiff; }
+					else
+						{ frameNum = tmpFrameNum; }
+//	System.out.println(" PING PONG mode:  frameNum = " + frameNum.toString() + 
+//			" tmpFrameNum = " + tmpFrameNum.toString()  + 
+//			" norm = " + norm.toString() + 
+//			" normDiff = " + normDiff.toString() + 
+//			" totalFrames = " + this.totalFrames );
+					break;
+				default:		// Standard mode.
+					frameNum = 
+						new Long( curFrameNns / this.timerFrameDuration );
+
+//		System.out.println("DEBUG: " +
+//			" frameNum = "+frameNum.toString() +
+//			" curFrameNns = " + curFrameNns.toString() +
+//			" this.timerAnimDuration = " + this.timerAnimDuration.toString() +
+//			" this.timerFrameDuration = " + this.timerFrameDuration.toString()
+//			);
+		
+					break;
+				}
+			Integer curTile = this.curStart + frameNum.intValue();
+			VImage tImg = this.theVsp.getTileAsVImage( curTile );
+
+			target.rect(this.x+219, this.y+48, this.x+286, this.y+115,
+					Color.WHITE );
+			target.rect( this.x+220, this.y+49, this.x+285, this.y+114,
+					Color.GRAY );
+			
+			target.scaleblit(this.x+221, this.y+50, 32, 32, tImg );
+			target.scaleblit(this.x+253, this.y+50, 32, 32, tImg );
+			target.scaleblit(this.x+221, this.y+82, 32, 32, tImg );
+			target.scaleblit(this.x+253, this.y+82, 32, 32, tImg );
+			
+//			System.out.println("Anim On Frame = " + frameNum.toString() +
+//					" of " + this.totalFrames.toString() 
+//					+ " (" + curTile.toString() + ")" );			
+			}
+		
+		return false;
+		}
+	
 	public boolean paint( VImage target )
 		{
 		if (this.isVisible == false)
@@ -173,16 +245,8 @@ public class VmenuAnimationEd implements Vmenu
 				core.Script.fntMASTER, Color.WHITE , "SAVE" );
 			}
 
-		if( (this.timerFrameDuration > 0) && (this.timerAnimDuration > 0) )
-			{
-			Long curFrameNns = 
-				(System.nanoTime() - this.animTimerInit) % timerAnimDuration;
-			Long frameNum = 
-				new Long( curFrameNns / this.timerFrameDuration);
-			
-			}
-		
-		// TODO Draw the preview.  HERE
+		// Superimpose animation.
+		this.animate( target );
 		
 		return false;
 		}
@@ -304,6 +368,7 @@ public class VmenuAnimationEd implements Vmenu
 					default:
 						break;
 					}
+				this.recalculateAnimationTimers();
 				break;
 			
 			case 33:		// [PAGE-UP]
@@ -365,9 +430,9 @@ public class VmenuAnimationEd implements Vmenu
 				break;
 
 			case 127:		// [Delete] same as rmov button.
-				this.funcActivate( 4);
+				this.funcActivate( 4 );
 				break;
-				
+
 			// Numbers keystrokes in this menu will be inserted
 			//     directly into the input boxes.  Funky conversions needed.
 			case 48:	case 49:  case 50:  case 51:  case 52:
@@ -393,6 +458,7 @@ public class VmenuAnimationEd implements Vmenu
 					if( this.curStart > this.theVsp.getNumtiles() )
 						{ this.curStart = this.theVsp.getNumtiles(); }
 					this.isModified = true;
+					this.recalculateAnimationTimers();
 					}
 				if( this.vmFocus == 8 )
 					{
@@ -400,6 +466,7 @@ public class VmenuAnimationEd implements Vmenu
 					if( this.curEnd > this.theVsp.getNumtiles() )
 						{ this.curEnd = this.theVsp.getNumtiles(); }
 					this.isModified = true;
+					this.recalculateAnimationTimers();
 					}
 				if( this.vmFocus == 9 )
 					{
@@ -407,6 +474,7 @@ public class VmenuAnimationEd implements Vmenu
 					if( this.curDelay > this.MAX_DELAY )
 						{ this.curDelay = this.MAX_DELAY; }
 					this.isModified = true;
+					this.recalculateAnimationTimers();
 					}
 				if( this.vmFocus == 10 )
 					{
@@ -414,6 +482,7 @@ public class VmenuAnimationEd implements Vmenu
 					if( this.curMode > 3 )
 						{  this.curMode = 3; }
 					this.isModified = true;
+					this.recalculateAnimationTimers();
 					}
 				break;
 			
@@ -698,8 +767,6 @@ public class VmenuAnimationEd implements Vmenu
 	 *    returns ralse if it does not exist.  ese true. */
 	public boolean loadAnimation( int animationIndex )
 		{
-		System.out.println( "DEBUG: loadAnimation got arg: " + 
-				Integer.toString(animationIndex) );
 		// Sanity checks.
 		if( animationIndex < 0 )
 			{ 	animationIndex = this.theVsp.getNumAnimations() - 1; 	}
@@ -736,6 +803,7 @@ public class VmenuAnimationEd implements Vmenu
 		System.out.println("DEBUG : changed to animation # "+
 				Integer.toString( animationIndex ));
 
+		this.recalculateAnimationTimers();
 		this.isModified = false;
 		return(true);
 		}
@@ -867,6 +935,7 @@ public class VmenuAnimationEd implements Vmenu
 				this.theVsp.deleteAnimation( this.animNum );
 				if( this.animNum >= this.theVsp.getNumAnimations()-1 )
 					{ this.animNum = this.theVsp.getNumAnimations() - 1; }
+				this.loadAnimation( this.animNum );
 				break;
 			case 5:
 				this.saveCurrentSettings();
@@ -874,19 +943,26 @@ public class VmenuAnimationEd implements Vmenu
 			case 6:
 				this.vmitDesc.doInput();
 				break;
-			case 7:  break;
-			case 8:  break;
+			case 7:
+				this.recalculateAnimationTimers();
+				break;
+			case 8:
+				this.recalculateAnimationTimers();
+				break;
 			case 9:
 				this.delayLevel++;
 				if( this.delayLevel > 7 )
 					{ this.delayLevel = 0; }
 				this.curDelay = this.delayLevels[ this.delayLevel ];
 				this.isModified = true;
+				this.recalculateAnimationTimers();
 				break;
 			case 10:
 				this.changeMode(+1);
+				this.recalculateAnimationTimers();
 				break;
-			default:  break;
+			default:  
+				break;
 			}
 		return;
 		}
@@ -916,6 +992,7 @@ public class VmenuAnimationEd implements Vmenu
 				{ this.curEnd = this.theVsp.getNumtiles(); }
 			}
 		this.isModified = true;
+		this.recalculateAnimationTimers();
 		return;
 		}
 	
@@ -961,6 +1038,32 @@ public class VmenuAnimationEd implements Vmenu
 		this.vmFocus = 4;
 		System.out.println(" Saved Animation # " +
 				Integer.toString( this.animNum ));
+		return;
+		}
+
+	/** Need to call this at any point curStart End or Delay changes. */
+	private void recalculateAnimationTimers()
+		{
+		// sanitize start & end values
+		if( this.curStart == this.curEnd )
+			{		// bleh,  we got a degenerate animation 
+			this.timerFrameDuration = new Long(0);
+			this.timerAnimDuration = new Long(0);
+			return;
+			}
+		if( this.curStart > this.curEnd )
+			{ 
+			Integer tmp = this.curStart;
+			this.curStart = this.curEnd;
+			this.curEnd = tmp;
+			}
+		this.totalFrames = new Long( this.curEnd - this.curStart ) + 1L;
+		// Oscillate mode is different here.
+		if( this.curMode == 3 && this.totalFrames > 2 )
+			{ this.totalFrames = this.totalFrames * 2L - 2L; }
+		this.timerFrameDuration = new Long(this.curDelay) * 10000000L;
+		this.timerAnimDuration =
+			this.timerFrameDuration * this.totalFrames;
 		return;
 		}
 	

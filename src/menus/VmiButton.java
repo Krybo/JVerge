@@ -325,6 +325,9 @@ public class VmiButton implements Vmenuitem
 	
 
 
+	public boolean animate( VImage target )
+		{ return false; }
+	
 	public void paint(VImage target)
 		{
 		if( this.visible == false ) { return; }
