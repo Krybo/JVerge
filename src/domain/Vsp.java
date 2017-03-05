@@ -479,6 +479,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			f.writeSignedIntegerLittleEndian(this.getNumtiles());
 			f.writeSignedIntegerLittleEndian(this.getCompression());
 
+			// Saves all tiles as a RLE compressed byte block.
 			byte[] pixels = f.getPixelArrayFromFrames(tiles, tiles.length, this.tileSize, this.tileSize);
 			f.writeCompressedBytes(pixels);
 
@@ -915,7 +916,52 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			}
 		return(true);
 		}
+
 	
+	/** Adds an obstruction tile as a block of bytes to a specified 
+	 * obstruction index, pushing the existing obstructions up.
+	 * This index is base zero.
+	 * */
+	public boolean addObstruction( byte[] obsData, int atIndex )
+		{
+		if( obsData.length != this.tileArea )
+			{ return(false); }
+		if( atIndex < 0 || atIndex > this.numobs )
+			{ return(false); }
+
+		int newSize = this.obsPixels.length + this.tileArea; 
+		byte[] newData = new byte[ newSize ];
+		int target = atIndex * this.tileArea;
+		
+		int loop = 0;
+		int n  = 0;
+		while ( loop < this.obsPixels.length )
+			{
+			if( loop == target )
+				{	// Insert new data here.
+				for( n = 0; n < this.tileArea; n++ )
+					{
+					newData[loop+n] = obsData[n];
+					}
+				}
+			else		// Clone old data.
+				{
+				newData[loop+n] = this.obsPixels[loop];
+				}
+			loop++;
+			}
+		this.obsPixels = newData;
+		this.numobs++;
+		return(true);
+		}
+	
+	/**  Adds a new, blank obstruction tile to the end of the data. */
+	public boolean addObstruction()
+		{
+		byte[] b = new byte[ this.tileArea ];
+		return( this.addObstruction( b, this.numtiles ) );
+		}
+
 	public boolean UpdateAnimations()
 	{
 		boolean animated = false;
@@ -1258,7 +1304,6 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		return( true );
 		}
 
-
 	// Krybo (Feb.2017)  added accessors for animations
 	public int getAnimStart( int animationIndex )
 		{
@@ -1394,7 +1439,6 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		this.anims = anims2;
 		return( newAddition );
 		}
-
 
 	public static String animationModeToString( Integer mode )
 		{

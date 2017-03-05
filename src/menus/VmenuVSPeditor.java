@@ -75,7 +75,7 @@ import domain.Vsp;
  * 				{ In Color key } :  Load palette file
  * 			HOT	[Cntl]	Load entire VSP file from disk.
  * m	Toggle Ani[m]ation Mode
- * n	New		{main} 		New Tile: Clears tile to tool color 1
+ * n	New		{main, SB} 	New Tile: Clears tile to tool color 1
  * 					{colorKey} 	Set the basic 8-unit color key.
  * o	rOtate 				Rotates clockwise
  * 					[Cntl]	Rotate Counter-Clockwise
@@ -1178,7 +1178,6 @@ public class VmenuVSPeditor implements Vmenu
 			case 78:			// [n] new
 				if( this.cFocus == 4 )
 					{ break; }
-				System.out.println("n pressed");
 				switch( this.cFocus )
 					{
 					case 1:		// New Basic Color Key
@@ -1193,7 +1192,7 @@ public class VmenuVSPeditor implements Vmenu
 						if( targetidx >= 3 )
 							{
 							this.insertPaletteColor( (targetidx-3) 
-									+ (this.cBarIndexSet*8) );
+								+ (this.cBarIndexSet*8) );
 							}
 						else
 							{
@@ -1201,17 +1200,34 @@ public class VmenuVSPeditor implements Vmenu
 							}
 						break;
 
+					case 0:
 					case 3:		// new Tile (replicate tile)
 						if( isCntl == true )
 							{
-							this.vsp.insertTile(this.tIndex, new VImage(
+							if( this.obsEditMode == true )
+								{
+								this.vsp.addObstruction();
+								}
+							else
+								{
+							this.vsp.insertTile( this.tIndex, new VImage(
 								this.vsp.getTileSquarePixelSize(),
 								this.vsp.getTileSquarePixelSize(),
 								this.getColorkeySelectedColor() 
-								).getImage());
+								).getImage()  );
+								}
 							}
 						else 	{
-							this.vsp.insertReplicaTile(this.tIndex);
+							if( this.obsEditMode == true )
+								{
+								this.vsp.addObstruction( 
+									this.getObsTilefromWorkingData(), 
+									this.obsEditNum );
+								}
+							else
+								{
+								this.vsp.insertReplicaTile( this.tIndex );
+								}
 							}
 						this.refresh();
 						this.updateMiniTileset();
@@ -1225,7 +1241,6 @@ public class VmenuVSPeditor implements Vmenu
 
 			case 79:		// [o]  r[o]tation and mirroring.
 				if( this.cFocus != 3 )		{ break; }
-				if( this.cFocus != 4 )		{ break; }
 				if( isCntl == true )
 					{ this.rotate( +1, false ); }
 				else if( isAlt == true )
@@ -1773,10 +1788,13 @@ public class VmenuVSPeditor implements Vmenu
 
 /**  Loads up a vsp tile into the working data.
  * If there are problems... tile # 0 is loaded.
+ * This will do nothing if the editor is in obstruction edit mode
  * @param vspIdx   The vsp tile index to load.
  */
 	private void loadTile( int vspIdx )
 		{
+		if( this.obsEditMode )
+			{ return; }
 		System.out.println( " load tile # "+Integer.toString(vspIdx) );
 		if( this.vsp.checkTile(vspIdx) == false )
 			{  vspIdx = 0; }
@@ -1794,7 +1812,11 @@ public class VmenuVSPeditor implements Vmenu
 	/** (re) loads the data from current VSP into the working display.*/
 	private void loadWorkingTile()
 		{
-		this.loadTile( this.tIndex );
+		if( this.obsEditMode )
+			{ this.loadObstruction( this.obsEditNum );	}
+		else
+			{ this.loadTile( this.tIndex );	}
+
 		this.updatePreview();
 		}
 
@@ -1828,7 +1850,7 @@ public class VmenuVSPeditor implements Vmenu
 		if( this.obsEditMode )
 			{ 
 			this.obsEditNum = index;
-			this.setWorkingObstruction( this.obsEditNum );			
+			this.loadObstruction( this.obsEditNum );			
 			}
 		else
 			{
@@ -2464,6 +2486,7 @@ public class VmenuVSPeditor implements Vmenu
 			Color.BLACK );
 
 		main.refresh();
+		this.obsEditMode = false;
 		this.loadTile( this.tIndex );
 		this.updatePreview();
 
@@ -2496,6 +2519,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		this.clearUndoRedo();
 		main.refresh();
+		this.obsEditMode = false;
 		this.loadTile( this.tIndex );
 		this.updatePreview();
 
@@ -3170,6 +3194,7 @@ public class VmenuVSPeditor implements Vmenu
 
 			this.vsp = new Vsp( (Vsp) obj );
 			this.updatePreview();
+			this.obsEditMode = false;
 			this.loadTile( this.tIndex );
 			}
 
@@ -3335,7 +3360,7 @@ public class VmenuVSPeditor implements Vmenu
 		if( this.obsEditMode == true )
 			{
 			this.obsEditNum = 0;
-			this.setWorkingObstruction(this.obsEditNum);
+			this.loadObstruction(this.obsEditNum);
 			}
 		else	{ this.loadTile(this.tIndex); }
 
@@ -3357,9 +3382,8 @@ public class VmenuVSPeditor implements Vmenu
 		}
 
 
-	private void setWorkingObstruction( int obsIndex )
+	private void loadObstruction( int obsIndex )
 		{
-		System.out.println("DEBUG: obsIndex = "+Integer.toString(obsIndex));
 		byte[] data = this.vsp.getObsPixels( obsIndex );
 		if( data == null ) { return; }
 		int sizecheck = (this.vsp.getTileSquarePixelSize() * 
