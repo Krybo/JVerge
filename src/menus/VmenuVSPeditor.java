@@ -382,7 +382,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar.setFontAll(core.Script.fntLogicalScans14 );
 
 		this.resetPalette();
-		
+
 		// Pull out these guages from the sub-menu, but keep
 		//     the functionality of the submenu.
 		this.gR = (VmiGuageInt) this.colorEditor.getMenuItem(0);
@@ -747,6 +747,10 @@ public class VmenuVSPeditor implements Vmenu
 		if( this.processInputs() > 0 ) 
 			{ return(true); }
 
+			// Forbid the color key & editor when in obstruction mode.
+		if( this.obsEditMode && (this.cFocus == 1 || this.cFocus == 2) )
+			{  this.cFocus = 0; }
+		
 		Integer basecode = Controls.extcodeGetBasecode(ext_keycode);
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
 		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
@@ -808,6 +812,14 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 			case 8: 		// BACKSPACE <CANCEL> - change focus.
 				this.playMenuSound(enumMenuEVENT.CANCEL, 33);
+				if( this.obsEditMode )
+					{
+					if( this.cFocus != 0 )
+						{ this.cFocus = 0; }
+					else
+						{ VmenuVSPeditor.returnToSystem(); }
+					break;
+					}
 				switch ( this.cFocus )
 					{
 					case 0:
@@ -826,8 +838,8 @@ public class VmenuVSPeditor implements Vmenu
 						this.cFocus = 0;
 						break;
 					}
-
 				return( true );
+
 			case 10: 		// ENTER KEY <CONFIRM>
 				// 	Already delegated to animation menu.
 				if( this.cFocus == 4 )
@@ -1393,6 +1405,8 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar.refresh();
 		this.colorkey.refresh();
 		this.colorEditor.refresh();
+		if( this.cFocus == 4 )
+			{ this.animEd.refresh(); }
 		this.setChildID(this.getControlItem().getFocusId());
 		return;
 		}
@@ -1580,7 +1594,7 @@ public class VmenuVSPeditor implements Vmenu
 					
 					break;
 					}
-				// Else - we return it to the palette.
+				// Else - return it to the palette.
 				this.cFocus = 1;
 
 				if( this.clrs.get(cidx) == null ) 
@@ -1720,7 +1734,7 @@ public class VmenuVSPeditor implements Vmenu
 
 /**  Sets the working tile to an arbituary VImage.
  * If source is larger, this will only use the top x,y pixels.
- * There is no padding involved. 
+ * No padding is involved. 
  * @param vi  Any Source VImage
  */
 	private void loadWorkingImage( VImage vi )
@@ -1840,7 +1854,7 @@ public class VmenuVSPeditor implements Vmenu
 	private void setCbarLine( int lineIndex )
 		{
 		this.cBarIndexSet = lineIndex;
-		if( this.clrs.size() <= 8 )		// dude, theres only 1 line of colors!
+		if( this.clrs.size() <= 8 )		// only 1 line of colors!
 			{ this.cBarIndexSet = 0;  }
 		
 		int cbarsets = (this.clrs.size() >> 3);
@@ -1919,15 +1933,31 @@ public class VmenuVSPeditor implements Vmenu
 				255 - in.getBlue(), in.getAlpha() ) );
 		}
 
-	/** Moves the data from the menu object to the actual VSP. 
+	/** Moves the data from the menu object to the actual VSP.
+	 * Can either be an obstruction or sprite tile 
 	 * Triggered by pressing [s] menus hotkey */
 	private void saveWorkingTileAs( int vspIdx )
 		{
-		if( vspIdx < 0 ) { return; }
-		if( vspIdx > this.vsp.getNumtiles() ) { return; }
+		int max;
+		if( this.obsEditMode )
+			{	max = this.vsp.getNumObsTiles(); 	}
+		else
+			{	max = this.vsp.getNumtiles(); 	}
+
+		if( vspIdx < 0 || vspIdx > max ) 
+			{ return; }
 		this.setUndoPoint( new Vsp(this.vsp), 27 );
-		VImage output = this.copyWorkingTile();
-		vsp.modifyTile( vspIdx, output.getImage() );
+
+		if( this.obsEditMode == true )
+			{
+			this.vsp.saveObs( this.obsEditNum, 
+				this.getObsTilefromWorkingData() );
+			}
+		else
+			{			
+			VImage output = this.copyWorkingTile();
+			vsp.modifyTile( vspIdx, output.getImage() );
+			}
 		this.updatePreview();
 		}
 
@@ -3319,14 +3349,14 @@ public class VmenuVSPeditor implements Vmenu
 		if( this.cFocus != 4 )
 			{	this.cFocus = 4;	}
 		else
-			{	this.cFocus = 1;	}
+			{	this.cFocus = 0;	}
 		this.animEd.setVisible( true );
 		this.animEd.setActive( true );
 		this.animEd.doControls( 0 );	// Send update pulse
 		return;
 		}
 
-	
+
 	private void setWorkingObstruction( int obsIndex )
 		{
 		System.out.println("DEBUG: obsIndex = "+Integer.toString(obsIndex));
@@ -3364,5 +3394,24 @@ public class VmenuVSPeditor implements Vmenu
 
 		return;
 		}
-	
+
+	private byte[] getObsTilefromWorkingData()
+		{
+		Integer nx = this.main.countMenuItems();
+		byte[] outdata = new byte[nx];
+		if( outdata.length != this.vsp.getTilePixelArea() )
+			{  return(null); }
+		for( int x = 0; x < nx; x++ )
+			{
+			Vmenuitem vmi = this.main.getMenuItem(x);
+			Color c = vmi.getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value() );
+			if(c.getRed() == 0 && c.getGreen() == 0 && c.getBlue() == 0)
+				{	outdata[x] = (byte) 0;	}
+			else
+				{	outdata[x] = (byte) 255;	}
+			}
+		return( outdata );
+		}
+
 	}		// END CLASS

@@ -693,11 +693,22 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		return this.numtiles;
 		}
 	
-		// Krybo (Jan.2016) : 
-		// opens the internal size of tiles in pixels to public
-		//  Needed this for some display functionality
+		/**   opens the internal size of tiles in pixels to public
+		*  Needed this for some display functionality
+		*  Krybo (Jan.2016) :
+		 * 
+		 * @return  int # of pixels on either side of squre.tile 
+		 */
 	public int getTileSquarePixelSize()
 		{	return( this.tileSize );  }
+
+	/** Obtain total of pixels within a squre.tile
+	 *  Krybo (Mar.2017) :
+	 * 
+	 * @return  integer total of pixels within a squre.tile 
+	 */
+	public int getTilePixelArea()
+		{	return( this.tileArea );  }
 
 	public BufferedImage [] getTiles() {
 		return tiles;
@@ -884,6 +895,25 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		if (t>=numobs || t<0) return true;
 		if (x<0 || y<0 || x>15 || y>15) return true;
 		return obsPixels[(t*this.tileArea)+(y*this.tileSize)+x] == 0 ? false: true;
+		}
+
+	/**   Saves a tile worth block of bytes to the vsp obstruction data. 
+	 * This assumes the incoming data is arranged in the proper order. 
+	 * Returns true if the operation was successful.  */
+	public boolean saveObs( int t, byte[] data )
+		{
+		if( t>=numobs || t<0) 
+			{ return(false); }
+		if( data.length != this.tileArea )
+			{ return(false); }
+		int offset = t * this.tileArea;
+		int n = 0;
+		for( byte b : data )
+			{
+			this.obsPixels[ offset + n] = b;
+			n++;
+			}
+		return(true);
 		}
 	
 	public boolean UpdateAnimations()
