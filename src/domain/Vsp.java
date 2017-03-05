@@ -933,7 +933,10 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 
 	public void BlitObs(int x, int y, int index, VImage dest)
 		{
-		if (index >= numobs) return;
+		if( index >= this.numobs )
+			{ return; }
+		if( index < 0 )
+			{ return; }
 		//[Rafael, the Esper] char c[] = (char) obs + (index * 256);
 		//[Rafael, the Esper] int white = MakeColor(255,255,255);
 		int destOffsetX = 0;
@@ -944,19 +947,20 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 				{
 				destOffsetX = x+xx;
 				destOffsetY = y+yy;
-				targetPixel = this.obsPixels[this.tileArea*index + this.tileSize*yy + xx]; 
+				targetPixel = this.obsPixels[
+                             this.tileArea*index + this.tileSize*yy + xx]; 
 				if( targetPixel != 0 )
 					{
-					dest.setPixel(destOffsetX, destOffsetY, Color.WHITE );
-					}
+					dest.setPixel( destOffsetX, destOffsetY, Color.WHITE );
+					} 
 				}		// Krybo (Jan.2016): This now operates as intended.
 			// ; [Rafael, the Esper] if (c[(yy*16)+xx]>0) PutPixel(x+xx, y+yy, white, dest);
 		}
 
 	void AnimateTile(int i, int l)
-	{
-		switch (getAnims()[i].mode)
 		{
+		switch (getAnims()[i].mode)
+			{
 		    case ANIM_MODE_FORWARD:
 				if (tileidx[l]<getAnims()[i].finish) tileidx[l]++;
 	            else tileidx[l]=getAnims()[i].start;
@@ -980,8 +984,8 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 					else { tileidx[l]--; flipped[l]=1; }
 	            }
 				break;
+			}
 		}
-	}
 
 	boolean AnimateTiles()
 		{
@@ -1040,9 +1044,30 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	private int[] getVadelay()
 		{	return(this.vadelay);	}
 	
+	/** Return all obstruction data as a primative byte array.  
+	 * Bytes are stored as an [ [ [ x ] y ] tile] ordered stack.  */
 	private byte[] getObsPixels()
 		{	return( this.obsPixels ); 	}
 
+	/** Provides one tile worth of obstruction bytes, at index */
+	public byte[] getObsPixels( int index )
+		{
+		if( index < 0 || index > this.numobs )
+			{ return(null); }
+		int size = this.tileSize;
+		int area = size * size;
+		byte[] rtn = new byte[area];
+		for (int yy=0; yy< this.tileSize; yy++ )
+			{
+			for (int xx=0; xx<this.tileSize; xx++)
+				{
+				int idx = size*yy + xx;
+				rtn[idx] = this.obsPixels[ area * index + idx ];
+				}
+			}
+		return(rtn);
+		}
+	
 	/** Warning:  return value is base 1, not 0 
 	 * A return value of 0 means there really are no animation data. */
 	public int getNumAnimations()

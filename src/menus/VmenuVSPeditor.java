@@ -226,6 +226,9 @@ public class VmenuVSPeditor implements Vmenu
 	private Integer undoLastOp = 0;   
 	private static final int MAX_UNDO = 10;
 	
+	private boolean obsEditMode = false;
+	private Integer obsEditNum = 0;
+	
 	//  Add menu ID's to this to cause the input to be scanned
 	//   See  method  processInputs()
 	private Stack<Long> inputIDstack = new Stack<Long>();
@@ -427,6 +430,8 @@ public class VmenuVSPeditor implements Vmenu
 			tileRows *	(this.vsp.getTileSquarePixelSize()+2) , 
 			Color.BLACK );
 
+		this.obsEditMode = false;
+		this.obsEditNum = 0;
 		this.tIndex = 0;
 		this.updatePreview();
 		
@@ -499,9 +504,9 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		
 		// Small info panel in upper right.
-		target.rectfill( target.getWidth()-100, 0, target.getWidth()-2 , 40,
+		target.rectfill( target.getWidth()-100, 0, target.getWidth()-2 , 53,
 				Color.BLACK );
-		target.rect( target.getWidth()-100, 0, target.getWidth()-2 , 40,
+		target.rect( target.getWidth()-100, 0, target.getWidth()-2 , 53,
 				Color.WHITE );
 		target.printString( target.getWidth()-95, 12, 
 				core.Script.fntLogicalScans10, Color.WHITE, 
@@ -521,7 +526,12 @@ public class VmenuVSPeditor implements Vmenu
 		target.printString( target.getWidth()-37, 36, 
 				core.Script.fntLogicalScans10, Color.WHITE, 
 				Integer.toString(this.vsp.getNumtiles()-1) );
-
+		target.printString( target.getWidth()-95, 48, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"OB  "+Integer.toString( this.vsp.getNumObsTiles()) );
+		target.printString( target.getWidth()-50, 48, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"AN  "+Integer.toString( this.vsp.getNumAnimations() ));
 
 		// Large Brush mode.   Expand selected area.
 		if( this.brushSize > 1 )
@@ -546,11 +556,22 @@ public class VmenuVSPeditor implements Vmenu
 		else {  this.main.setMultiSelect( false ); }
 
 		// Paint the primary sub-menus objects.
-		
+
 		this.sidebar.paint( target );
 		this.colorkey.paint( target );
-		this.colorEditor.paint( target );
-		
+		// Color Editor is not needed while editing obstructions.
+		if( this.obsEditMode == true )
+			{
+			target.printString( 30, 400, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"OBSTRUCTION" );
+			target.printString( 35, 420, 
+				core.Script.fntLogicalScans10, Color.WHITE, 
+				"EDIT MODE" );
+			}
+		else
+			{ this.colorEditor.paint( target ); }
+
 		// Either paint the main editor or the animation editor
 		if( this.cFocus == 4 )
 			{ this.animEd.paint( target ); }
@@ -576,9 +597,18 @@ public class VmenuVSPeditor implements Vmenu
 		for( int py = 0; py < 3; py++ )
 			{ for( int px = 0; px < 3; px++ )
 				{
-				target.blit( puX+2+(px*this.preview.getWidth()), 
-					puY+2+(py*this.preview.getHeight() ), 
-					this.preview);  
+				if( this.obsEditMode == true )
+					{
+					this.vsp.BlitObs( puX+2+(px*this.preview.getWidth()), 
+						puY+2+(py*this.preview.getHeight() ), 
+						this.obsEditNum, target );
+					}
+				else
+					{
+					target.blit( puX+2+(px*this.preview.getWidth()), 
+						puY+2+(py*this.preview.getHeight() ), 
+						this.preview);
+					}
 				} }
 
 
@@ -655,21 +685,44 @@ public class VmenuVSPeditor implements Vmenu
 			target.circle( lx+z, ly+z, radX+1, radY+1, Color.BLACK,target);
 			target.circle( lx+z, ly+z, radX, radY, Color.WHITE, target );
 			}
+		
+		VImage tmpImg = this.vsp.getTileAsVImage( 0 );
+		int thistile = 0;
+		int max, xAdj, yAdj = 0;
 
-		// Tile Selection preview.
+		// Tile preview.
 		for( int row = -1; row <= 1; row++ )
 			{	for( int col = -4; col <= 4; col++ )
 				{
-				int thistile = this.tIndex + col + 
-					(row * DEFAULT_TILES_PER_ROW);
-				while( thistile >= this.vsp.getNumtiles() )
-					{ thistile -= this.vsp.getNumtiles(); }
-				while( thistile < 0 )
-					{ thistile += this.vsp.getNumtiles(); }
-				int xAdj = col * 33;
-				int yAdj = row * 33;
-				target.tscaleblit( 350+xAdj, 380+yAdj, 32, 32, 
-						this.vsp.getTileAsVImage( thistile ) );
+				if( this.obsEditMode == true )
+					{
+					thistile = this.obsEditNum + col + 
+						(row * DEFAULT_TILES_PER_ROW);
+					max = this.vsp.getNumObsTiles();
+					}
+				else
+					{
+					thistile = this.tIndex + col + 
+						(row * DEFAULT_TILES_PER_ROW);
+					max = this.vsp.getNumtiles();
+					}
+
+				while( thistile >= max )	{ thistile -= max; }
+				while( thistile < 0 )		{ thistile += max; }
+				xAdj = col * 33;
+				yAdj = row * 33;
+				if( this.obsEditMode == true )
+					{	// Slap the Ob.tile on a fake tile to use below.
+					tmpImg.paintBlack(1.0f);
+					this.vsp.BlitObs( 0,0, thistile, tmpImg );
+					}
+				else		// Draw from direct tiles.
+					{
+					tmpImg = this.vsp.getTileAsVImage( thistile );
+					}
+//				target.tscaleblit( 350+xAdj, 380+yAdj, 32, 32, 
+//					this.vsp.getTileAsVImage( thistile ) );
+				target.tscaleblit( 350+xAdj, 380+yAdj, 32, 32, tmpImg );				
 			}	}
 		target.rect(349, 379, 383, 413, Color.WHITE );
 		target.rect(348, 378, 384, 414, Color.BLACK );
@@ -736,7 +789,8 @@ public class VmenuVSPeditor implements Vmenu
 		// normal key overrides.
 		switch( basecode )
 			{
-			case -9999:		// TODO: warning killer -- eventually get rid of it
+			case -9999:	// DO NOT use.
+				// TODO: warning killer -- eventually get rid of it
 				this.toggleHelp();
 				this.getSelectedColorkey();
 				this.modifyColorEditor(100, 100, 100);
@@ -1734,23 +1788,40 @@ public class VmenuVSPeditor implements Vmenu
 	private void changeTile( int indexDiff )
 		{
 		int toNum = this.tIndex + indexDiff;
-		while( toNum >= this.vsp.getNumtiles() )
-			{ toNum -= this.vsp.getNumtiles(); }
+		int max = this.vsp.getNumtiles();
+		if( this.obsEditMode )
+			{
+			toNum = this.obsEditNum + indexDiff;	
+			max = this.vsp.getNumObsTiles(); 
+			}
+		while( toNum >= max )
+			{ toNum -= max; }
 		while( toNum < 0 )
-			{ toNum += this.vsp.getNumtiles(); }
+			{ toNum += max; }
 
-		this.changeTileAbs(toNum);
+		this.changeTileAbs( toNum );
 		return;
 		}
 	
 	/* Changes the displayed working tile to exact vsp index */
 	private void changeTileAbs( int index )
 		{
-		this.tIndex = index;
-		if( this.tIndex < 0 )   { this.tIndex = 0; }
-		if( this.tIndex >= this.vsp.getNumtiles() )   
-			{ this.tIndex = this.vsp.getNumtiles()-1; }
-		this.loadTile( this.tIndex );
+		int max = this.vsp.getNumtiles();
+		if( this.obsEditMode )
+			{ max = this.vsp.getNumObsTiles(); }
+		if( index < 0 )   { index = 0; }
+		if( index >= max )   	{ index = max-1; }
+		if( this.obsEditMode )
+			{ 
+			this.obsEditNum = index;
+			this.setWorkingObstruction( this.obsEditNum );			
+			}
+		else
+			{
+			this.tIndex = index;
+			this.loadTile( this.tIndex );
+			}
+		
 		return;
 		}
 	
@@ -3185,7 +3256,17 @@ public class VmenuVSPeditor implements Vmenu
 			switch( x )
 				{
 				case 0:  	//  This is "goto tile #"
-					int tilenum = Integer.parseInt(theInput);
+					int tilenum;
+					try {
+						tilenum = Integer.parseInt(theInput);
+						}
+					catch( Exception e )
+						{
+						tilenum = 0;
+						System.err.println( "Error parsing goto-tile input  : "
+								+ e.getMessage() + 
+								" Tile select was reset to zero." );
+						}
 					this.changeTileAbs( tilenum );
 //					System.out.println( " Got INPUT " + theInput );
 					break;
@@ -3217,7 +3298,17 @@ public class VmenuVSPeditor implements Vmenu
 	 * Changes tile navigator and uses another selectedIndex */
 	public void toggleObsEdit()
 		{
-		// TODO: do this.
+		// Refuse to enter obstruction mode while animation ed. is open.
+		if( this.cFocus == 4 ) 
+			{ return; }
+		this.obsEditMode = ! this.obsEditMode;
+		if( this.obsEditMode == true )
+			{
+			this.obsEditNum = 0;
+			this.setWorkingObstruction(this.obsEditNum);
+			}
+		else	{ this.loadTile(this.tIndex); }
+
 		System.out.println("OBSTRUCTION EDITOR.");
 		return;
 		}
@@ -3232,6 +3323,45 @@ public class VmenuVSPeditor implements Vmenu
 		this.animEd.setVisible( true );
 		this.animEd.setActive( true );
 		this.animEd.doControls( 0 );	// Send update pulse
+		return;
+		}
+
+	
+	private void setWorkingObstruction( int obsIndex )
+		{
+		System.out.println("DEBUG: obsIndex = "+Integer.toString(obsIndex));
+		byte[] data = this.vsp.getObsPixels( obsIndex );
+		if( data == null ) { return; }
+		int sizecheck = (this.vsp.getTileSquarePixelSize() * 
+			this.vsp.getTileSquarePixelSize() );
+		if( data.length != sizecheck ) 
+			{ return; }
+		for( int n = 0; n < sizecheck; n++ )
+			{
+			VmiButton element = 
+					(VmiButton) this.main.getMenuItem(n);
+			// Only really care about the Active color here.
+			element.setColorComponent(
+				enumMenuButtonCOLORS.BODY_INACTIVE, 
+				Color.GRAY );
+			element.setColorComponent(
+				enumMenuButtonCOLORS.BODY_SELECTED, 
+				VmenuVSPeditor.invertColor( Color.GRAY ) );
+			
+			if( data[n] != 0 )
+				{
+				element.setColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE, 
+					Color.WHITE );
+				}
+			else
+				{
+				element.setColorComponent(
+					enumMenuButtonCOLORS.BODY_ACTIVE, 
+					Color.BLACK );				
+				}
+			}
+
 		return;
 		}
 	
