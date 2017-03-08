@@ -1335,6 +1335,22 @@ public class VmenuVSPeditor implements Vmenu
 			case 127:		// [Delete]
 				if( this.cFocus == 4 )
 					{ break; }
+				if( this.obsEditMode == true &&
+						this.vsp.getNumObsTiles() > 0 )
+					{
+					if( isCntl )	// Delete last tile
+						{
+						this.deleteObstruction(this.vsp.getNumObsTiles());
+						break;
+						}
+					if( isShift )
+						{
+						this.deleteObstruction( 0 );
+						break;
+						}
+					this.deleteObstruction( this.obsEditNum );
+					break;
+					}
 				switch( this.cFocus )
 					{
 					case 1:		// Delete current palette entry
@@ -2468,6 +2484,8 @@ public class VmenuVSPeditor implements Vmenu
 		
 		this.vsp = newguy;
 		this.animEd.changeVsp( this.vsp );
+		this.obsEditMode = false;
+		this.obsEditNum = 0;
 
 		// Post-load - must restore some internals to a fresh state.
 
@@ -2477,6 +2495,12 @@ public class VmenuVSPeditor implements Vmenu
 		this.showOverview = false;
 		this.showHelp = false;
 
+		if( this.vsp.getNumObsTiles() == 0 )
+			{
+			this.vsp.addObstruction();
+			System.out.println("Obstruction data empty, added blank ob");
+			}
+
 		int tileRows = newguy.getNumtiles() / 
 				VmenuVSPeditor.DEFAULT_TILES_PER_ROW;
 		this.vspOverview = new VImage(
@@ -2485,9 +2509,10 @@ public class VmenuVSPeditor implements Vmenu
 			tileRows *	(this.vsp.getTileSquarePixelSize()+2) , 
 			Color.BLACK );
 
-		main.refresh();
 		this.obsEditMode = false;
+		this.obsEditNum = 0;
 		this.loadTile( this.tIndex );
+		main.refresh();
 		this.updatePreview();
 
 		return(true);
@@ -3354,13 +3379,19 @@ public class VmenuVSPeditor implements Vmenu
 	public void toggleObsEdit()
 		{
 		// Refuse to enter obstruction mode while animation ed. is open.
+		//   or if for some reason there are no obstructions.
 		if( this.cFocus == 4 ) 
 			{ return; }
 		this.obsEditMode = ! this.obsEditMode;
+		if( this.vsp.getNumObsTiles() == 0 )
+			{
+			this.obsEditMode = false;
+			return; 
+			}
 		if( this.obsEditMode == true )
 			{
 			this.obsEditNum = 0;
-			this.loadObstruction(this.obsEditNum);
+			this.loadObstruction( this.obsEditNum );
 			}
 		else	{ this.loadTile(this.tIndex); }
 
@@ -3438,4 +3469,16 @@ public class VmenuVSPeditor implements Vmenu
 		return( outdata );
 		}
 
+	private boolean deleteObstruction( int index )
+		{
+		boolean rtn = this.vsp.removeObs( index );
+		this.refresh();
+		this.updateMiniTileset();
+		this.updatePreview();
+		if( this.obsEditNum > this.vsp.getNumObsTiles() )
+			{ this.obsEditNum = this.vsp.getNumObsTiles(); } 
+		this.loadObstruction( this.obsEditNum );
+		return(rtn);
+		}
+	
 	}		// END CLASS

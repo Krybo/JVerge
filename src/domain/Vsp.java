@@ -900,7 +900,8 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 
 	/**   Saves a tile worth block of bytes to the vsp obstruction data. 
 	 * This assumes the incoming data is arranged in the proper order. 
-	 * Returns true if the operation was successful.  */
+	 * Returns true if the operation was successful.
+	 * Krybo.Mar2017 */
 	public boolean saveObs( int t, byte[] data )
 		{
 		if( t>=numobs || t<0) 
@@ -917,11 +918,10 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		return(true);
 		}
 
-	
 	/** Adds an obstruction tile as a block of bytes to a specified 
 	 * obstruction index, pushing the existing obstructions up.
 	 * This index is base zero.
-	 * */
+	 * Krybo.Mar2017  */
 	public boolean addObstruction( byte[] obsData, int atIndex )
 		{
 		if( obsData.length != this.tileArea )
@@ -955,11 +955,37 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		return(true);
 		}
 	
+	/** remove an obstruction tile at [index]
+	 * returns true upon success. 
+	 * Krybo.Mar2017 */
+	public boolean removeObs( int index )
+		{
+		if( this.numobs <= 1 )	// Forbid removing last remaining.
+			{ return(false); }
+		if( index < 0 || index > this.numobs )
+			{ return(false); }
+		
+		int target = index * this.tileArea;
+		int newsize = this.obsPixels.length - this.tileArea;
+		byte[] newObs = new byte[ newsize ];
+		
+		int skip = 0;
+		for( int x = 0;  x < newsize; x++ )
+			{
+			if( x == target )	{ skip = this.tileArea; } 
+			newObs[x] = this.obsPixels[ x+skip ];
+			}
+		
+		this.obsPixels = newObs;
+		this.numobs--;
+		return(true);
+		}
+	
 	/**  Adds a new, blank obstruction tile to the end of the data. */
 	public boolean addObstruction()
 		{
 		byte[] b = new byte[ this.tileArea ];
-		return( this.addObstruction( b, this.numtiles ) );
+		return( this.addObstruction( b, this.numobs ) );
 		}
 
 	public boolean UpdateAnimations()
