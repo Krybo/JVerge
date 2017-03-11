@@ -1,12 +1,14 @@
 package menus;
 
 import static core.Script.getInput;
+import static core.Script.setMenuFocus;
 
 import java.awt.Color;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import core.Controls;
+import core.VergeEngine;
 import menus.Vmenu.enumMenuEVENT;
 import menus.Vmenuitem.enumMenuItemSTATE;
 import menus.VmiButton.enumMenuButtonCOLORS;
@@ -410,6 +412,9 @@ public class VmenuAnimationEd implements Vmenu
 
 			case 69:		// [e]  jump to delay
 				this.vmFocus = 8;
+				break;
+
+			case 77:		// [m] de-toggle ,wasnt' needed.
 				break;
 
 			case 78:		// [n] move control to name (description) input

@@ -1154,7 +1154,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	/** Provides one tile worth of obstruction bytes, at index */
 	public byte[] getObsPixels( int index )
 		{
-		if( index < 0 || index > this.numobs )
+		if( index < 0 || index >= this.numobs )
 			{ return(null); }
 		int size = this.tileSize;
 		int area = size * size;

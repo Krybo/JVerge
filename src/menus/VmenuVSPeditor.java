@@ -217,7 +217,10 @@ public class VmenuVSPeditor implements Vmenu
 	private int circleTool = -1;
 
 	private boolean showHelp;
-	private static final int DEFAULT_TILES_PER_ROW = 16;
+	private static final int DEFAULT_TILES_PER_COL = 3;
+	private static final int DEFAULT_TILES_PER_ROW = 8;
+	VImage[] vmPrev;
+	Integer vmPrevLastIdx = -1;
 	// primative undo functionality.
 	private Stack<Object> undoStack = new Stack<Object>();
 	private Stack<Object> redoStack = new Stack<Object>();
@@ -690,40 +693,32 @@ public class VmenuVSPeditor implements Vmenu
 		int thistile = 0;
 		int max, xAdj, yAdj = 0;
 
-		// Tile preview.
-		for( int row = -1; row <= 1; row++ )
-			{	for( int col = -4; col <= 4; col++ )
+		this.loadTilePreview();
+
+		Integer rowMax = VmenuVSPeditor.DEFAULT_TILES_PER_ROW;
+		Integer rowHalf = rowMax / 2;
+		Integer colMax = VmenuVSPeditor.DEFAULT_TILES_PER_COL;
+		Integer colHalf = colMax / 2;
+		
+		int ntile = -1;
+		for( int row = rowHalf * -1; row <= rowHalf; row++ )
+			{	for( int col = colHalf * -1; col <= colHalf; col++ )
 				{
-				if( this.obsEditMode == true )
+				ntile++;
+				xAdj = row * 33;
+				yAdj = col * 33;
+
+				if( this.vmPrev == null || this.vmPrev[ntile] == null )
 					{
-					thistile = this.obsEditNum + col + 
-						(row * DEFAULT_TILES_PER_ROW);
-					max = this.vsp.getNumObsTiles();
-					}
-				else
-					{
-					thistile = this.tIndex + col + 
-						(row * DEFAULT_TILES_PER_ROW);
-					max = this.vsp.getNumtiles();
+					System.out.println(" NULL : "+ Integer.toString( ntile ) ); 
+					continue; 
 					}
 
-				while( thistile >= max )	{ thistile -= max; }
-				while( thistile < 0 )		{ thistile += max; }
-				xAdj = col * 33;
-				yAdj = row * 33;
-				if( this.obsEditMode == true )
-					{	// Slap the Ob.tile on a fake tile to use below.
-					tmpImg.paintBlack(1.0f);
-					this.vsp.BlitObs( 0,0, thistile, tmpImg );
-					}
-				else		// Draw from direct tiles.
-					{
-					tmpImg = this.vsp.getTileAsVImage( thistile );
-					}
-//				target.tscaleblit( 350+xAdj, 380+yAdj, 32, 32, 
-//					this.vsp.getTileAsVImage( thistile ) );
-				target.tscaleblit( 350+xAdj, 380+yAdj, 32, 32, tmpImg );				
+				target.scaleblit( 350+xAdj, 380+yAdj, 32, 32,
+						this.vmPrev[ntile] );
 			}	}
+
+		// HERE
 		target.rect(349, 379, 383, 413, Color.WHITE );
 		target.rect(348, 378, 384, 414, Color.BLACK );
 		target.rect(347, 377, 385, 415, Color.WHITE );
@@ -750,7 +745,7 @@ public class VmenuVSPeditor implements Vmenu
 			// Forbid the color key & editor when in obstruction mode.
 		if( this.obsEditMode && (this.cFocus == 1 || this.cFocus == 2) )
 			{  this.cFocus = 0; }
-		
+		// Crack down extended keycode
 		Integer basecode = Controls.extcodeGetBasecode(ext_keycode);
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
 		boolean isCntl = Controls.extcodeGetCNTL(ext_keycode);
@@ -879,13 +874,14 @@ public class VmenuVSPeditor implements Vmenu
 				this.getControlItem().doControls(ext_keycode);
 				break;
 			
+			case 100:
 			case 37: 		// ARROW-[LEFT]
 				if( isShift == true )		// Shift working tile 1px left
 					{
 					this.wrapWorkingImage( -1, 0 );
 					break;
 					}
-				if( isCntl == true ) 
+				if( isCntl == true || basecode == 100 ) 
 					{
 					this.prevTile();
 					break;
@@ -897,13 +893,14 @@ public class VmenuVSPeditor implements Vmenu
 				this.getControlItem().doControls(ext_keycode);
 				break;
 
+			case 104:
 			case 38: 		// ARROW-UP
 				if( isShift == true )   // Shift working tile 1px up
 					{
 					this.wrapWorkingImage( 0, +1 );
 					break;
 					}
-				if( isCntl == true ) 
+				if( isCntl == true || basecode == 104 ) 
 					{
 					this.changeTile( -1 *
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
@@ -916,13 +913,14 @@ public class VmenuVSPeditor implements Vmenu
 				this.getControlItem().doControls(ext_keycode);
 				break;
 
+			case 102:
 			case 39: 		// ARROW-RIGHT
 				if( isShift == true )	// Shift working tile 1px right
 					{
 					this.wrapWorkingImage( +1, 0 );
 					break;
 					}
-				if( isCntl == true ) 
+				if( isCntl == true || basecode == 102 ) 
 					{
 					this.nextTile();
 					break;
@@ -934,13 +932,14 @@ public class VmenuVSPeditor implements Vmenu
 				this.getControlItem().doControls(ext_keycode);
 				break;
 
+			case 98:
 			case 40: 		// ARROW-DOWN
 				if( isShift == true )	// Shift working tile 1px down
 					{
 					this.wrapWorkingImage( 0, -1 );
 					break;
 					}
-				if( isCntl == true ) 
+				if( isCntl == true || basecode == 98 ) 
 					{
 					this.changeTile( 
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW);
@@ -954,6 +953,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 44:		// [,]  decrease brush size.
+				if( this.cFocus == 4 )
+					{ break; }
 				if( this.lineTool != -1 || this.rectTool != -1 
 						|| this.circleTool != -1 )
 					{ break; }		// only functions in "brush" mode.
@@ -962,6 +963,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 46:		// [.]  Increase brush size.
+				if( this.cFocus == 4 )
+					{ break; }
 				if( this.lineTool != -1 || this.rectTool != -1 
 						|| this.circleTool != -1 )
 					{ break; }		// only functions in "brush" mode.
@@ -988,6 +991,16 @@ public class VmenuVSPeditor implements Vmenu
 					// Sets a single pixel.
 					this.saveMainTileState( 2 );
 					Color cbarC = this.getColorkeyColor( transform );
+					if( this.obsEditMode )
+						{	// Eliminate colors when in obs mode.
+						transform = 1;
+						cbarC = this.clr1st;
+						if( isCntl || isShift || isAlt )
+							{
+							transform = 2;
+							cbarC = this.clr2nd;
+							}
+						}
 					if( this.arealTool != -1 )
 						{
 						this.randomSpray( this.arealTool, 
@@ -1044,11 +1057,13 @@ public class VmenuVSPeditor implements Vmenu
 						break;
 						}
 					// "Dropper"  sets a color key from the current selected.
-					if( isCntl == true && isAlt == false && transform > 0 ) 
+					// Disabled dropper when in obs mode.
+					if( isCntl == true && isAlt == false && 
+						transform > 0 && this.obsEditMode == false ) 
 						{
 						this.setUndoPoint( this.getColorPaletteCopy() , 6 );
 						this.setColorkeyColor( transform, 
-								this.getColorCursorCell());
+							this.getColorCursorCell());
 						break;
 						}
 					if( this.brushSize > 1 )
@@ -1083,6 +1098,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 67:		// [c] Copy
+				if( this.cFocus == 4 )
+					{ break; }
 				// tileset with padding.
 				if( isCntl == true && isShift == true )	
 					{
@@ -1130,6 +1147,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 73:		//  [i] - invert function.
+				if( this.cFocus == 4 )
+					{ break; }
 				if( isCntl == true )		
 					{ this.invertAllCells(); break; }
 				switch( this.cFocus )
@@ -1175,6 +1194,10 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				break;
 
+			case 77:		// [m]  un-toggle animation ed.
+				this.toggleAnimationEd();
+				break;
+				
 			case 78:			// [n] new
 				if( this.cFocus == 4 )
 					{ break; }
@@ -1202,6 +1225,7 @@ public class VmenuVSPeditor implements Vmenu
 
 					case 0:
 					case 3:		// new Tile (replicate tile)
+						this.vmPrevLastIdx = -1;	
 						if( isCntl == true )
 							{
 							if( this.obsEditMode == true )
@@ -1239,7 +1263,7 @@ public class VmenuVSPeditor implements Vmenu
 					}
 				break;
 
-			case 79:		// [o]  r[o]tation and mirroring.
+			case 79:		// [o]  rOtation and mirroring.
 				if( this.cFocus != 3 )		{ break; }
 				if( isCntl == true )
 					{ this.rotate( +1, false ); }
@@ -1279,6 +1303,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 				
 			case 84:		// [t]  transparency & tile viewer
+				if( this.cFocus == 4 )
+					{ break; }
 				if( isCntl == true )	{ break; }		// Eaten by hotkey
 				if( this.cFocus == 1 )
 					{	// Set selected color to transparent.
@@ -1287,7 +1313,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 86:		//  [v] - paste functions
-			
+				if( this.cFocus == 4 )
+					{ break; }
 				if( isCntl == true && isAlt == true )
 					{		// Full VSP inport from clipboard.
 					this.handleVspPaste(core.Script.getClipboardVImage());
@@ -1324,6 +1351,8 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 90:		// [z] Undo and Redo.
+				if( this.cFocus == 4 )
+					{ break; }
 				if( isCntl == true )
 					{ 
 					this.undo();  
@@ -1332,9 +1361,30 @@ public class VmenuVSPeditor implements Vmenu
 				this.redo();
 				break;
 
+			case 96:		// [Num.0]   numpad tile navigate
+				this.changeTileAbs( 0 );
+				break;
+			case 97:		// [Num.1]   numpad tile navigate
+				this.changeTile( 
+					VmenuVSPeditor.DEFAULT_TILES_PER_ROW-1);
+				break;
+			case 99:		// [Num.3]   numpad tile navigate
+				this.changeTile( 
+					VmenuVSPeditor.DEFAULT_TILES_PER_ROW+1);
+				break;
+			case 103:		// [Num.7]   numpad tile navigate
+				this.changeTile( -1 * 
+					VmenuVSPeditor.DEFAULT_TILES_PER_ROW-1);
+				break;
+			case 105:		// [Num.9]   numpad tile navigate
+				this.changeTile( -1 * 
+					VmenuVSPeditor.DEFAULT_TILES_PER_ROW+1);
+				break;
+
 			case 127:		// [Delete]
 				if( this.cFocus == 4 )
 					{ break; }
+				this.vmPrevLastIdx = -1;	
 				if( this.obsEditMode == true &&
 						this.vsp.getNumObsTiles() > 0 )
 					{
@@ -1811,7 +1861,7 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if( this.obsEditMode )
 			{ return; }
-		System.out.println( " load tile # "+Integer.toString(vspIdx) );
+//		System.out.println( " load tile # "+Integer.toString(vspIdx) );
 		if( this.vsp.checkTile(vspIdx) == false )
 			{  vspIdx = 0; }
 		this.tIndex = vspIdx;
@@ -1820,7 +1870,6 @@ public class VmenuVSPeditor implements Vmenu
 		t.setImage( this.vsp.getTiles()[vspIdx] );
 		this.loadWorkingImage(t);
 		this.setColorEditorToCursor();
-		this.updatePreview();
 		this.updatePreview();
 		return;
 		}
@@ -1984,6 +2033,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		if( vspIdx < 0 || vspIdx > max ) 
 			{ return; }
+
 		this.setUndoPoint( new Vsp(this.vsp), 27 );
 
 		if( this.obsEditMode == true )
@@ -1996,7 +2046,9 @@ public class VmenuVSPeditor implements Vmenu
 			VImage output = this.copyWorkingTile();
 			vsp.modifyTile( vspIdx, output.getImage() );
 			}
+		this.vmPrevLastIdx = -1;
 		this.updatePreview();
+		return;
 		}
 
 /** Snatches the colors in the working tile into a VImage.
@@ -2020,7 +2072,10 @@ public class VmenuVSPeditor implements Vmenu
 	 * Saves the current work to the currently active tile.  */
 	private void saveWorkingTile( )
 		{
-		this.saveWorkingTileAs( this.tIndex );
+		if( this.obsEditMode )
+			{  this.saveWorkingTileAs( this.obsEditNum ); }
+		else
+			{  this.saveWorkingTileAs( this.tIndex );  }
 		return;
 		}
 	
@@ -2511,6 +2566,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		this.obsEditMode = false;
 		this.obsEditNum = 0;
+		this.vmPrevLastIdx = -1;
 		this.loadTile( this.tIndex );
 		main.refresh();
 		this.updatePreview();
@@ -3382,19 +3438,25 @@ public class VmenuVSPeditor implements Vmenu
 		//   or if for some reason there are no obstructions.
 		if( this.cFocus == 4 ) 
 			{ return; }
-		this.obsEditMode = ! this.obsEditMode;
 		if( this.vsp.getNumObsTiles() == 0 )
 			{
 			this.obsEditMode = false;
 			return; 
 			}
+
+			// Switch obs modes
+		this.obsEditMode = ! this.obsEditMode;
+			// load into main frame. 
 		if( this.obsEditMode == true )
 			{
-			this.obsEditNum = 0;
+//			this.obsEditNum = 0;
 			this.loadObstruction( this.obsEditNum );
 			}
-		else	{ this.loadTile(this.tIndex); }
+		else	{ 
+			this.loadTile(this.tIndex); 
+			}
 
+		this.vmPrevLastIdx = -1;	// Force update of preview.
 		System.out.println("OBSTRUCTION EDITOR.");
 		return;
 		}
@@ -3411,7 +3473,6 @@ public class VmenuVSPeditor implements Vmenu
 		this.animEd.doControls( 0 );	// Send update pulse
 		return;
 		}
-
 
 	private void loadObstruction( int obsIndex )
 		{
@@ -3472,13 +3533,86 @@ public class VmenuVSPeditor implements Vmenu
 	private boolean deleteObstruction( int index )
 		{
 		boolean rtn = this.vsp.removeObs( index );
-		this.refresh();
-		this.updateMiniTileset();
-		this.updatePreview();
-		if( this.obsEditNum > this.vsp.getNumObsTiles() )
-			{ this.obsEditNum = this.vsp.getNumObsTiles(); } 
-		this.loadObstruction( this.obsEditNum );
+		if( rtn )
+			{
+			this.refresh();
+			this.updateMiniTileset();
+			this.updatePreview();
+			if( this.obsEditNum >= this.vsp.getNumObsTiles() )
+				{ this.obsEditNum = this.vsp.getNumObsTiles()-1; } 
+			this.loadObstruction( this.obsEditNum );
+			this.vmPrevLastIdx = -1;	// Force update of preview.
+			}
 		return(rtn);
+		}
+
+	/** method that updates image data in the tile navigator preview. 
+	 * This holds a matrix of double sized tiles 
+	 * The paint method needs to only call this
+	 *     then draw the vmPrev data */
+	private void loadTilePreview( )
+		{
+		// Prevents unnecessary cycles.
+		if( this.obsEditMode == true &&
+				this.vmPrevLastIdx == this.obsEditNum )
+			{ return; }
+		if( this.obsEditMode == false &&
+				this.vmPrevLastIdx == this.tIndex )
+			{ return; }		
+
+		Integer rowMax = VmenuVSPeditor.DEFAULT_TILES_PER_ROW;
+		Integer rowHalf = rowMax / 2;
+		Integer colMax = VmenuVSPeditor.DEFAULT_TILES_PER_COL;
+		Integer colHalf = colMax / 2;
+		Integer size = (rowMax+1) * colMax;
+		int xAdj, yAdj = 0;
+
+		Integer thistile, max = 0;
+		Integer scaleSize = this.vsp.getTileSquarePixelSize();
+		Integer setMax = this.vsp.getNumtiles();
+		
+		this.vmPrev = new VImage[size];
+		for( int x = 0; x < size; x++ )
+			{ this.vmPrev[x] = new VImage( scaleSize, scaleSize ); }
+
+		int prevNum = 0;
+		for( int row = rowHalf * -1; row <= rowHalf; row++ )
+			{	for( int col = colHalf * -1; col <= colHalf; col++ )
+				{
+				if( this.obsEditMode == true )
+					{
+					thistile = this.obsEditNum + (col * rowMax) + row;
+					this.vmPrevLastIdx = this.obsEditNum;
+					max = this.vsp.getNumObsTiles();
+					}
+				else
+					{
+					thistile = this.tIndex + (col * rowMax) + row;
+					this.vmPrevLastIdx = this.tIndex;
+					max = this.vsp.getNumtiles();
+					}
+
+				while( thistile >= max )	{ thistile -= max; }
+				while( thistile < 0 )		{ thistile += max; }
+				if( this.obsEditMode == true )
+					{	// Slap the Ob.tile on a fake tile to use below.
+					this.vmPrev[ prevNum ].paintBlack(1.0f);
+					this.vsp.BlitObs( 0,0, 
+							thistile, this.vmPrev[ prevNum ] );
+					}
+				else		// Draw from direct tiles.
+					{
+					this.vmPrev[prevNum] = 
+							this.vsp.getTileAsVImage( thistile );
+					}
+//	System.out.println(  "col: " + Integer.toString(col) +
+//			" row: " + Integer.toString(row) +
+//			" prevNum: " + Integer.toString(prevNum) +
+//			" thistile: " + Integer.toString(thistile)  );
+				prevNum++;
+				}
+			}
+		return;
 		}
 	
 	}		// END CLASS
