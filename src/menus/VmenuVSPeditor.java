@@ -237,7 +237,10 @@ public class VmenuVSPeditor implements Vmenu
 	private Stack<Long> inputIDstack = new Stack<Long>();
 
 	private VmenuAnimationEd animEd;
-	
+
+	private String statusBar;
+	private String toolStatus;
+
 //	private static final long serialVersionUID = 6666410183698706332L;
 
 
@@ -447,6 +450,9 @@ public class VmenuVSPeditor implements Vmenu
 		this.animEd.setActive(true);
 		this.sidebar.getMenuItem(8).setChildID( 
 			this.animEd.getFocusId() );
+		
+		this.statusBar = new String("VSP Editor Initialized");
+		this.toolStatus = new String("MENUS");
 
 		return;
 		}
@@ -535,6 +541,25 @@ public class VmenuVSPeditor implements Vmenu
 		target.printString( target.getWidth()-50, 48, 
 				core.Script.fntLogicalScans10, Color.WHITE, 
 				"AN  "+Integer.toString( this.vsp.getNumAnimations() ));
+
+		// Tool Status Note
+		this.toolStatusUpdate();
+		target.rectfill( target.getWidth()-125, 58, target.getWidth()-6 , 82,
+				Color.BLACK );
+		target.rect( target.getWidth()-125, 58, target.getWidth()-6 , 82,
+				Color.WHITE );
+		target.printString( target.getWidth()-120, 78, 
+				core.Script.fntLogicalScans18, Color.WHITE, 
+				this.toolStatus );
+
+		// Print status bar.
+		target.rectfill( 10, target.getHeight()-27, target.getWidth()-10 , 
+				target.getHeight()-5,  Color.BLACK );
+		target.rect( 10, target.getHeight()-27, target.getWidth()-10 , 
+				target.getHeight()-5,  Color.WHITE );
+		target.printString( 18, target.getHeight()-8, 
+				core.Script.fntLogicalScans18, Color.WHITE, 
+				this.statusBar );
 
 		// Large Brush mode.   Expand selected area.
 		if( this.brushSize > 1 )
@@ -745,6 +770,7 @@ public class VmenuVSPeditor implements Vmenu
 			// Forbid the color key & editor when in obstruction mode.
 		if( this.obsEditMode && (this.cFocus == 1 || this.cFocus == 2) )
 			{  this.cFocus = 0; }
+
 		// Crack down extended keycode
 		Integer basecode = Controls.extcodeGetBasecode(ext_keycode);
 		boolean isShift = Controls.extcodeGetSHIFT(ext_keycode);
@@ -810,7 +836,10 @@ public class VmenuVSPeditor implements Vmenu
 				if( this.obsEditMode )
 					{
 					if( this.cFocus != 0 )
-						{ this.cFocus = 0; }
+						{
+						this.cFocus = 0;
+						this.statusMessage("End Obstruction Mode");
+						}
 					else
 						{ VmenuVSPeditor.returnToSystem(); }
 					break;
@@ -822,15 +851,20 @@ public class VmenuVSPeditor implements Vmenu
 						break;
 					case 2:		// Return to color key, discarding changes.
 						this.cFocus = 1;
+						this.statusMessage("Discarded Changes to Pal# "+
+							Integer.toString( 
+								this.colorkey.getSelectedIndexAsInt() ) );
 						if( this.editColorInPlace == true )
 							{
 							this.cFocus = 3;
 							this.editColorInPlace = false;
+							this.statusMessage("Discarded Changes to Cell");
 							}
 						this.setColorEditorToCurrentColorKey();
 						break;
 					default:
 						this.cFocus = 0;
+						this.statusMessage("Main menu");
 						break;
 					}
 				return( true );
@@ -845,6 +879,8 @@ public class VmenuVSPeditor implements Vmenu
 					this.setColorEditorToCursor();
 					this.cFocus = 2;
 					this.editColorInPlace = true;
+					this.statusMessage(
+						"Directly modify this cell's color components");
 					return(true);
 					}
 				this.funcActivate();
@@ -879,6 +915,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( isShift == true )		// Shift working tile 1px left
 					{
 					this.wrapWorkingImage( -1, 0 );
+					this.statusMessage("Tile edit: Left shift");
 					break;
 					}
 				if( isCntl == true || basecode == 100 ) 
@@ -898,6 +935,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( isShift == true )   // Shift working tile 1px up
 					{
 					this.wrapWorkingImage( 0, +1 );
+					this.statusMessage("Tile edit: Up shift");
 					break;
 					}
 				if( isCntl == true || basecode == 104 ) 
@@ -918,6 +956,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( isShift == true )	// Shift working tile 1px right
 					{
 					this.wrapWorkingImage( +1, 0 );
+					this.statusMessage("Tile edit: Right shift");
 					break;
 					}
 				if( isCntl == true || basecode == 102 ) 
@@ -937,6 +976,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( isShift == true )	// Shift working tile 1px down
 					{
 					this.wrapWorkingImage( 0, -1 );
+					this.statusMessage("Tile edit: Down shift");
 					break;
 					}
 				if( isCntl == true || basecode == 98 ) 
@@ -953,23 +993,11 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 44:		// [,]  decrease brush size.
-				if( this.cFocus == 4 )
-					{ break; }
-				if( this.lineTool != -1 || this.rectTool != -1 
-						|| this.circleTool != -1 )
-					{ break; }		// only functions in "brush" mode.
-				if( this.brushSize > 1 )
-					{ this.brushSize--; }
+				changeBrushSize(-1);
 				break;
 
 			case 46:		// [.]  Increase brush size.
-				if( this.cFocus == 4 )
-					{ break; }
-				if( this.lineTool != -1 || this.rectTool != -1 
-						|| this.circleTool != -1 )
-					{ break; }		// only functions in "brush" mode.
-				if( this.brushSize < VmenuVSPeditor.MAX_BRS_SZ )
-					{ this.brushSize++; }
+				this.changeBrushSize(+1);
 				break;
 
 			// the Number keys that do their bizz.
@@ -984,6 +1012,9 @@ public class VmenuVSPeditor implements Vmenu
 					this.setUndoPoint( this.getColorPaletteCopy() , 1 );
 					this.swapColorKeyColor( 
 						this.colorkey.getSelectedIndex(), transform );
+					this.statusMessage("Swapped palette # " +
+						Integer.toString( this.colorkey.getSelectedIndex())+
+						" with " + Integer.toString( transform ) );
 					break;
 					}
 				if( this.cFocus == 3 )   // focus on main.
@@ -1064,6 +1095,8 @@ public class VmenuVSPeditor implements Vmenu
 						this.setUndoPoint( this.getColorPaletteCopy() , 6 );
 						this.setColorkeyColor( transform, 
 							this.getColorCursorCell());
+						this.statusMessage("'Dropper' to palette # "+
+							Integer.toString(transform) );
 						break;
 						}
 					if( this.brushSize > 1 )
@@ -1106,6 +1139,8 @@ public class VmenuVSPeditor implements Vmenu
 					this.vsp.exportToClipboard(
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW,
 						true );
+					this.statusMessage("Copied tileset to "+
+						"clipboard with padding");
 					break;
 					}
 			 	// 	Entire Tileset to clipboard
@@ -1114,6 +1149,8 @@ public class VmenuVSPeditor implements Vmenu
 					this.vsp.exportToClipboard(
 						VmenuVSPeditor.DEFAULT_TILES_PER_ROW,
 						false );
+					this.statusMessage("Copied tileset to "+
+							"clipboard without padding");
 					break;
 					}
 				if( isShift == true  && isCntl == false )
@@ -1122,7 +1159,7 @@ public class VmenuVSPeditor implements Vmenu
 					break;
 					}
 				// plain c copies only the working tile.
-				System.out.println("Working tile copied to clipboard.");
+				this.statusMessage("Working tile copied to clipboard.");
 				this.copyWorkingTile().copyImageToClipboard();
 				break;
 
@@ -1154,16 +1191,18 @@ public class VmenuVSPeditor implements Vmenu
 				switch( this.cFocus )
 					{
 					case 1:		// Invert the color key.
-					this.setUndoPoint( this.getColorPaletteCopy() , 9 );
+						this.setUndoPoint( this.getColorPaletteCopy() , 9 );
 						this.setColorkeySelectedColor( 
 							VmenuVSPeditor.invertColor(
 								this.getColorkeySelectedColor() ));
 						this.setColorEditorToCurrentColorKey();
+						this.statusMessage("Inverted color palette entry");
 						break;
 					case 3:		// invert a single cell
-					this.saveMainTileState( 9 );
+						this.saveMainTileState( 9 );
 						this.invertSelectedCell();
 						this.setColorEditorToCursor();
+						this.statusMessage("Inverted current cell");
 						break;
 					default:
 						break;
@@ -1197,7 +1236,7 @@ public class VmenuVSPeditor implements Vmenu
 			case 77:		// [m]  un-toggle animation ed.
 				this.toggleAnimationEd();
 				break;
-				
+
 			case 78:			// [n] new
 				if( this.cFocus == 4 )
 					{ break; }
@@ -1231,6 +1270,7 @@ public class VmenuVSPeditor implements Vmenu
 							if( this.obsEditMode == true )
 								{
 								this.vsp.addObstruction();
+								this.statusMessage("Insert obstruction");
 								}
 							else
 								{
@@ -1239,6 +1279,7 @@ public class VmenuVSPeditor implements Vmenu
 								this.vsp.getTileSquarePixelSize(),
 								this.getColorkeySelectedColor() 
 								).getImage()  );
+								this.statusMessage("Inserted new tile");
 								}
 							}
 						else 	{
@@ -1247,10 +1288,12 @@ public class VmenuVSPeditor implements Vmenu
 								this.vsp.addObstruction( 
 									this.getObsTilefromWorkingData(), 
 									this.obsEditNum );
+								this.statusMessage("Added new obstr.");
 								}
 							else
 								{
 								this.vsp.insertReplicaTile( this.tIndex );
+								this.statusMessage("Replicated new Tile");
 								}
 							}
 						this.refresh();
@@ -1272,7 +1315,8 @@ public class VmenuVSPeditor implements Vmenu
 				else if( isShift == true )
 					{ this.rotate( 0, true ); }
 				else
-					{ this.rotate( -1, false ); } 
+					{ this.rotate( -1, false ); }
+				this.statusMessage("Rotated the tile");
 				break;
 
 			case 82: 		// [r]  Rectangles
@@ -1309,6 +1353,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( this.cFocus == 1 )
 					{	// Set selected color to transparent.
 					this.setColorkeySelectedColor(this.clrTrans);
+					this.statusMessage("set pal.entry to transparent.");
 					}
 				break;
 
@@ -1318,12 +1363,14 @@ public class VmenuVSPeditor implements Vmenu
 				if( isCntl == true && isAlt == true )
 					{		// Full VSP inport from clipboard.
 					this.handleVspPaste(core.Script.getClipboardVImage());
+					this.statusMessage("VSP import from clipboard");
 					break;					
 					}
 				if( isCntl == true )
 					{		// tile paste + working save.
 					this.handleTilePaste( core.Script.getClipboardVImage() );
 					this.saveWorkingTile();
+					this.statusMessage("VSP import+save from clipboard");
 					break;
 					}
 				if( isShift == true )
@@ -1334,6 +1381,7 @@ public class VmenuVSPeditor implements Vmenu
 					break;
 					}
 				this.handleTilePaste( core.Script.getClipboardVImage() );
+				this.statusMessage("Pasted tile.");
 				break;
 				
 			case 87: 		// [w]  Toggle Circle tool
@@ -1406,7 +1454,6 @@ public class VmenuVSPeditor implements Vmenu
 					case 1:		// Delete current palette entry
 						Integer targetidx = 
 							this.colorkey.getSelectedIndex();
-						System.out.println("Delete Pal @ "+targetidx.toString());
 						if( targetidx >= 3 )
 							{
 							this.removePaletteColor( (targetidx-3) 
@@ -1417,7 +1464,9 @@ public class VmenuVSPeditor implements Vmenu
 					default:		// Delete a current tile from vsp.
 						if( this.vsp.getNumtiles() <= 1 )	
 							{ break; }		// refuse to delete final tile.
-						this.vsp.spliceTile(this.tIndex);
+						this.vsp.spliceTile( this.tIndex );
+						this.statusMessage("Removed tile # "+
+							Integer.toString(this.tIndex) );
 						if( this.tIndex == this.vsp.getNumtiles() )
 							{ this.tIndex--; }
 						this.refresh();
@@ -1433,6 +1482,9 @@ public class VmenuVSPeditor implements Vmenu
 					{
 					this.animEd.importTileTarget( 
 						this.tIndex, true );
+					this.statusMessage("Imported tile # " +
+						Integer.toString(this.tIndex) +
+						" into animation START " );
 					}
 				break;
 			case 93:		// right bracket
@@ -1440,6 +1492,9 @@ public class VmenuVSPeditor implements Vmenu
 					{
 					this.animEd.importTileTarget( 
 						this.tIndex, false );
+					this.statusMessage("Imported tile # " +
+						Integer.toString(this.tIndex) +
+						" as animation END" );
 					}
 				break;
 				
@@ -1459,6 +1514,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		return(true);
 		}
+
 
 
 	// This is a full screen menu -- thus moving it makes no sense.
@@ -1647,10 +1703,13 @@ public class VmenuVSPeditor implements Vmenu
 
 			case 1:		// Color key bar - edit this color pod
 				this.cFocus = 2;
+				this.statusMessage("Editing color palette entry");
 				break;
 
 			case 2:		// Color Editor - Save color, back to palette.
 				int cidx = this.getSelectedColorkeyCIDX();
+				this.statusMessage("Modified color "+
+						Integer.toString(cidx) );
 				// TODO: perhaps alpha this shouldn't be hard set
 				Color nc = new Color( this.gR.getValue(), 
 					this.gG.getValue(), this.gB.getValue(), 255 );
@@ -1672,7 +1731,8 @@ public class VmenuVSPeditor implements Vmenu
 						enumMenuButtonCOLORS.BODY_INACTIVE , nc);
 					this.getCursorCell().setColorComponent(
 						enumMenuButtonCOLORS.BODY_SELECTED , nc);
-					
+
+					this.statusMessage("Pixel modified");
 					break;
 					}
 				// Else - return it to the palette.
@@ -1683,7 +1743,10 @@ public class VmenuVSPeditor implements Vmenu
 				
 				// Actually abort..... color wasn't changed.
 				if( nc.getRGB() == this.clrs.get(cidx).getRGB() ) 
-					{ break; }
+					{
+					this.statusMessage("Color not changed");
+					break; 
+					}
 
 				this.setUndoPoint( this.getColorPaletteCopy() , 28 );
 
@@ -1922,7 +1985,9 @@ public class VmenuVSPeditor implements Vmenu
 			this.tIndex = index;
 			this.loadTile( this.tIndex );
 			}
-		
+
+		this.statusMessage("Tile # " + Integer.toString( index ) +
+			" Selected for editing");
 		return;
 		}
 	
@@ -1966,6 +2031,11 @@ public class VmenuVSPeditor implements Vmenu
 					theColor );
 			this.colorkey.getMenuItem(bn).setColorContent( tmp );
 			}
+
+		this.statusMessage("Changed palette bar to Line # "+
+			Integer.toString( lineIndex ) + " ( " + 
+			Integer.toString( (lineIndex) * 8 ) + " - " + 
+			Integer.toString( ((lineIndex+1) * 8)-1) + " )" );
 		return;
 		}
 
@@ -2048,6 +2118,7 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		this.vmPrevLastIdx = -1;
 		this.updatePreview();
+		this.statusMessage("Saved workign tile.");
 		return;
 		}
 
@@ -2196,6 +2267,23 @@ public class VmenuVSPeditor implements Vmenu
 		}
 
 	
+	
+	private void changeBrushSize( int delta )
+		{
+		if( this.cFocus == 4 )
+			{ return; }
+		if( isToolActive() == true )
+			{ return; }		// only functions in "brush" mode.
+		this.brushSize += delta;
+		while( this.brushSize > VmenuVSPeditor.MAX_BRS_SZ  )
+			{ this.brushSize -= VmenuVSPeditor.MAX_BRS_SZ;  }
+		while( this.brushSize < 1 )
+			{ this.brushSize += VmenuVSPeditor.MAX_BRS_SZ;  }
+		this.statusMessage("Brush size now " +
+			Integer.toString(brushSize) );
+		return;
+		}
+
 	// Utilities for manipulating color key bar.
 	
 	private void setColorPaletteEntry( int paletteIndex, Color c )
@@ -2301,6 +2389,7 @@ public class VmenuVSPeditor implements Vmenu
 					)	);
 			this.main.getMenuItem(vmi).setColorContent(hmTmp);
 			}
+		this.statusMessage("Inverted all cells");
 		return;
 		}
 	
@@ -2713,8 +2802,10 @@ public class VmenuVSPeditor implements Vmenu
 			{	try { exin.close(); } catch(Exception e ) {}	}
 
 		this.resetPalette();
+		this.statusMessage("Loaded palette");
 		return(true);
 		}
+	/** Resets the palette to the standard verge pal.  */
 
 	private void setBasicPalette()
 		{
@@ -2794,6 +2885,7 @@ public class VmenuVSPeditor implements Vmenu
 	
 			this.colorkey.addItem(cBtn);
 			}
+		this.statusMessage("Reset to default palette.");
 		return;
 		}
 	
@@ -2815,6 +2907,8 @@ public class VmenuVSPeditor implements Vmenu
 			{	this.clrs.put( x, this.clrs.get(x-1) );	}
 		this.clrs.put( palIndex, this.clr1st);
 		this.setCbarLine( this.cBarIndexSet );
+		this.statusMessage("Inserted new palette color at "+
+				Integer.toString(palIndex) );
 		return;
 		}
 
@@ -2836,6 +2930,8 @@ public class VmenuVSPeditor implements Vmenu
 		while( (this.cBarIndexSet*8) > (this.clrs.size()-1) )
 			{  this.cBarIndexSet--; }
 		this.setCbarLine( this.cBarIndexSet );
+		this.statusMessage("Removed palette entry # "+
+				Integer.toString(palIndex) );
 		return;
 		}
 
@@ -3167,8 +3263,7 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if( this.undoStack.isEmpty() )		
 			{
-			System.out.println( 
-				"Undo attempted but undo stack is empty." );
+			this.statusMessage( "Undo: nothing to undo!" );
 			return; 
 			}
 		int t1 = this.undoStack.size();
@@ -3248,11 +3343,12 @@ public class VmenuVSPeditor implements Vmenu
 						System.out.println(" Undo ColorBar::  "+
 							"HashMap with value type : "+itsName.toString()
 							+"  with "+testSize.toString()+" Entries");
+						this.statusMessage("Undo: colorbar change");
 						return;
 						}
 					catch( Exception e )
 						{
-						System.out.println(
+						this.statusMessage(
 							" ERROR, ignored unexpected Undo object");
 						return;
 						}
@@ -3277,6 +3373,7 @@ public class VmenuVSPeditor implements Vmenu
 			this.updatePreview();
 			this.obsEditMode = false;
 			this.loadTile( this.tIndex );
+			this.statusMessage("Undo:  Restated entire tileset");
 			}
 
 		// restore a snapshot of the tile data - reload it.
@@ -3298,7 +3395,7 @@ public class VmenuVSPeditor implements Vmenu
 			// Check for size compatibility
 			if( this.main.countMenuItems() != ssm.getArraySize() )
 				{ 
-				System.out.println(" Discarded undo - Incompatible size");
+				this.statusMessage(" Discarded undo - Incompatible size");
 				return;
 				}
 
@@ -3307,10 +3404,10 @@ public class VmenuVSPeditor implements Vmenu
 				VmiButton tmpBtn = 
 					(VmiButton) this.main.getMenuItem(idx);
 				tmpBtn.setColorComponent( enumMenuButtonCOLORS.BODY_ACTIVE, 
-						ssm.get(idx) );
+					ssm.get(idx) );
 				}
  
-			System.out.println(" restored state of tile data.");
+			this.statusMessage("Undo: restored state of tile data.");
 			}
 
 		return;
@@ -3320,11 +3417,11 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if( this.redoStack.isEmpty() )   
 			{ return; }
-		System.out.println( "REDO: " + Integer.toString( this.redoStack.size()) + 
-			" on stack " );
+		this.statusMessage( "REDO: has " + 
+			Integer.toString( this.redoStack.size()) + " left on stack " );
 		// Take an object from the redo.. put it back on undo.
 		Object o = this.redoStack.pop();
-		
+
 		this.doUndo( o , false );		// fires the redo operation.
 		
 		// put the last undo operation back onto its stack.
@@ -3343,8 +3440,10 @@ public class VmenuVSPeditor implements Vmenu
 		this.undoStack.clear();
 		this.redoStack.clear();
 		this.unredoLastOp = null;
+		this.statusMessage("Cleared Undo & Redo history.");
 		return;
 		}
+
 	
 	/* pushes the colors from the main tile editor into the undo stack.
 	  A subclass needed to be created in order to differentiate the tile
@@ -3465,9 +3564,15 @@ public class VmenuVSPeditor implements Vmenu
 	public void toggleAnimationEd( )
 		{
 		if( this.cFocus != 4 )
-			{	this.cFocus = 4;	}
+			{
+			this.cFocus = 4;
+			this.statusMessage("Entered animation editor");
+			}
 		else
-			{	this.cFocus = 0;	}
+			{
+			this.cFocus = 0;
+			this.statusMessage("Quit animation editor");
+			}
 		this.animEd.setVisible( true );
 		this.animEd.setActive( true );
 		this.animEd.doControls( 0 );	// Send update pulse
@@ -3543,6 +3648,8 @@ public class VmenuVSPeditor implements Vmenu
 			this.loadObstruction( this.obsEditNum );
 			this.vmPrevLastIdx = -1;	// Force update of preview.
 			}
+		this.statusMessage( "Deleted obstruction # " + 
+			Integer.toString( index ) );
 		return(rtn);
 		}
 
@@ -3615,4 +3722,57 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 	
+	private void statusMessage(String msg)
+		{ 
+		this.statusBar = msg;
+		return;
+		}
+	
+	private void toolStatusUpdate()
+		{
+		String newMsg = new String("Pixel "+
+				Integer.toString( brushSize) +"x");
+
+		if( arealTool != -1 )
+			{ 
+			newMsg = new String("Spray "+
+					Integer.toString(arealToolDensity)+" " );
+			if( arealToolCRandom )
+				{ newMsg = newMsg.concat(" * "); }
+			}
+		
+		if( lineTool != -1 )
+			{ 
+			newMsg = new String("Line");
+			if( lineContiguous )
+				{ newMsg = newMsg.concat(" + "); }
+			}
+
+		if( rectTool != -1 )
+			{ 
+			newMsg = new String("Rect");
+			if( rectContiguous )
+				{ newMsg = newMsg.concat(" + "); }
+			}
+		
+		if( circleTool != -1 )
+			{ newMsg = new String("Circle"); }
+
+		this.toolStatus = newMsg;
+		return;
+		}
+	
+	private boolean isToolActive()
+		{
+		if( this.lineTool != -1 )
+			{ return(true); }
+		if( this.circleTool != -1 )
+			{ return(true); }
+		if( this.rectTool != -1 )
+			{ return(true); }
+		if( this.arealTool != -1 )
+			{ return(true); }
+		return(false);
+		}
+
 	}		// END CLASS
