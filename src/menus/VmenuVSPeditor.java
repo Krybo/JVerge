@@ -1826,7 +1826,10 @@ public class VmenuVSPeditor implements Vmenu
 	     		   return(false); 
 	     		   }
 	     	   else
-	     		   {   action.invoke( this, args );   }
+	     		   { 
+	     		   System.out.println("Invoke:  " + action.getName() );
+	     		   action.invoke( this, args );   
+	     		   }
 	     	   }
 			}
 		catch(Exception e)
@@ -1934,6 +1937,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.loadWorkingImage(t);
 		this.setColorEditorToCursor();
 		this.updatePreview();
+		this.statusMessage("Loaded tile "+Integer.toString(vspIdx) );
 		return;
 		}
 
@@ -2401,6 +2405,8 @@ public class VmenuVSPeditor implements Vmenu
 		Color tmp = this.getColorkeyColor( slot1 );
 		this.setColorkeyColor(slot1, this.getColorkeyColor( slot2 ) );
 		this.setColorkeyColor(slot2, tmp );
+		this.statusMessage("Swapped palette # " +
+			Integer.toString(slot1) + " with " + Integer.toString(slot2) );
 		return;
 		}
 
@@ -2416,6 +2422,7 @@ public class VmenuVSPeditor implements Vmenu
 		   clipboardVImage.getHeight() < this.vsp.getTileSquarePixelSize() )
 			{ System.err.print("Failed tile paste.II "); return(false); }
 		this.loadWorkingImage( clipboardVImage );
+		this.statusMessage("Paste External Image");
 		return(true);
 		}
 
@@ -2479,11 +2486,12 @@ public class VmenuVSPeditor implements Vmenu
 							z, z) );
 					if( r == true ) { inportCount++; }
 				}	}
-			System.out.println("Inported "+inportCount.toString()+" tiles.");
+			this.statusMessage( "Inported " +
+				inportCount.toString()+" tiles.");
 			this.loadWorkingTile();
 			return(true);
 			}
-		System.err.println("VSP Paste : non-compatible clipboard");
+		this.statusMessage( "Error: incompatible VSP Paste" );
 		return(false);
 		}
 
@@ -2659,6 +2667,9 @@ public class VmenuVSPeditor implements Vmenu
 		this.loadTile( this.tIndex );
 		main.refresh();
 		this.updatePreview();
+		
+		this.statusMessage("Completed load of External VSP. w/ " +
+			Integer.toString( newguy.getNumtiles() ) + " tiles " );
 
 		return(true);
 		}
@@ -2692,6 +2703,8 @@ public class VmenuVSPeditor implements Vmenu
 		this.obsEditMode = false;
 		this.loadTile( this.tIndex );
 		this.updatePreview();
+		
+		this.statusMessage("Started a new VSP.");
 
 		return;
 		}
@@ -2733,9 +2746,13 @@ public class VmenuVSPeditor implements Vmenu
 				exout.writeByte((byte) this.clrs.get(c).getGreen() % 256);
 				exout.writeByte((byte) this.clrs.get(c).getBlue() % 256);
 				}
+			this.statusMessage( "exported Palette" );
 			}
 		catch( Exception e )
-			{ return(false); }
+			{
+			this.statusMessage("Error exporting Palette");
+			return(false); 
+			}
 		finally {   
 			if( exout != null )
 				{	try { exout.close(); } catch(Exception e ) {}	}
@@ -2805,8 +2822,8 @@ public class VmenuVSPeditor implements Vmenu
 		this.statusMessage("Loaded palette");
 		return(true);
 		}
-	/** Resets the palette to the standard verge pal.  */
 
+	/** Resets the palette to the standard verge pal.  */
 	private void setBasicPalette()
 		{
 		this.setUndoPoint( this.getColorPaletteCopy() , 13 );
@@ -3192,9 +3209,8 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 	
-	/*  Undo functionality methods */
-	
-	private void wrapWorkingImage(int x, int y)
+	/** Wrap-around working tile contents horizontally and vertically */
+	private void wrapWorkingImage( int x, int y)
 		{
 		if( x == 0 && y == 0 )	{ return; }
 		this.saveMainTileState( 22 );
@@ -3234,6 +3250,8 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		return;
 		}
+	
+	/*  Undo functionality methods */
 	
 	/**
 	 *   Items that should call this:
@@ -3613,6 +3631,8 @@ public class VmenuVSPeditor implements Vmenu
 				}
 			}
 
+		this.statusMessage("Loaded obstruction @ "+
+				Integer.toString(obsIndex) );
 		return;
 		}
 
@@ -3722,7 +3742,7 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 	
-	private void statusMessage(String msg)
+	private void statusMessage( String msg )
 		{ 
 		this.statusBar = msg;
 		return;
@@ -3733,6 +3753,27 @@ public class VmenuVSPeditor implements Vmenu
 		String newMsg = new String("Pixel "+
 				Integer.toString( brushSize) +"x");
 
+		if( this.cFocus == 0 )
+			{
+			this.toolStatus = new String("MENUS");
+			return;
+			}
+		if( this.cFocus == 1 )
+			{
+			this.toolStatus = new String("PALETTE");
+			return;
+			}
+		if( this.cFocus == 2 )
+			{
+			this.toolStatus = new String("COLOR ED" );
+			return;
+			}
+		if( this.cFocus == 4 )
+			{
+			this.toolStatus = new String("ANIM ED");
+			return;
+			}
+		
 		if( arealTool != -1 )
 			{ 
 			newMsg = new String("Spray "+
