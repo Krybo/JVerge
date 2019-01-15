@@ -819,6 +819,27 @@ public class VmenuVSPeditor implements Vmenu
 		// Control processing continues below, so be careful of dups.
 		if( this.cFocus == 4 ) 
 			{ this.animEd.doControls(ext_keycode); }
+			
+		// The help table has a simple control set of its own
+		//   that allows it to scroll 
+		if( this.showHelp )
+			{
+			switch( basecode )
+				{
+				case 8:   case 10:  this.toggleHelp();   //  get out
+					break;
+				case 104: case 38:  this.helpTable.doScrollVertical(-1);
+					break;
+				case 98: case 40:   this.helpTable.doScrollVertical(1);
+					break;
+				case 33:	 this.helpTable.doScrollVertical(-3);
+					break;
+				case 34:	this.helpTable.doScrollVertical(3);
+					break;
+				default:  break;
+				}
+			return( true );
+			}
 
 		// normal key overrides.
 		switch( basecode )
@@ -4081,8 +4102,9 @@ public class VmenuVSPeditor implements Vmenu
 		try {
 			this.helpTable = 
 				new VmiDataTable( 20, 20, 600, 400, 3, 50, info);
+			this.helpTable.setScrollable( 3, 12, 3.0d, true );
 			}
-		catch (Exception e)
+		catch (Exception e )
 			{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -4091,4 +4113,4 @@ public class VmenuVSPeditor implements Vmenu
 
 
 
-	}		// END CLASS
+	}		// END CLASS  VmenuVSPeditor

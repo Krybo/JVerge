@@ -960,6 +960,28 @@ public class VmiDataTable implements Vmenuitem
 		// 2: Print all infromation to this virtual image	
 		}
 	
+	// External methods for manipulating the scrolling
+	//  Returns the current scrolled value
+	//  TODO   enforce bounds
+	public int doScrollHorizontal( int amount )
+		{
+		this.scrollX += new Double( amount * this.scrollSpeed).intValue();
+		System.out.println("Scroll X = "+Integer.toString(this.scrollX));
+		return( this.scrollX );
+		}
+	public int doScrollVertical( double amount )
+		{
+		this.scrollY += new Double( amount * this.scrollSpeed).intValue();
+		System.out.println("Scroll Y = "+Integer.toString(this.scrollY ));
+		return( this.scrollY );
+		}
+	public void doScroll( int x, int y)  // Operates both at once.
+		{
+		this.doScrollHorizontal( x );
+		this.doScrollVertical( y );
+		return;
+		}
+	
 	
 	/** ----------------------- non-interface methods ---------------------- **/	
 
