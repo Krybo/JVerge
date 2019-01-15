@@ -67,12 +67,21 @@ public class VmiDataTable implements Vmenuitem
 	private String decimalFormatter = new String( "%.3f" );
 	private Font fnt = core.Script.fntMASTER;
 	private Font theCaptionFont = this.fnt;
+
+		// For scrolling
+	private boolean enableScroll = false;
+	private boolean enableScrollBars = false; 
+	private Double scrollSpeed = 1.0d;
+	private Integer scrollX = 0;
+	private Integer scrollY = 0;
+	private Integer scrollXitems = 0;
+	private Integer scrollYitems = 0;
 	
-		// These are required by all menu items.
+		// These are interface requirements for all menu items.
 	private Long parentID = new Long(-1);
 	private Long id = new Long(-1);
 	private Long childID = new Long(-1);
-	
+
 	private VImage bkgImg = null;
 
 		// Key data members.
@@ -106,10 +115,9 @@ public class VmiDataTable implements Vmenuitem
 		}
 
 
-	/** --------------------------------------------------------------------------- **/
+	/** -------------------- Constructor -------------------------------------- */
 
-
-	public VmiDataTable(int pinX, int pinY, int pixelWidth, int pixelHeight,
+	public VmiDataTable( int pinX, int pinY, int pixelWidth, int pixelHeight,
 			int numColumns, int numRows, 
 			LinkedHashMap<String,String> entries )
 		{
@@ -118,6 +126,10 @@ public class VmiDataTable implements Vmenuitem
 		this.setDefaultColors();
 		return;
 		}
+
+
+	/** Constructor helpers */
+
 
 	/**  This handles an arraylist of various types as Data input to build
 	 *      a verge menu item data table.
@@ -228,8 +240,8 @@ public class VmiDataTable implements Vmenuitem
 		this.visible = true;
 		this.enableImageBackdrop = false;
 		}
-	
 
+	
 	private void setDefaultColors()
 		{
 			// Define Default colors.
@@ -732,7 +744,7 @@ public class VmiDataTable implements Vmenuitem
 		this.imgLabels = imageItems;
 		return;
 		}
-	
+
 	/**  in array form, sends VImage icon data into the object.
 	 *    one per data cell.
 	 *    will ignore if more icons then there are data values. 
@@ -869,7 +881,7 @@ public class VmiDataTable implements Vmenuitem
 		return;
 		}
 
-	// If this happens to recieve input -- it shouldn't -- 
+	// If this happens to receive input -- it shouldn't -- 
 	//   hide it away in a negative index.
 	public void processInput(String input)
 		{
@@ -902,6 +914,50 @@ public class VmiDataTable implements Vmenuitem
 		if( descriptions.length >= 2 )	
 			{ this.desc  = descriptions[1]; }
 		return;
+		}
+	
+	/**  --   Drawing and Scroll related support methods ----------  */
+
+	public void setScrollable( Integer dispRows, Integer dispCols, 
+			Double speed, boolean showScrollBars )
+		{
+		this.enableScroll = true;
+		this.enableScrollBars = showScrollBars; 
+		this.scrollSpeed = speed;
+		this.scrollX = 0;
+		this.scrollY = 0;
+		this.scrollXitems = dispCols;
+		this.scrollYitems = dispRows;
+		return;
+		}
+
+	public void disableScroll()
+		{
+		this.enableScroll = false;
+		this.enableScrollBars = false; 
+		this.scrollSpeed = 1.0d;
+		this.scrollX = 0;
+		this.scrollY = 0;
+		this.scrollXitems = 0;
+		this.scrollYitems = 0;
+		return;		
+		}
+	
+	/** Examine data and determine width and height of each col & row. */
+	private void analyzeRowsCols()
+		{
+		return;
+		}
+
+	/**  Re-allocates a full size VImage containing all data.
+	 *    For simplicity, it has no border, caption, etc. 
+	 *    The virtual body is then scaled into the confines of the main pane  
+	 *    All other aspects are handled within the paint() method	*/
+	private void redrawVirtualTable()
+		{
+		this.analyzeRowsCols();
+		// 1: (Re)Size an appropriate virtual image.
+		// 2: Print all infromation to this virtual image	
 		}
 	
 	

@@ -241,6 +241,8 @@ public class VmenuVSPeditor implements Vmenu
 	private String statusBar;
 	private String toolStatus;
 
+	private VmiDataTable helpTable;
+
 //	private static final long serialVersionUID = 6666410183698706332L;
 
 
@@ -297,6 +299,7 @@ public class VmenuVSPeditor implements Vmenu
 		Method m6 = null;
 		Method m7 = null;
 		Method m8 = null;
+		Method m9 = null;
 		Method mIn1 = null;
 		try {
 			m2 = VmenuVSPeditor.class.getDeclaredMethod(
@@ -317,6 +320,8 @@ public class VmenuVSPeditor implements Vmenu
 				"saveWorkingTile",  new Class[]{} );
 			m8 = VmenuVSPeditor.class.getDeclaredMethod( 
 				"toggleVspOverview",  new Class[]{} );
+			m9 = VmenuVSPeditor.class.getDeclaredMethod( 
+				"toggleHelp",  new Class[]{} );
 			mIn1 = VmenuVSPeditor.class.getDeclaredMethod( 
 				"delegateInput",  VmiInputInteger.class );
 
@@ -367,7 +372,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		VmiTextSimple vts09 = new VmiTextSimple("Controls Help");
 		vts09.setKeycode( 576 );
-//		vts07.setAction( m7 );
+		vts09.setAction( m9 );
 
 		VmiInputInteger vmiIn01 = new VmiInputInteger( 
 				"<GoTo Tile #> ", "Enter VSP Tile number (INT)", 	0, 0 );
@@ -440,7 +445,6 @@ public class VmenuVSPeditor implements Vmenu
 		this.obsEditNum = 0;
 		this.tIndex = 0;
 		this.updatePreview();
-		
 		this.loadTile( this.tIndex );
 
 		this.animEd = new VmenuAnimationEd( this.vsp, 
@@ -453,6 +457,8 @@ public class VmenuVSPeditor implements Vmenu
 		
 		this.statusBar = new String("VSP Editor Initialized");
 		this.toolStatus = new String("MENUS");
+		
+		this.initHelpTable();
 
 		return;
 		}
@@ -464,8 +470,9 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if( this.cFocus != 4 )	{ return(false); }
 		return( this.animEd.animate(target) ); 
-		}
-	
+		}		
+
+	/**  Displays the VSP editor onto a given VImage (LARGE) */
 	public boolean paint( VImage target )
 		{
 		if(  this.isBkgImg == true && this.bkgImg != null  )
@@ -743,7 +750,6 @@ public class VmenuVSPeditor implements Vmenu
 						this.vmPrev[ntile] );
 			}	}
 
-		// HERE
 		target.rect(349, 379, 383, 413, Color.WHITE );
 		target.rect(348, 378, 384, 414, Color.BLACK );
 		target.rect(347, 377, 385, 415, Color.WHITE );
@@ -756,6 +762,9 @@ public class VmenuVSPeditor implements Vmenu
 					new Color(0.0f,0.0f,0.0f,0.5f)) );
 			target.blit( 200, 10, this.vspOverview );	
 			}
+		
+		if( this.showHelp )
+			{ this.helpTable.paint( target ); }
 
 		return( true );
 		}		// End   paint()
@@ -2542,7 +2551,8 @@ public class VmenuVSPeditor implements Vmenu
 	private void toggleHelp()
 		{
 		this.showHelp = ! this.showHelp;
-		// TODO : implement
+		System.out.println( "Help is " + Boolean.toString( this.showHelp ) );
+		this.statusMessage( "Displaying Keyboard Help" );
 		return;
 		}
 
@@ -3815,5 +3825,270 @@ public class VmenuVSPeditor implements Vmenu
 			{ return(true); }
 		return(false);
 		}
+
+	private void initHelpTable()
+		{
+		ArrayList<String> info = new ArrayList<String>();
+
+		info.add(" H ");
+		info.add("ALL");
+		info.add("toggle this Help table");
+
+		info.add("(0-9) & '-'");
+		info.add("MAIN");
+		info.add("Set cursor cell to corresponding palette # ");
+
+		info.add("{CNTL} (0-9) & '-'");
+		info.add("MAIN");
+		info.add("Dropper: Set palette # to current cell");
+
+		info.add("{ALT+ALT} (0-9) & '-'");
+		info.add("MAIN");
+		info.add("Blast: Set entire working tile to solid palette #");
+
+		info.add("{SHIFT+ALT} (0-9) & '-'");
+		info.add("MAIN");
+		info.add("Full tile replace selected with palette #");
+
+		info.add("Backspace");
+		info.add("MENU");
+		info.add("Close the editor");
+
+		info.add("Backspace");
+		info.add("ALL*");
+		info.add("Return focus to sidebar menu");
+
+		info.add("{CNTL} Backspace");
+		info.add("ALL");
+		info.add("Close the editor");
+
+		info.add("[Arrow Keys]");
+		info.add("ALL");
+		info.add("Navigate various within menus");
+
+		info.add("{CNTL} [Arrow Keys]");
+		info.add("ALL");
+		info.add("Navigate tileset");
+
+		info.add("{SHIFT} [Arrow Keys]");
+		info.add("MAIN");
+		info.add("Shift working tile contents");
+
+		info.add(" A ");
+		info.add("MAIN");
+		info.add("AirBrush tool");
+
+		info.add("{CNTL} A ");
+		info.add("MAIN");
+		info.add("AirBrush tool - high Density");
+
+		info.add("{SHIFT} A ");
+		info.add("MAIN");
+		info.add("AirBrush tool - random color output");
+
+		info.add(" B ");
+		info.add("ALL");
+		info.add("toggle oBstruction editing mode");
+
+		info.add(" C ");
+		info.add("ALL");
+		info.add("Copy working tile to OS clipboard");
+
+		info.add("{CNTL} C ");
+		info.add("ALL");
+		info.add("Copy entire tileset to OS clipboard");
+
+		info.add("{CNT+SHIFTL} C ");
+		info.add("ALL");
+		info.add("Copy entire tileset to OS clipboard with padding");
+
+		info.add(" E ");
+		info.add("ALL");
+		info.add("Edit focus working tile");
+
+		info.add("{CNTL} E ");
+		info.add("ALL");
+		info.add("Edit focus palette bar");
+
+		info.add(" F ");
+		info.add("MAIN");
+		info.add("Flood fill Color 1 - zero tolerance");
+
+		info.add("{SHIFT} F ");
+		info.add("MAIN");
+		info.add("Flood fill Color 2 - zero tolerance");
+
+		info.add("{CNTL} F ");
+		info.add("MAIN");
+		info.add("Flood fill - light tolerance");		
+
+		info.add("{ALT} F ");
+		info.add("MAIN");
+		info.add("Flood fill - moderate tolerance");
+
+		info.add(" G ");
+		info.add("ALL");
+		info.add("Goto tile input");
+
+		info.add(" I ");
+		info.add("MAIN");
+		info.add("Invert cursor cell color");
+
+		info.add("{CNTL} I ");
+		info.add("MAIN");
+		info.add("Invert working tile color");
+
+		info.add(" I ");
+		info.add("PAL");
+		info.add("Invert cursor palette color");
+
+		info.add(" L ");
+		info.add("MAIN");
+		info.add("Line drawing tool");
+
+		info.add("{SHIFT} L ");
+		info.add("MAIN");
+		info.add("contiguous Line drawing tool");
+
+		info.add(" L ");
+		info.add("PAL");
+		info.add("Load a palette file dialog");
+
+		info.add("{CNTL} L ");
+		info.add("ALL");
+		info.add("Load a VSP dialog");
+
+		info.add(" M ");
+		info.add("ALL");
+		info.add("open aniMation editor");
+
+		info.add(" N ");
+		info.add("MENU");
+		info.add("add New replicated tile to tileset");
+
+		info.add(" N ");
+		info.add("MAIN");
+		info.add("add New replicated tile to tileset");
+
+		info.add(" N ");
+		info.add("PAL");
+		info.add("add New replicated color to palette");
+
+		info.add(" O ");
+		info.add("MAIN");
+		info.add("rOtate working tile clockwise 90 deg.");
+
+		info.add("{CNTL} O ");
+		info.add("MAIN");
+		info.add("rOtate working tile -90 deg.");
+
+		info.add("{ALT} O ");
+		info.add("MAIN");
+		info.add("rOtate working tile 180 degrees.");
+
+		info.add("{SHIFT} O ");
+		info.add("MAIN");
+		info.add("rOtate working tile - mirror.");
+
+		info.add(" R ");
+		info.add("MAIN");
+		info.add("Rectangle tool");
+
+		info.add(" R ");
+		info.add("SHIFT");
+		info.add("contiguous Rectangle tool");
+
+		info.add(" S ");
+		info.add("ALL");
+		info.add("Save working tile to tileset");
+
+		info.add("{CNTL} S ");
+		info.add("ALL");
+		info.add("Save tileset to a file dialog");
+
+		info.add("{SHIFT} S ");
+		info.add("ALL");
+		info.add("Save palette to file dialog");
+
+		info.add(" T ");
+		info.add("PAL");
+		info.add("reset palette to Transparent color");
+
+		info.add("{CNTL} T ");
+		info.add("ALL");
+		info.add("toggle entire Tileset preview");
+
+		info.add(" V ");
+		info.add("ALL");
+		info.add("clipboard paste into working tile");
+
+		info.add("{CNTL} V ");
+		info.add("ALL");
+		info.add("clipboard paste into working tile & save");
+
+		info.add("{SHIFT} V ");
+		info.add("ALL");
+		info.add("clipboard paste insert single tile into tileset");
+
+		info.add("{CNTL+ALT} V ");
+		info.add("ALL");
+		info.add("attempt full VSP clipboard paste into tileset");
+
+		info.add(" W ");
+		info.add("MAIN");
+		info.add("circle drawing tool");
+
+		info.add(" Z ");
+		info.add("ALL");
+		info.add("UNDO function");		
+
+		info.add("{CNTL} Z ");
+		info.add("ALL");
+		info.add("REDO function");
+
+		info.add("{CNTL} ~ ");
+		info.add("ALL");
+		info.add("immediate reset to blank tileset");
+
+		info.add(" . ");
+		info.add("ALL");
+		info.add("increase pixel tool size");
+
+		info.add(" , ");
+		info.add("ALL");
+		info.add("decrease pixel tool size");
+		
+		info.add("{CNTL} Page-Up");
+		info.add("ALL");
+		info.add("move to next palette line");
+
+		info.add("{CNTL} Page-Down");
+		info.add("ALL");
+		info.add("move to previous palette line");
+
+		info.add(" [ ");
+		info.add("ANIM");
+		info.add("set selected tile as animation start");
+
+		info.add(" ] ");
+		info.add("ANIM");
+		info.add("set selected tile as animation finish");
+
+		info.add(" [NUMPAD 0-9] ");
+		info.add("ALL");
+		info.add("navigate tileset");		
+
+		try {
+			this.helpTable = 
+				new VmiDataTable( 20, 20, 600, 400, 3, 50, info);
+			}
+		catch (Exception e)
+			{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			}
+		}
+
+
 
 	}		// END CLASS
