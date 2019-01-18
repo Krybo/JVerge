@@ -5,7 +5,10 @@ import static core.Script.setMenuFocus;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +43,7 @@ public class VmiDataTable implements Vmenuitem
 	{
 
 	/**  Great resource for font centering.  
-	 * Which is a real nag here.
+	 * Which is a real chore for this class.
 	 * http://stackoverflow.com/questions/1055851/how-do-you-draw-a-string-centered-vertically-in-java
 	 */
 	
@@ -69,6 +72,7 @@ public class VmiDataTable implements Vmenuitem
 	private Font theCaptionFont = this.fnt;
 
 		// For scrolling
+	private VImage virtualBody = new VImage(1600,1200);
 	private boolean enableScroll = false;
 	private boolean enableScrollBars = false; 
 	private Double scrollSpeed = 1.0d;
@@ -76,6 +80,7 @@ public class VmiDataTable implements Vmenuitem
 	private Integer scrollY = 0;
 	private Integer scrollXitems = 0;
 	private Integer scrollYitems = 0;
+	private int textAccent = 0;	// Font Accent (in px) for the current Text
 	
 		// These are interface requirements for all menu items.
 	private Long parentID = new Long(-1);
@@ -270,7 +275,7 @@ public class VmiDataTable implements Vmenuitem
 			enumMenuDataTableCOLORS.TEXT_LABELS.value(), 
 			new Color( 1.0f,1.0f,0.77f,1.0f) );
 		}
-	
+
 	private void resolvePositions( HashMap<String,String> entries )
 		{
 		int indent = this.borderPaddingPx+this.borderWidthPx;
@@ -456,6 +461,8 @@ public class VmiDataTable implements Vmenuitem
 		int xw = x2 - this.borderWidthPx - this.borderPaddingPx;
 //		int yh = y2 - this.borderWidthPx - this.borderPaddingPx;
 		Double tmp;
+		
+		this.redrawVirtualTable();
 
 		FontMetrics fm =
 				target.getImage().getGraphics().getFontMetrics(
@@ -529,31 +536,6 @@ public class VmiDataTable implements Vmenuitem
 					enumMenuDataTableCOLORS.BKG_MAIN.value()) );
 			}
 
-			// Draw gridlines
-		if( this.enableGrid == true )
-			{
-
-			for( double a = 1.0d; a < this.colnum; a += 1.0d )
-				{		// VERTICAL
-				tmp = a * this.colMaxW;
-//				System.out.println(" Column "+Double.toString(a)+ " = "+tmp.toString() 
-//						+ " { " + this.colMaxW.toString() + " } " );
-				target.line( x1+tmp.intValue(), 
-					y0+this.captionHeight.intValue(), 
-					x1+tmp.intValue(), y2, this.clrSettings.get(
-					enumMenuDataTableCOLORS.GRIDLINES_Y.value()));
-				}
-			for( double b = 1.0d; b < this.rownum; b += 1.0d )
-				{		// HORIZONTAL
-				tmp = b * this.rowMaxH;		// row descent.
-//				System.out.println(" Row "+Double.toString(b)+ " = "+tmp.toString()
-//						+ " { " + this.rowMaxH.toString() + " } " );
-				target.line( x0, y1+tmp.intValue(), x2, 
-					y1+tmp.intValue(),  this.clrSettings.get(
-					enumMenuDataTableCOLORS.GRIDLINES_X.value()) );
-				}
-
-			}		// Done IF-gridlines
 		
 		// the bordering frame
 		if( this.enableBorder == true )
@@ -592,105 +574,14 @@ public class VmiDataTable implements Vmenuitem
 				this.theCaption	);
 			}
 
-		// Finally, print all the labels & values.
-//		String label = new String("");
-		String tmpLabel = new String("");
-		tmpLabel.trim();
-		String tmpData = new String("");
-		tmpData.trim();
 
-		for( Integer s = 0; s < this.theData.size(); s++ )
-			{
-			if( s+1 > this.getDataCellCount() )		{ continue; }
-			tmpData = this.theData.get(s);
-			tmpLabel = this.theLabels.get(s)+this.labelTerminator;
-			
-			int dw0 = new Double( this.fnt.getStringBounds(
-					tmpData, frc ).getWidth() ).intValue();
-//			int dy0 = new Double( this.fnt.getStringBounds(
-//					tmpData, frc ).getMaxY() ).intValue();
-			int dy1 = new Double( this.fnt.getStringBounds(
-					tmpData, frc ).getMinY() ).intValue();
-//			int dy2 = new Double( this.fnt.getStringBounds(
-//					tmpData, frc ).getHeight() ).intValue();
-
-			double dy3 = this.fnt.getStringBounds( tmpData, frc ).getY();
-			// half of unutilized space
-//			int dy4 = new Double((this.rowMaxH + dy3) / 2.0d ).intValue();
-			int dy4 = new Double( Math.abs(dy3) / 2.0d ).intValue();
-			
-//			int dy3 = 	Math.abs( new Double( 
-//		this.fnt.getStringBounds( tmpData, frc ).getY() +
-//		this.fnt.getStringBounds( tmpData, frc ).getMinY() ).intValue() )+1;
-			
-			int shorten = dw0;
-				// This thing is longer then the space allocated.
-				//   will need to truncate it.
-			while( (shorten > this.colMaxW) && tmpData.length() > 2 )
-				{
-				tmpData = tmpData.substring(0, tmpData.length()-2 );
-				shorten = new Double( this.fnt.getStringBounds(
-					tmpData, frc ).getWidth() ).intValue();
-				}
-
-			if( tmpData.isEmpty() )	{ continue; }
-			
-			// note: indentation is built into : this.theXpos.get(s) 			
-			int Xadj = x0 + this.theXpos.get(s).intValue() 
-					+ this.colMaxW.intValue() - shorten - 1;
-			// Bumps text baseline down to vertical center of cell 
-			int Yadj = y0 + this.theYpos.get(s).intValue()
-					+ (this.rowMaxH.intValue() / 2) + dy4;
-//					+ (dy3 / 2);
-//					+ (this.rowMaxH.intValue() / 2) + dy0;
-
-			if( this.useLabels == true )
-				{
-				// Image icons used when turned on + the image
-				//  is present, and the cell hgt allowcated is > 6 pixels.
-				if( 		this.useImagesAsLabels == true &&  
-						this.imgLabels.get(s) != null && 
-						this.rowMaxH > 6.0d )
-					{
-					
-					// Scale to the height of the cell.
-					Double scFct = new Double(
-						this.imgLabels.get(s).height) / (this.rowMaxH-4.0d);
-					target.scaleblit( 2 + x0 + this.theXpos.get(s).intValue(), 
-						2 + y0 + this.theYpos.get(s).intValue(), 
-						new Double(this.imgLabels.get(s).width / scFct).intValue(), 
-						this.rowMaxH.intValue() - 4, 
-						this.imgLabels.get(s) );
-					}
-				else
-					{
-					shorten = new Double( this.fnt.getStringBounds(
-							tmpLabel, frc ).getWidth() ).intValue();
-					while( (shorten > this.colMaxW) && tmpLabel.length() > 2 ) 
-						{
-						tmpLabel = tmpLabel.substring(0, tmpLabel.length()-2 );
-						shorten = new Double( this.fnt.getStringBounds(
-							tmpLabel, frc ).getWidth() ).intValue();
-						}
-
-					target.printString( 1 + x0 + this.theXpos.get(s).intValue(),  
-						y0 - dy1 + this.theYpos.get(s).intValue(), 
-						this.fnt, this.clrSettings.get(
-							enumMenuDataTableCOLORS.TEXT_DATA.value() ),
-						tmpLabel	);
-					}
-				}
-
-//			System.out.println( " string x/y " + 
-//				Integer.toString( Xadj ) + " / " +  
-//				Integer.toString( Yadj ) );
-
-			target.printString( Xadj, Yadj, 
-				this.fnt, this.clrSettings.get(
-					enumMenuDataTableCOLORS.TEXT_DATA.value() ),
-				tmpData	);
-			
+		if( this.enableScroll == true )
+			{    // Inset part of the virtual body depending on scroll vars
+			target.blitSubRegion( this.virtualBody, 
+				this.scrollX, this.scrollY, this.w, this.h, x0, y0 );
 			}
+		else   // Otherwise, just plop the entire V.body - scaled.
+			{	target.scaleblit( this.x, this.y, this.w, this.h, this.virtualBody );	}			 
 
 		return;
 		}
@@ -801,7 +692,7 @@ public class VmiDataTable implements Vmenuitem
 	public void enableBackdrop(boolean enable)
 		{	this.enableImageBackdrop = enable;	}
 
-	public void enableFrame(boolean enable)
+	public void enableFrame( boolean enable)
 		{	this.enableBorder = enable;	}
 
 	/** VmiDataTable is state-less .. not selectable. */
@@ -943,9 +834,97 @@ public class VmiDataTable implements Vmenuitem
 		return;		
 		}
 	
-	/** Examine data and determine width and height of each col & row. */
+	/** Examine data and determine metrics needed for cols & rows. */
 	private void analyzeRowsCols()
 		{
+		final FontMetrics vbfm = 
+			this.virtualBody.getImage().getGraphics().getFontMetrics(this.fnt);
+		Integer virtualX = 0;
+		Integer virtualY = 0;
+		Integer maxHeight = 0;
+		int[] colWidths = new int[ this.colnum ];
+		for( Integer c = 0; c < this.colnum; c++ )
+			{ colWidths[c] = 0; }
+		Integer widthTotal = 0;
+		Integer heightTotal = 0;
+		this.theXpos.clear();
+		this.theYpos.clear();
+
+		Integer indent = this.borderPaddingPx + this.borderWidthPx;
+
+		for( Integer s = 0; s < this.theData.size(); s++ )
+			{
+			int cNum = s % this.colnum;
+			if( cNum == 0 )
+				{ virtualY += (indent + vbfm.getHeight() ); }
+
+			String lab = this.theLabels.get(s);
+			String val = this.theData.get(s);
+			String cellText = new String("");
+			int lenVal = 0; 
+			int lenLab = 0;
+			if( val != null )   { cellText = val; }
+			if( lab != null )   { cellText = lab + ": " + cellText; }
+			
+//			Double tmpDbl = vbfm.getStringBounds( cellText, 
+//				this.virtualBody.getImage().getGraphics() ).getMaxX();
+//			Double tmpYa = vbfm.getStringBounds( cellText, 
+//				this.virtualBody.getImage().getGraphics() ).getMaxY();
+//			Double tmpYb = vbfm.getStringBounds( cellText, 
+//				this.virtualBody.getImage().getGraphics() ).getMinY();
+//			widthTotal = tmpDbl.intValue() + 1;
+			
+			Rectangle metrics = 
+				this.virtualBody.getStringPixelBounds( this.fnt, cellText );
+			int heightTotalCalc = metrics.height;
+			widthTotal = metrics.width;
+
+			if( heightTotalCalc > heightTotal )
+				{ heightTotal = heightTotalCalc; }
+			
+			System.out.println( cellText  + " [metrics] " + metrics.toString() );
+
+			// Integer widthTotal = lenVal + lenLab;
+
+			if( this.useImagesAsLabels == true ) 
+				{ widthTotal = lenVal; }   // TODO Use icon widths instead.
+			
+			if( widthTotal > colWidths[cNum] )
+				{  colWidths[cNum] = widthTotal;  } 
+
+//			System.out.println( "Test: # "+Integer.toString(s) + ":" + val + " = " + lab +
+//					" :len: "  + Integer.toString(lenVal) + " - " + Integer.toString(lenLab) + 
+//					" COL # " + Integer.toString( cNum ) );
+			}
+
+		int cellNum = -1;
+		int thisX = indent;
+		for( Integer c = 0; c < this.colnum; c++ )
+			{ 
+			virtualX += (indent + colWidths[c] );
+			int thisY = indent;
+			for( Integer y = 0; y < this.rownum; y++ )
+				{
+				cellNum = y * this.colnum + c;
+				System.out.println("POS "+Integer.toString(cellNum)+" :|: "+Integer.toString(thisX) + 
+				    " :: " + Integer.toString(thisY) );
+				this.theXpos.put( cellNum, thisX );
+				this.theYpos.put( cellNum, thisY );
+				thisY +=  ( 1 + this.borderPaddingPx + heightTotal );
+				}
+			thisX += ( 1 + this.borderPaddingPx + colWidths[c] );
+			if( c == (this.colnum-1) )
+				{ virtualY = thisY; }
+			}
+		
+		this.virtualBody = new VImage( virtualX, virtualY );
+		
+		//  This measures the font accent by using a non-descent char
+		this.textAccent = 
+			this.virtualBody.getStringPixelBounds( this.fnt, "8" ).height;
+		
+		System.out.println( " --- Final: " + Integer.toString(virtualX) +
+				" x "+Integer.toString(virtualY) );
 		return;
 		}
 
@@ -956,6 +935,82 @@ public class VmiDataTable implements Vmenuitem
 	private void redrawVirtualTable()
 		{
 		this.analyzeRowsCols();
+		Double tmp;
+		Integer indent = this.borderPaddingPx + this.borderWidthPx;
+		
+		Integer vbw = this.virtualBody.getWidth();
+		Integer vbh = this.virtualBody.getHeight();
+		
+			// Background bounding box (or image)
+		if( this.enableImageBackdrop == true && this.bkgImg != null )
+			{
+				// Scale desired image to fit the box.
+			this.virtualBody.scaleblit( this.x, this.y, vbw, vbh, this.bkgImg ); 
+			}
+		else	
+			{
+			this.virtualBody.rectfill( this.x, this.y, vbw, vbh, 
+				this.clrSettings.get(
+					enumMenuDataTableCOLORS.BKG_MAIN.value()) );
+			}
+
+		String tmpLabel = new String("");
+		tmpLabel.trim();
+		String tmpData = new String("");
+		tmpData.trim();
+		Color theColor = this.clrSettings.get(
+			enumMenuDataTableCOLORS.TEXT_DATA.value() );
+		
+		for( Integer s = 0; s < this.theData.size(); s++ )
+			{
+			if( s+1 > this.getDataCellCount() )	{ continue; }
+			tmpData = this.theData.get(s);
+			tmpLabel = this.theLabels.get(s)+this.labelTerminator;
+			if( ! this.theXpos.containsKey(s) )  { continue; }
+			if( ! this.theYpos.containsKey(s) )  { continue; }
+			Integer xPos = this.theXpos.get(s).intValue();
+			Integer yPos = this.theYpos.get(s).intValue();
+			
+			System.out.println( "display"+Integer.toString(s) + " of " +
+					Integer.toString( this.getDataCellCount() ) + " :: " +
+					Integer.toString(xPos) + " : " + Integer.toString(yPos) + 
+					" ==> " + this.theData.get(s) );
+			
+			int yAdj = new Double( this.textAccent * 0.5 + 0.5).intValue();
+			this.virtualBody.printString( xPos - yAdj, yPos + yAdj, 
+					this.fnt, theColor, tmpData	 );
+			}
+			
+
+		if( this.enableGrid == true )
+			{
+			int xStart = 0;
+			int yStart = 0;
+			Color xColor = this.clrSettings.get(
+					enumMenuDataTableCOLORS.GRIDLINES_Y.value() );
+			Color yColor = this.clrSettings.get(
+					enumMenuDataTableCOLORS.GRIDLINES_X.value() );
+			for( Integer s = 0; s < this.theData.size(); s++ )
+				{
+				int myCol = s % this.colnum;
+				if( ! this.theXpos.containsKey(s) )  { continue; }
+				if( ! this.theYpos.containsKey(s) )  { continue; }
+				if( s >= 1 && s < this.colnum )				// VERTICAL
+					{
+					xStart = this.theXpos.get(s) - this.borderPaddingPx - 1;
+					this.virtualBody.line( xStart, 0,  
+						xStart, this.virtualBody.height,  xColor );
+					}
+				if( s >= this.colnum && myCol == 0 )		// HORIZONTAL
+					{
+					yStart = this.theYpos.get(s) - this.borderPaddingPx - 1;
+					this.virtualBody.line( 0, yStart,  
+						this.virtualBody.width, yStart,  yColor );
+					}
+				}
+			}  // End Gridlines
+				
+		
 		// 1: (Re)Size an appropriate virtual image.
 		// 2: Print all infromation to this virtual image	
 		}
@@ -965,13 +1020,23 @@ public class VmiDataTable implements Vmenuitem
 	//  TODO   enforce bounds
 	public int doScrollHorizontal( int amount )
 		{
+		if( this.virtualBody.width < this.w )		// scrolling not possible 
+			{ this.scrollX = 0;   return( 0 ); }
 		this.scrollX += new Double( amount * this.scrollSpeed).intValue();
+		if( this.scrollX < 0 )   { this.scrollX = 0; }
+		if( (this.scrollX + this.w) > this.virtualBody.width )
+			{ this.scrollX = this.virtualBody.width - this.w; }
 		System.out.println("Scroll X = "+Integer.toString(this.scrollX));
 		return( this.scrollX );
 		}
 	public int doScrollVertical( double amount )
 		{
+		if( this.virtualBody.height < this.h )		// scrolling not possible 
+			{ this.scrollY = 0;   return( 0 ); }
 		this.scrollY += new Double( amount * this.scrollSpeed).intValue();
+		if( this.scrollY < 0 )   { this.scrollY = 0; }
+		if( (this.scrollY + this.h) > this.virtualBody.height )
+			{ this.scrollY = this.virtualBody.height - this.h; }
 		System.out.println("Scroll Y = "+Integer.toString(this.scrollY ));
 		return( this.scrollY );
 		}
@@ -1100,3 +1165,109 @@ public class VmiDataTable implements Vmenuitem
 
 
 
+
+
+
+
+/*
+ * 		// Finally, print all the labels & values.
+//		String label = new String("");
+		String tmpLabel = new String("");
+		tmpLabel.trim();
+		String tmpData = new String("");
+		tmpData.trim();
+		
+		for( Integer s = 0; s < this.theData.size(); s++ )
+			{
+			if( s+1 > this.getDataCellCount() )		{ continue; }
+			tmpData = this.theData.get(s);
+			tmpLabel = this.theLabels.get(s)+this.labelTerminator;
+			
+			int dw0 = new Double( this.fnt.getStringBounds(
+					tmpData, frc ).getWidth() ).intValue();
+//			int dy0 = new Double( this.fnt.getStringBounds(
+//					tmpData, frc ).getMaxY() ).intValue();
+			int dy1 = new Double( this.fnt.getStringBounds(
+					tmpData, frc ).getMinY() ).intValue();
+//			int dy2 = new Double( this.fnt.getStringBounds(
+//					tmpData, frc ).getHeight() ).intValue();
+
+			double dy3 = this.fnt.getStringBounds( tmpData, frc ).getY();
+			// half of unutilized space
+//			int dy4 = new Double((this.rowMaxH + dy3) / 2.0d ).intValue();
+			int dy4 = new Double( Math.abs(dy3) / 2.0d ).intValue();
+			
+//			int dy3 = 	Math.abs( new Double( 
+//		this.fnt.getStringBounds( tmpData, frc ).getY() +
+//		this.fnt.getStringBounds( tmpData, frc ).getMinY() ).intValue() )+1;
+			
+			int shorten = dw0;
+				// This thing is longer then the space allocated.
+				//   will need to truncate it.
+	while( (shorten > this.colMaxW) && tmpData.length() > 2 )
+		{
+		tmpData = tmpData.substring(0, tmpData.length()-2 );
+		shorten = new Double( this.fnt.getStringBounds(
+			tmpData, frc ).getWidth() ).intValue();
+		}
+
+			if( tmpData.isEmpty() )	{ continue; }
+			
+			// note: indentation is built into : this.theXpos.get(s) 			
+			int Xadj = x0 + this.theXpos.get(s).intValue() 
+					+ this.colMaxW.intValue() - shorten - 1;
+			// Bumps text baseline down to vertical center of cell 
+			int Yadj = y0 + this.theYpos.get(s).intValue()
+					+ (this.rowMaxH.intValue() / 2) + dy4;
+//					+ (dy3 / 2);
+//					+ (this.rowMaxH.intValue() / 2) + dy0;
+
+			if( this.useLabels == true )
+				{
+				// Image icons used when turned on + the image
+				//  is present, and the cell hgt allowcated is > 6 pixels.
+				if( 		this.useImagesAsLabels == true &&  
+						this.imgLabels.get(s) != null && 
+						this.rowMaxH > 6.0d )
+					{
+					
+					// Scale to the height of the cell.
+					Double scFct = new Double(
+						this.imgLabels.get(s).height) / (this.rowMaxH-4.0d);
+					target.scaleblit( 2 + x0 + this.theXpos.get(s).intValue(), 
+						2 + y0 + this.theYpos.get(s).intValue(), 
+						new Double(this.imgLabels.get(s).width / scFct).intValue(), 
+						this.rowMaxH.intValue() - 4, 
+						this.imgLabels.get(s) );
+					}
+				else
+					{
+					shorten = new Double( this.fnt.getStringBounds(
+							tmpLabel, frc ).getWidth() ).intValue();
+					while( (shorten > this.colMaxW) && tmpLabel.length() > 2 ) 
+						{
+						tmpLabel = tmpLabel.substring(0, tmpLabel.length()-2 );
+						shorten = new Double( this.fnt.getStringBounds(
+							tmpLabel, frc ).getWidth() ).intValue();
+						}
+
+					target.printString( 1 + x0 + this.theXpos.get(s).intValue(),  
+						y0 - dy1 + this.theYpos.get(s).intValue(), 
+						this.fnt, this.clrSettings.get(
+							enumMenuDataTableCOLORS.TEXT_DATA.value() ),
+						tmpLabel	);
+					}
+				}
+
+//			System.out.println( " string x/y " + 
+//				Integer.toString( Xadj ) + " / " +  
+//				Integer.toString( Yadj ) );
+
+			target.printString( Xadj, Yadj, 
+				this.fnt, this.clrSettings.get(
+					enumMenuDataTableCOLORS.TEXT_DATA.value() ),
+				tmpData	);
+			
+			}
+
+ * */

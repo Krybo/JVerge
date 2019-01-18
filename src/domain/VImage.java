@@ -11,11 +11,13 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Polygon;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Transparency;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 //import java.awt.geom.AffineTransform;
@@ -30,6 +32,7 @@ import java.awt.image.WritableRaster;
 //import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
@@ -497,6 +500,7 @@ public class VImage implements Transferable
 
 
 /**	Return a region of any given VImage (static method)
+ * If given region violates the source bounds, returned result is truncated
  * (Krybo.Apr2016)
  * @param x	Upper-left pixel x-coord of the target region
  * @param y	Upper-left pixel y-coord of the target region
@@ -508,6 +512,10 @@ public class VImage implements Transferable
 		public static BufferedImage getSubImage(int x,int y,
 				int w, int h, VImage src )
 			{
+			if( x+w > src.getWidth() )
+				{	w = src.getWidth() - x;	}
+			if( y+h > src.getHeight() )
+				{	h = src.getHeight() - y;	}
 			return( src.getImage().getSubimage(x, y, w, h) );
 			}
 		
@@ -1670,6 +1678,51 @@ public class VImage implements Transferable
 		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
 		WritableRaster raster = bi.copyData(null);
 		return( new BufferedImage(cm, raster, isAlphaPremultiplied, null) );
+		}
+
+	
+	/** Krybo (Jan 2019) : 
+	 *  Provides a method to obtain accurate graphic font metrics for
+	 * a string written to the host image with a specified font fnt 
+	 * Standard orientation  Left tto Right - but others can be passed:
+	 *    Font.LAYOUT_LEFT_TO_RIGHT  
+	 *  Use the method with ArrayList<String> to compute all of them in 1 pass. 
+	 *    Special Thanks to:    Tomasz Radziszewski
+	 *   https://stackoverflow.com/questions/6202225/java-fontmetrics-ascent-incorrect 
+	 *    */
+	public Rectangle getStringPixelBounds( Font fnt, String text )
+		{
+		return( this.getStringPixelBounds( fnt, text, 
+				Font.LAYOUT_LEFT_TO_RIGHT) );
+		}
+	public Rectangle getStringPixelBounds( Font fnt, String text, int stringOrientation )
+		{
+		if( text == null )   { return(null); }
+		Graphics2D gfx = (Graphics2D) this.getImage().createGraphics();
+
+	     GlyphVector gv = fnt.layoutGlyphVector(
+	         gfx.getFontRenderContext(), text.toCharArray(), 0, text.length(), 
+	         stringOrientation );
+	     return( gv.getPixelBounds(
+	         gfx.getFontRenderContext(), 0, 0 ) );
+		}
+	public ArrayList<Rectangle> getStringPixelBounds(
+			Font fnt, ArrayList<String> text,  int stringOrientation )
+		{
+		if( text == null )   { return(null); }
+		Graphics2D gfx = (Graphics2D) this.getImage().createGraphics();
+		ArrayList<Rectangle> rslt = new ArrayList<Rectangle>();
+
+		for( String s : text )
+			{
+			if( s.length() < 1 )  { rslt.add(null);  continue; }  
+		     GlyphVector gv = fnt.layoutGlyphVector(
+		         gfx.getFontRenderContext(), s.toCharArray(), 0, s.length(), 
+		         stringOrientation );
+		     rslt.add( gv.getPixelBounds(
+		         gfx.getFontRenderContext(), 0, 0 ) );
+			}
+		return(rslt);
 		}
 	
 	}

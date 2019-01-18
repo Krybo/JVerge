@@ -828,13 +828,17 @@ public class VmenuVSPeditor implements Vmenu
 				{
 				case 8:   case 10:  this.toggleHelp();   //  get out
 					break;
-				case 104: case 38:  this.helpTable.doScrollVertical(-1);
+				case 100: case 37:  this.helpTable.doScrollHorizontal(-10);
 					break;
-				case 98: case 40:   this.helpTable.doScrollVertical(1);
+				case 102: case 39:  this.helpTable.doScrollHorizontal(10);
 					break;
-				case 33:	 this.helpTable.doScrollVertical(-3);
+				case 104: case 38:  this.helpTable.doScrollVertical(-10);
 					break;
-				case 34:	this.helpTable.doScrollVertical(3);
+				case 98: case 40:   this.helpTable.doScrollVertical(10);
+					break;
+				case 33:	 this.helpTable.doScrollVertical(-33);
+					break;
+				case 34:	this.helpTable.doScrollVertical(33);
 					break;
 				default:  break;
 				}
@@ -3855,19 +3859,19 @@ public class VmenuVSPeditor implements Vmenu
 		info.add("ALL");
 		info.add("toggle this Help table");
 
-		info.add("(0-9) & '-'");
+		info.add("(0-9) -");
 		info.add("MAIN");
 		info.add("Set cursor cell to corresponding palette # ");
 
-		info.add("{CNTL} (0-9) & '-'");
+		info.add("{CNTL} (0-9) -" );
 		info.add("MAIN");
 		info.add("Dropper: Set palette # to current cell");
 
-		info.add("{ALT+ALT} (0-9) & '-'");
+		info.add("{CNTL+ALT} (0-9) -" );
 		info.add("MAIN");
 		info.add("Blast: Set entire working tile to solid palette #");
 
-		info.add("{SHIFT+ALT} (0-9) & '-'");
+		info.add("{SHIFT+ALT} (0-9) -");
 		info.add("MAIN");
 		info.add("Full tile replace selected with palette #");
 
@@ -3949,7 +3953,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		info.add(" G ");
 		info.add("ALL");
-		info.add("Goto tile input");
+		info.add("Goto tile # input");
 
 		info.add(" I ");
 		info.add("MAIN");
@@ -4015,8 +4019,8 @@ public class VmenuVSPeditor implements Vmenu
 		info.add("MAIN");
 		info.add("Rectangle tool");
 
-		info.add(" R ");
-		info.add("SHIFT");
+		info.add(" {SHIFT} R ");
+		info.add("MAIN");
 		info.add("contiguous Rectangle tool");
 
 		info.add(" S ");
@@ -4067,7 +4071,7 @@ public class VmenuVSPeditor implements Vmenu
 		info.add("ALL");
 		info.add("REDO function");
 
-		info.add("{CNTL} ~ ");
+		info.add("{CNTL} TILDA ");
 		info.add("ALL");
 		info.add("immediate reset to blank tileset");
 
@@ -4101,7 +4105,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		try {
 			this.helpTable = 
-				new VmiDataTable( 20, 20, 600, 400, 3, 50, info);
+				new VmiDataTable( 20, 20, 600, 400, 3, 86, info);
 			this.helpTable.setScrollable( 3, 12, 3.0d, true );
 			}
 		catch (Exception e )
