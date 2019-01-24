@@ -819,7 +819,7 @@ public class VmenuVSPeditor implements Vmenu
 		// Control processing continues below, so be careful of dups.
 		if( this.cFocus == 4 ) 
 			{ this.animEd.doControls(ext_keycode); }
-			
+		
 		// The help table has a simple control set of its own
 		//   that allows it to scroll 
 		if( this.showHelp )
@@ -3855,6 +3855,34 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		ArrayList<String> info = new ArrayList<String>();
 
+		info.add("Key / Combo");
+		info.add("MODE");
+		info.add("Function");
+
+		info.add("Focus mode -ALL-");
+		info.add("-");
+		info.add("Function Works anywhere");
+
+		info.add("Focus mode -MENU-");
+		info.add("-");
+		info.add("Functions only within side menus");
+
+		info.add("Focus mode -MAIN-");
+		info.add("-");
+		info.add("Functions only within 16x16 tile editing mode");
+		
+		info.add("Focus mode -PAL-");
+		info.add("-");
+		info.add("Functions only in palette editor");
+
+		info.add("Focus mode -CLR-");
+		info.add("-");
+		info.add("Functions only within color editor");
+
+		info.add("Focus mode -ANIM-");
+		info.add("-");
+		info.add("Functions only in the animation editor");
+
 		info.add(" H ");
 		info.add("ALL");
 		info.add("toggle this Help table");
@@ -3882,14 +3910,34 @@ public class VmenuVSPeditor implements Vmenu
 		info.add("Backspace");
 		info.add("ALL*");
 		info.add("Return focus to sidebar menu");
+		
+		info.add("Backspace");
+		info.add("CLR*");
+		info.add("Cancel color edit and return to palette");
 
 		info.add("{CNTL} Backspace");
 		info.add("ALL");
-		info.add("Close the editor");
+		info.add("Exit the editor immediately");
+		
+		info.add("Enter Key");
+		info.add("MENU");
+		info.add("Activate side menu function");
+		
+		info.add("Enter Key");
+		info.add("PAL");
+		info.add("Switch to palette color editor (lower left)");
+		
+		info.add("Enter Key");
+		info.add("CLR");
+		info.add("Confirm color change & return to palette" );
 
 		info.add("[Arrow Keys]");
 		info.add("ALL");
 		info.add("Navigate various within menus");
+		
+		info.add("[Arrow Keys]");
+		info.add("CLR");
+		info.add("Modify palette entry color values");
 
 		info.add("{CNTL} [Arrow Keys]");
 		info.add("ALL");
@@ -4101,7 +4149,15 @@ public class VmenuVSPeditor implements Vmenu
 
 		info.add(" [NUMPAD 0-9] ");
 		info.add("ALL");
-		info.add("navigate tileset");		
+		info.add("navigate tileset");
+		
+		info.add(" [NUMPAD /*] ");
+		info.add("CLR");
+		info.add("Set color entry to full black or white");
+		
+		info.add(" [NUMPAD +] ");
+		info.add("CLR");
+		info.add("Set color RGB component to 255 ");				
 
 		try {
 			this.helpTable = 

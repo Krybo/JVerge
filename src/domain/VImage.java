@@ -1230,9 +1230,12 @@ public class VImage implements Transferable
 		// Krybo (Feb.2016) enable color control
 		public void printString(int x, int y, Font font, Color cf, String text) 
 			{
+			if( text == null )   { return; }
+			if( text.length() < 1 )  { return; }
 			this.g.setFont(font);
 			this.g.setColor( cf );
 			this.g.drawString(text, x, y);
+			return;
 			}
 		
 

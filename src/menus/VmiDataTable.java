@@ -16,37 +16,42 @@ import java.util.LinkedHashMap;
 
 import domain.VImage;
 
-/**  VmiDataTable - a Vmi element intended for displaying tabular data.
+/**  VmiDataTable - a VERGE menu item element intended for displaying 
+ *    a lot of tabular data at once, intended to help inventory display or shops.
  * It operates in an "inactive" state, which means Vmenu that attach it
  * will not allow it to be selected nor will it conform boundries to it.
+ * Thus, parent menus are responsible for sending controls to it.
  * Any data taken in must be turned into a String type first.
+ * The size of the table row and columns is externally fixed, as 
+ *     the data table will not automatically react to addition of data values.
  * 
- * Working Freatures :  
+ * Working Features :  
  * 		Background images
  * 		Dynamic number of columns and rows
  * 		Image Icon or Text Labels 
  * 		Optional Caption with a different font
- * 		Dynamicly changable font.
+ * 		Changable main & caption fonts.
  * 		Custom width border and main-block padding
  * 		Custom (translucent) colors when images are not used.
- * 		Smart cell clipping and scaling.
+ * 		Smart column sizing
+ * 		Scrolling with optional scroll bars
  * 
- * TODO low-pri features:
+ * TODO What is NOT done.   low-pri features:
  * 		inter-cellular padding.
  * 		translucent image backgrounds
+ * 		Multi-line text within cells - currently truncates long entries
+ * 		Gridline thickness and styles
+ * 		Inter-cell content alignment
  * 
  * @author Krybo
  *
  */
-
 public class VmiDataTable implements Vmenuitem
 	{
-
 	/**  Great resource for font centering.  
 	 * Which is a real chore for this class.
 	 * http://stackoverflow.com/questions/1055851/how-do-you-draw-a-string-centered-vertically-in-java
 	 */
-	
 	private int x = 0, y = 0, w = 0, h = 0;
 	private int rownum = 0;
 	private int colnum = 0;
@@ -60,22 +65,25 @@ public class VmiDataTable implements Vmenuitem
 	private boolean visible = true;
 	private boolean useLabels = false;
 	private boolean useImagesAsLabels = false;
-	private boolean scanMode = true;
+	private boolean scanMode = false;
 	private boolean enableGrid = true;
 	private boolean enableBorder = true;
 	private boolean enableImageBackdrop = false;
 	private boolean enableCaption = false;
-	private String labelTerminator	= new String(":");
+	private boolean scaleVoid = false;
+	private String labelTerminator	= new String(": ");
 	private String theCaption 		= new String("");
 	private String decimalFormatter = new String( "%.3f" );
 	private Font fnt = core.Script.fntMASTER;
 	private Font theCaptionFont = this.fnt;
 
 		// For scrolling
-	private VImage virtualBody = new VImage(1600,1200);
+	private VImage virtualBody = new VImage( 24,24 );
 	private boolean enableScroll = false;
 	private boolean enableScrollBars = false; 
 	private Double scrollSpeed = 1.0d;
+	private Double scrollFractionX = 0.0d;
+	private Double scrollFractionY = 0.0d;
 	private Integer scrollX = 0;
 	private Integer scrollY = 0;
 	private Integer scrollXitems = 0;
@@ -90,14 +98,14 @@ public class VmiDataTable implements Vmenuitem
 	private VImage bkgImg = null;
 
 		// Key data members.
-	private HashMap<Integer,String> theData;
-	private HashMap<Integer,String> theLabels;
-	private HashMap<Integer,VImage> imgLabels;
-	private HashMap<Integer,Integer> theXpos;
-	private HashMap<Integer,Integer> theYpos;
 	private HashMap<Integer,Color> clrSettings;
+	private HashMap<Integer,TableCell> cells;
 	private String desc;
 	private String tip;
+
+	//  This allows a string-pixel limit to be placed on each column
+	//    zero or null means unlimited.
+	private HashMap<Integer,Integer> cellTruncationBounds;
 
 	public static enum enumMenuDataTableCOLORS
 		{
@@ -126,15 +134,14 @@ public class VmiDataTable implements Vmenuitem
 			int numColumns, int numRows, 
 			LinkedHashMap<String,String> entries )
 		{
-		this.init(pinX, pinY, pixelWidth, pixelHeight, numColumns, numRows);
-		this.resolvePositions( entries );
+		this.init( pinX, pinY, pixelWidth, pixelHeight, numColumns, numRows );
+		this.insertEntries( entries );
 		this.setDefaultColors();
+		this.analyzeRowsCols();		
 		return;
 		}
 
-
 	/** Constructor helpers */
-
 
 	/**  This handles an arraylist of various types as Data input to build
 	 *      a verge menu item data table.
@@ -148,13 +155,13 @@ public class VmiDataTable implements Vmenuitem
 	 * @param dataEntries	An ArrayList of some type.
 	 * @throws Exception	throws if the arraylist<type> cannot be used
 	 */
-	public VmiDataTable(int pinX, int pinY, int pixelWidth, int pixelHeight,
+	public VmiDataTable( int pinX, int pinY, int pixelWidth, int pixelHeight,
 			int numColumns, int numRows, 
 			ArrayList<?> dataEntries ) throws Exception
 		{
 		this.init(pinX, pinY, pixelWidth, pixelHeight, numColumns, numRows);
 		this.setDefaultColors();
-
+		
 		boolean keepgoing = false;
 
 		// Proceed with a empty table.
@@ -167,7 +174,8 @@ public class VmiDataTable implements Vmenuitem
 			for( int n = 0; n < dataEntries.size(); n++ )
 				{
 				String o = (String) dataEntries.get(n);
-				this.theData.put( n, o );
+//				this.theData.put( n, o );
+				this.cells.get(n).setText( o );
 				}
 			keepgoing = true;
 			}
@@ -177,7 +185,8 @@ public class VmiDataTable implements Vmenuitem
 			for( int n = 0; n < dataEntries.size(); n++ )
 				{
 				Integer o = (Integer) dataEntries.get(n);
-				this.theData.put( n, o.toString() );
+//				this.theData.put( n, o.toString() );
+				this.cells.get(n).setText( o.toString() );
 				}
 			keepgoing = true;
 			}
@@ -187,8 +196,10 @@ public class VmiDataTable implements Vmenuitem
 			for( int n = 0; n < dataEntries.size(); n++ )
 				{
 				Float o = (Float) dataEntries.get(n);
-				this.theData.put( n, String.format(	
-						this.decimalFormatter, o ) );
+//				this.theData.put( n, String.format(	
+//						this.decimalFormatter, o ) );
+				this.cells.get(n).setText( 
+						String.format(this.decimalFormatter, o ) );
 				}
 			keepgoing = true;
 			}
@@ -198,7 +209,9 @@ public class VmiDataTable implements Vmenuitem
 			for( int n = 0; n < dataEntries.size(); n++ )
 				{
 				Double o = (Double) dataEntries.get(n);
-				this.theData.put( n, String.format(	
+//				this.theData.put( n, String.format(	
+//						this.decimalFormatter, o ) );
+				this.cells.get(n).setText( String.format(	
 						this.decimalFormatter, o ) );
 				}
 			keepgoing = true;
@@ -214,7 +227,7 @@ public class VmiDataTable implements Vmenuitem
 			throw(e);
 			}
 
-		this.resolvePositions( );
+		this.analyzeRowsCols();
 		return;
 		}
 	
@@ -228,25 +241,308 @@ public class VmiDataTable implements Vmenuitem
 		this.h = pixelHeight;
 		this.colnum = numColumns;
 		this.rownum = numRows;
+		this.cells = new HashMap<Integer,TableCell>();
 		
-			// Critical: Init data arrays 
-		this.theData 		= new HashMap<Integer,String>();
-		this.theLabels 	= new HashMap<Integer,String>();
-		this.imgLabels		= new HashMap<Integer,VImage>();
-		this.theXpos		= new HashMap<Integer,Integer>();
-		this.theYpos 		= new HashMap<Integer,Integer>();
+		this.virtualBody = new VImage( this.w+24, this.h+24 );
+		
+		// Init inner cells.
+		for( Integer n = 0; n < this.getDataCellCount(); n++ )
+			{  this.cells.put( n, new TableCell( n,-1,-1,"", this.fnt) );  }
+		
 		this.clrSettings 	= new HashMap<Integer,Color>();
+		
+		//  Shut off truncation on default.
+		this.cellTruncationBounds = new HashMap<Integer,Integer>();
+		for( int c = 0; c < numColumns; c++ )
+			{ this.cellTruncationBounds.put( c, 0); }
 
 		this.theCaption = new String("");
 		this.theCaptionFont = this.fnt;
 		this.enableCaption = false;
+		this.scaleVoid = false;
 
 		this.active = false;
 		this.visible = true;
+		this.scanMode = false;	// Fill across columns, then rows, by default.
 		this.enableImageBackdrop = false;
 		}
 
 	
+	private class TableCell
+		{
+		private Integer myX,myY,id;
+		private VImage icon = null;
+		private String myText,myLabel;
+		private String labelTerminator;
+		private Integer pxW, pxH, pxBorder, pxPadding;
+		private Integer calcW, calcH;
+		private Boolean showLabel, showImageAsLabel;
+		private Boolean needsUpdate;
+		private Boolean showVoidSpace;
+		private Font myFont;
+		private Color clrGridX, clrGridY, clrText, clrLabel;
+		private Integer bareAccent;		// Text accent value of font
+		private Integer imgW, imgH;
+		private Integer xVoidSpace, yVoidSpace;
+		
+		public TableCell( int idNum, int x, int y, String text, Font fnt )
+			{
+				// Essentials
+			this.id = idNum;
+			this.myX = x;
+			this.myY = y;
+			this.myText = text;
+				// Defaults
+			this.labelTerminator = new String(": ");
+			this.showLabel = true;
+			this.showImageAsLabel = false;
+			this.myFont = fnt;
+			this.needsUpdate = true;
+			this.yVoidSpace = 0;
+			this.xVoidSpace = 0;
+			this.pxW = 0;
+			this.pxH = 0;
+			this.imgW = 0;
+			this.imgH = 0;
+			this.pxBorder = 1;
+			this.pxPadding = 3;
+			this.clrGridX = Color.gray;
+			this.clrGridY = Color.gray;
+			this.clrText = Color.gray;
+			this.clrLabel = Color.gray; 
+			return;
+			}
+		
+		public void setColors( Color gridX, Color gridY, Color text, Color label )
+			{
+			if( gridX != null )
+				{ this.clrGridX = gridX; }
+			if( gridY != null )
+				{ this.clrGridY = gridY; }
+			if( text != null )
+				{ this.clrText = text; }
+			if( label != null )
+				{ this.clrLabel = label; }			
+			return;
+			}
+			
+		public void reposition( int x, int y )
+			{
+			this.myX = x;
+			this.myY = y;
+			return;
+			}
+		
+		public void setLabel( String lab )
+			{ 
+			this.myLabel = lab;
+			this.needsUpdate = true;
+			return; 
+			}
+			
+		public void setIcon( VImage vimg )
+			{
+			this.icon = vimg;
+			this.needsUpdate = true;
+			return; 
+			}
+		
+		public void setLabelTerminator( String joiner )
+			{
+			this.labelTerminator = joiner;
+			this.needsUpdate = true;
+			return;  
+			}
+			
+		public String getText( )
+			{ return( this.myText ); }
+		public String getLabel( )
+			{ return( this.myLabel ); }
+		public Integer getX( )
+			{ return( this.myX ); }
+		public Integer getY( )
+			{ return( this.myY ); }
+		
+		public void setShowLabel( Boolean onOff )
+			{
+			this.showLabel = onOff;
+			this.needsUpdate = true;
+			return; 
+			}
+		public void setImageForLabel( Boolean onOff )
+			{
+			this.showImageAsLabel = onOff;
+			this.needsUpdate = true;
+			return;  
+			}
+			
+		public void setFixedWidth( Integer widthPx )
+			{
+			this.pxW = widthPx;
+			this.needsUpdate = true;
+			return;
+			}
+		public void setFixedHeight( Integer hgtPx )
+			{
+			this.pxH = hgtPx;
+			this.needsUpdate = true;
+			return;
+			}
+			
+		public void setText( String text )
+			{
+			this.myText = text;
+			this.needsUpdate = true;
+			return;
+			}
+		
+		public Integer getTextWidth( )
+			{
+			return( this.calcW );
+			}
+		public Integer getTextHeight( )
+			{
+			return( this.calcH );
+			}
+
+		/** returns the space the border and padding consume within a cell */
+		public Integer getInsetSpacePx()
+			{ return( this.pxBorder + (this.pxPadding * 2) ); }
+		
+		public Boolean setVoidSpace( Boolean onOff )
+			{
+			this.showVoidSpace = onOff;
+			this.needsUpdate = true;
+			return( this.showVoidSpace );
+			}
+		
+		public void setXvoid( Integer voidXpx )
+			{
+			this.xVoidSpace = voidXpx;
+			return;
+			}
+		public void setYvoid( Integer voidYpx )
+			{
+			this.yVoidSpace = voidYpx;
+			return;
+			}
+		
+		public Integer getTotalWidth()
+			{ return( this.pxW + this.getInsetSpacePx() ); }
+					
+		public Integer getTotalHeight()
+			{ return( this.pxH + this.getInsetSpacePx() ); }
+
+		public void update( VImage target )
+			{
+			String fullText = this.myText;
+			if( this.showLabel )
+				{
+				fullText = this.myLabel + this.labelTerminator + this.myText;
+				if( this.showImageAsLabel == true )
+					{  fullText = " " + this.myText; }
+				}
+			Rectangle metrics = 
+				target.getStringPixelBounds( this.myFont, fullText );
+			this.calcW = metrics.width;
+			this.calcH = metrics.height;
+
+			int realH = this.calcH;
+			if( this.pxH > 0  &&  this.pxH > this.calcH )
+				{ realH = this.pxH; }
+				
+			// Calculated Width exceeds permitted width.  Truncate.
+			if( this.showImageAsLabel  &&  this.icon != null )
+				{
+				Integer scaledWidth = new Double( 
+					this.icon.width / this.icon.height * realH ).intValue();
+				this.imgH = realH;
+				this.imgW = scaledWidth;
+				this.calcW += scaledWidth; 
+				}
+			
+			//  Handle cell Overflow.
+			if(  this.pxW > 0  &&  this.calcW > this.pxW )
+				{
+				String oversized = fullText;
+				String tmpStr = new String(oversized); 
+				int shorten = this.calcW;
+				int breaker = 0;
+				while( (shorten >= this.pxW) &&  (tmpStr.length() > 2)  
+						&& breaker < 500 ) 
+					{
+					breaker++;
+					tmpStr = oversized.substring( 0, oversized.length()-1 );
+					shorten = target.getStringPixelBounds( 
+						this.myFont, tmpStr ).width + this.imgW;
+//		System.out.println("DEBUG: "+Integer.toString(shorten));
+					oversized = new String( tmpStr );
+					}
+				System.out.println("Need to shorten # "+Integer.toString( this.id ) +
+						" by " + Integer.toString(breaker) + " of " +
+						Integer.toString(fullText.length()));
+				if( fullText.length() > breaker )
+					{
+					this.myText = this.myText.substring( 0, 
+						fullText.length() - breaker);
+					this.calcW = this.pxW - 1;
+					}
+				else { 
+					this.myText = new String("|||");
+					this.calcW = 20;	// TODO - get this right. 
+					}	
+				}
+			
+			// Need a hgt measurement of non-descending chars
+			//     for proper vertical alignment 
+			this.bareAccent =	target.getStringPixelBounds( 
+					this.myFont, "0123456789YASZ").height + 1;
+			
+			this.needsUpdate = false;
+			}
+		
+		public void paint( VImage target )
+			{
+			if( this.needsUpdate )  	{ this.update( target ); }
+			
+			// Padding & border adjustments
+			Integer inset = this.pxPadding + this.pxBorder;
+			Integer outset = this.pxPadding * 2 + this.pxBorder;
+			
+			int imgAdj = 0;
+			if( this.showImageAsLabel == true )
+				{
+				target.scaleblit( inset + this.myX, inset + this.myY,
+						this.imgW, this.imgH, this.icon );
+				imgAdj = this.imgW + 1;
+				}
+			
+			target.printString( inset + this.myX + imgAdj, 
+				inset + this.myY + this.bareAccent, 
+				this.myFont, this.clrText, this.myText );
+
+			
+			target.line( this.myX, this.myY, 
+				this.myX+this.pxW+outset+this.xVoidSpace,
+				this.myY, this.clrGridX );
+			target.line(  this.myX, 
+				this.myY + this.pxH + outset + this.yVoidSpace,
+				this.myX + this.pxW + outset + this.xVoidSpace,
+				this.myY + this.pxH + outset + this.yVoidSpace, 
+				this.clrGridX );
+			target.line(  this.myX, this.myY, 
+				this.myX, this.myY + this.pxH + outset + this.yVoidSpace,
+				this.clrGridY );
+			target.line( this.myX + this.pxW + outset + this.xVoidSpace, 
+				this.myY, 
+				this.myX + this.pxW + outset + this.xVoidSpace,
+				this.myY + this.pxH + outset + this.yVoidSpace, this.clrGridY );
+			return;
+			}
+
+		}		// END SUBCLASS TABLECELL
+
+
 	private void setDefaultColors()
 		{
 			// Define Default colors.
@@ -276,102 +572,46 @@ public class VmiDataTable implements Vmenuitem
 			new Color( 1.0f,1.0f,0.77f,1.0f) );
 		}
 
-	private void resolvePositions( HashMap<String,String> entries )
+	/** Searching in order from the beginning, Returns the last index value
+	* of the entry matching the argument conditions contiguously.  
+	* otherwise: Finds the first unused cell within the table.   */
+	private Integer getLastEntry( Boolean hasData, Boolean hasLabel )
 		{
-		int indent = this.borderPaddingPx+this.borderWidthPx;
-			// Pixel space to allocate to each column
-		this.colMaxW = new Double( this.w - (2*indent)) / this.colnum;
-		this.rowMaxH = new Double( this.h - (2*indent)) / this.rownum;
-
-		this.justifyCaption( 1.2d );
-
-		int td = 1, tr = 1;
-		Integer n = 0;
+		if( hasData == false  &&  hasLabel == false )
+			{ return(-1); }		// nonsense argument values
+				// This loop will simply kick out upon the first violation.
+		for( Integer x : this.cells.keySet() )
+			{
+			String lab = this.cells.get(x).getLabel();
+			String dat = this.cells.get(x).getText();
+			if( hasData == true  &&  dat.isEmpty() )
+				{ return(x-1); }
+			if( hasLabel == true  &&  lab.isEmpty() )
+				{ return(x-1); }
+			if( hasData == true  &&  dat.length() < 1 )
+				{ return(x-1); }
+			if( hasLabel == true  &&  lab.length() < 1 )
+				{ return(x-1); }
+			}
+		return( this.cells.size() );
+		}
+	
+	private void insertEntries( HashMap<String,String> entries )
+		{
+		if( entries == null || entries.isEmpty() )
+			{ return; }
+		// Inject new values at the end of known.
+		Integer n = this.getLastEntry( true, true );
 		for(  String key : entries.keySet() )
 			{
-			Double tdw = new Double( td - 1 ) * this.colMaxW;
-	//		Double trw = new Double( tr - 1 ) * this.colMaxW;
-	//		Double tdh = new Double( td - 1 ) * this.rowMaxH;
-			Double trh = new Double( tr - 1 ) * this.rowMaxH + 
-					this.captionHeight;
-
-			this.theData.put( n, entries.get(key) );
-			this.theLabels.put( n, key );
-			this.theXpos.put(n,  tdw.intValue() + indent );
-			this.theYpos.put(n, trh.intValue() + indent );
-	
 			n++;
-				// Layout the table according to scanmode.
-			if( this.scanMode == true )
-				{
-				td++;
-				if( td > this.colnum )
-					{
-					td = 1;
-					tr++;
-					}
-				}
-			else		// Fill table by Rows.
-				{
-				tr++;
-				if( tr > this.rownum )
-					{
-					tr = 1;
-					td++;
-					}
-				}
+			this.cells.get( n ).setText(  new String( entries.get(key) ) );
+			this.cells.get( n ).setLabel( new String( key ) );
+//			this.theData.put( n, new String( entries.get(key) ) );
+//			this.theLabels.put( n, new String( key ) );
 			}
 		return;
 		}
-	
-	//  This one just resolves the positions of existing data and labels.
-	private void resolvePositions( )
-		{
-		if( this.theData.isEmpty() )   { return; }
-		int indent = this.borderPaddingPx+this.borderWidthPx; 
-			// Pixel space to allocate to each column
-		this.colMaxW = new Double( this.w - (2*indent)) / this.colnum;
-
-		this.justifyCaption( 1.2d );
-	
-		int td = 1, tr = 1;
-		
-//		for( Integer keyint : this.theData.keySet() )
-		for( Integer n = 0;  n < this.theData.size(); n++ )
-			{
-//			String key = this.theLabels.get(keyint);
-			Double tdw = new Double( td - 1 ) * this.colMaxW;
-			Double trh = new Double( tr - 1 ) * this.rowMaxH +
-					this.captionHeight;
-	
-//			System.out.println("DEBUG  tdw = "+tdw.toString());
-			
-			this.theXpos.put(n,  tdw.intValue() + indent );
-			this.theYpos.put(n, trh.intValue() + indent );
-	
-				// Layout the table according to scanmode.
-			if( this.scanMode == true )
-				{
-				td++;
-				if( td > this.colnum )
-					{
-					td = 1;
-					tr++;
-					}
-				}
-			else		// Fill table by Rows.
-				{
-				tr++;
-				if( tr > this.rownum )
-					{
-					tr = 1;
-					td++;
-					}
-				}
-			}
-		return;
-		}
-
 
 	// Adjusts the vertical positioning associated with introducing a caption
 	//  Factor is a Double that scales the height of the caption.
@@ -405,7 +645,7 @@ public class VmiDataTable implements Vmenuitem
 			{ return(false); }
 		this.x = posX+relPosX;
 		this.y = posY+relPosY;
-		this.resolvePositions();
+		this.analyzeRowsCols();
 		return true;
 		}
 
@@ -453,97 +693,88 @@ public class VmiDataTable implements Vmenuitem
 		// calc the corners for box and its margin.
 		int x0 = this.x;
 		int y0 = this.y;
-		int x1 = x0 + this.borderWidthPx + this.borderPaddingPx;
-		int y1 = y0 + this.borderWidthPx + this.borderPaddingPx +
-				this.captionHeight.intValue();
+		//  x1 & y1 are the main body top-left position after all adjustments.
+		int x1 = x0 + this.borderWidthPx;
+		int y1 = y0 + this.borderWidthPx;
 		int x2 = x0 + this.w;
 		int y2 = y0 + this.h;
+
 		int xw = x2 - this.borderWidthPx - this.borderPaddingPx;
-//		int yh = y2 - this.borderWidthPx - this.borderPaddingPx;
+		int yh = y2 - this.borderWidthPx - this.borderPaddingPx;
 		Double tmp;
 		
 		this.redrawVirtualTable();
 
-		FontMetrics fm =
-				target.getImage().getGraphics().getFontMetrics(
-				this.fnt );
-		FontRenderContext frc = fm.getFontRenderContext();
-
-			// recalculate this in case margins have changed.
-		this.colMaxW = new Double( xw - x1) / this.colnum;
+		// recalculate this in case margins have changed.
 		this.justifyCaption( 1.2d );
+		
+		int bodyWidth =  this.w - (this.borderWidthPx * 2) + 1;
+		int bodyHeight =  this.h - (this.borderWidthPx * 2) + 1;
 
-		Double captionStartX = new Double(x1);
+		//  -- Caption Calculations --
+		Double captionStartX = new Double( 0.0d );
 		Double captionStartY = new Double( 0.0d );
-		if( this.enableCaption == true && ! this.theCaption.isEmpty() )
+		if( this.enableCaption == true  &&  ! this.theCaption.isEmpty() )
 			{
-			FontMetrics fm2 =
-					target.getImage().getGraphics().getFontMetrics(
-					this.theCaptionFont );
-			FontRenderContext frc2 = fm2.getFontRenderContext();
+			Rectangle captionMetrics = target.getStringPixelBounds(
+					this.theCaptionFont, this.theCaption );
 
+			//  Text space for the caption.
+			int capWidth    = captionMetrics.width;
+			int captHeight =  captionMetrics.height;
 			
-//			this.theCaptionFont.getStringBounds( 
-//			this.theCaption, frc2 ).getMinY() -
-			this.captionHeight = new Double( 
-				(this.borderWidthPx * 2) + (this.borderPaddingPx * 2) ) + 
-				(-1.0d) * this.theCaptionFont.getStringBounds(
-				this.theCaption, frc2 ).getY();
-			this.captionHeight = this.captionHeight * 1.25d + 0.5d;
+			this.captionHeight = new Double( (this.getFramePaddingPx() * 2) +
+					captHeight + (this.borderPaddingPx*2) ); 
 
-				// Only do this if a change is detected.
+			// Analysis is expensive.  Only do so if a change is detected.
 			if( this.captionHeight != this.captionHeightSave )
 				{
-				this.resolvePositions();
+				this.analyzeRowsCols();
 				this.captionHeightSave = this.captionHeight;
 				}
 
-			captionStartX = 
-					new Double( this.theCaptionFont.getStringBounds(
-					this.theCaption, frc2 ).getWidth() );
-			captionStartX = new Double(this.x) + 
-					((new Double(this.w) - captionStartX ) / 2.0d);
+			captionStartX = new Double( this.w - capWidth ) / 2;
+			captionStartX += new Double( x0 );
 			captionStartY = new Double( y0 + this.borderWidthPx + 
-					this.borderPaddingPx) +
-					this.captionHeight / 2.0d;
+					this.borderPaddingPx + captHeight );
 
-//					new Double( this.theCaptionFont.getStringBounds(
-//					this.theCaption, frc2 ).getHeight() ) / 2.0d ;
-//			captionStartX = ( (new Double(this.w) / 2.0d) - 
-//					(captionStartX / 2.0d ) );
-			y1 = y0 + this.borderWidthPx + this.borderPaddingPx +
-					this.captionHeight.intValue();
+			y1 = y0 + this.captionHeight.intValue();
+			bodyHeight -= this.captionHeight.intValue();
 			}
 		else if( this.captionHeight != 0.0d )
 			{
 			this.captionHeight = 0.0d;
 			captionStartX = 0.0d;
 			captionStartY = 0.0d;
-			y1 = y0 + this.borderWidthPx + this.borderPaddingPx;
-			this.resolvePositions();
+//			y1 = y0 + this.borderWidthPx + this.borderPaddingPx;
+			this.analyzeRowsCols();
 			}
-
-			// Background bounding box (or image)
-		if( this.enableImageBackdrop == true && this.bkgImg != null )
-			{
-				// Scale desired image to fit the box.
-			target.scaleblit( x0, y0, this.w, this.h, this.bkgImg ); 
-			}
-		else
-			{
-			target.rectfill( x0, y0, x2, y2, 
-				this.clrSettings.get(
-					enumMenuDataTableCOLORS.BKG_MAIN.value()) );
-			}
-
 		
+		// -- Draw the main body through a virtual canvas --
+		//   the virtual canvas contains the backdrop, main text, and gridlines
+		if( this.enableScroll == true )
+			{
+			int sBarAdjust = 0; 
+			if( this.enableScrollBars ) 
+				{ sBarAdjust = 5; }
+			 // Inset part of the virtual body depending on scroll vars
+			target.blitSubRegion( this.virtualBody, 
+				this.scrollX, this.scrollY, bodyWidth - sBarAdjust, 
+				bodyHeight - sBarAdjust, x0 + this.borderWidthPx, 
+				y0 + this.borderWidthPx + this.captionHeight.intValue() );
+			}
+		else   // Otherwise, just plop the entire virtualbody - scaled.
+			{
+			target.scaleblit( x1,  y1,
+				bodyWidth, bodyHeight, this.virtualBody );	
+			}
+
 		// the bordering frame
 		if( this.enableBorder == true )
 			{
 			Color fc; 			// Which color to use?
 			for( int fn = 0; fn < this.borderWidthPx; fn++ )
 				{
-
 				fc = this.clrSettings.get(
 					enumMenuDataTableCOLORS.FRAME_INNER.value() );
 				if( fn == 0 || fn == this.borderWidthPx-1 )
@@ -561,6 +792,53 @@ public class VmiDataTable implements Vmenuitem
 					}
 				}
 			}
+		
+		// Draws the scrollbars
+		if( this.enableScrollBars )
+			{
+			int subX = x2 - this.borderWidthPx;
+			int subY = y2 - this.borderWidthPx;
+			// First need the amount of space that is possibly scrollable.
+			Double xScrollable = 
+				new Double( this.virtualBody.getWidth() - bodyWidth );
+			Double yScrollable = 
+				new Double( this.virtualBody.getHeight() - bodyHeight );				
+			int sBarVX = subX - 5;
+			int sBarVY = y1;
+			int sBarHX = x1;
+			int sBarHY = subY - 5;
+			Double scrX = new Double( new Double(bodyWidth) / this.virtualBody.getWidth() );
+			Double scrY = new Double( new Double( bodyHeight ) / this.virtualBody.getHeight() );
+			int barW = new Double( scrX * bodyWidth + 0.5d ).intValue();
+			int barH = new Double( scrY * bodyHeight + 0.5d ).intValue();
+			int scrollXoffset = new Double( this.scrollFractionX *
+					new Double( bodyWidth - barW ) ).intValue();
+			int scrollYoffset = new Double( this.scrollFractionY *
+					new Double( bodyHeight - barH ) ).intValue();
+
+			Color cOut = this.clrSettings.get(
+					enumMenuDataTableCOLORS.FRAME_OUTER.value());
+			Color cFill = this.clrSettings.get(
+					enumMenuDataTableCOLORS.FRAME_INNER.value());
+			
+//			System.out.println("DEBUG SCROLL: " + 
+//				Integer.toString(this.virtualBody.getWidth() )  + " w, " +  
+//				Integer.toString(this.virtualBody.getHeight() )  + " h, " +
+//				Integer.toString( scrollXoffset ) + " xt " + 
+//				Integer.toString(scrollYoffset) + " yt "  );
+			
+			target.rectfill( sBarVX, sBarVY, subX, subY, cFill ); 
+			target.rectfill( sBarHX, sBarHY, subX, subY, cFill ); 
+
+			target.rect( sBarVX, sBarVY, subX, subY,  cOut );
+			target.rect( sBarHX, sBarHY, subX, subY, cOut );
+			
+			target.rectfill( sBarHX + scrollXoffset, sBarHY, 
+					sBarHX + scrollXoffset + barW,  sBarHY+5, cOut );
+			target.rectfill( sBarVX, sBarVY + scrollYoffset, sBarVX+5, 
+					sBarVY + scrollYoffset + barH, cOut );
+			
+			}
 
 //		System.out.println( " Data # " + Integer.toString( this.theData.size() ) );
 
@@ -571,33 +849,24 @@ public class VmiDataTable implements Vmenuitem
 				this.theCaptionFont, 
 				this.clrSettings.get(
 					enumMenuDataTableCOLORS.TEXT_DATA.value() ),
-				this.theCaption	);
+				this.theCaption );
 			}
-
-
-		if( this.enableScroll == true )
-			{    // Inset part of the virtual body depending on scroll vars
-			target.blitSubRegion( this.virtualBody, 
-				this.scrollX, this.scrollY, this.w, this.h, x0, y0 );
-			}
-		else   // Otherwise, just plop the entire V.body - scaled.
-			{	target.scaleblit( this.x, this.y, this.w, this.h, this.virtualBody );	}			 
-
+			
 		return;
-		}
+		}		// END main paint() method.
 
 
 	/**  For data tables, this acts to toggle the scan mode.
-	 *   argument = 0 will display data fills columns first, else rows first.
+	 *   argument = 0 data will fill across rows first, else fill down columns first.
 	 */
-	public boolean changeMode(Integer theModeNumber)
+	public boolean changeMode( Integer theModeNumber )
 		{
 		if( theModeNumber == 0 )
 			{ this.scanMode = false; }
 		else
 			{ this.scanMode = true; }
-		this.resolvePositions();
-		return(this.scanMode);
+		this.analyzeRowsCols();
+		return( this.scanMode );
 		}
 
 	public Double getX()
@@ -620,19 +889,44 @@ public class VmiDataTable implements Vmenuitem
 	 *    may lead to strangeness if applicable labels are accompanied.
 	 */
 	public void setTextContent( HashMap<Integer, String> textItems )
-		{	this.theData = textItems;	}
+		{
+		for( Integer x : textItems.keySet() )
+			{
+			this.cells.get(x).setText(
+					new String( textItems.get(x)) );
+			}
+		return;
+		}
 	
-	/**  Import a HashMap containing the Labels for the values..
+	/**  Import a HashMap containing the Labels for the corresponding cell #..
+	 * Returns an Integer of the number actually set.
 	 */
-	public void setTextLabels( HashMap<Integer, String> textLabels )
-		{	this.theLabels = textLabels;	}
+	public Integer setTextLabels( HashMap<Integer, String> textLabels )
+		{
+		Integer n = 0;
+		for( Integer x : textLabels.keySet() )
+			{
+			if( textLabels.get(x) == null  ||  textLabels.get(x).length() < 1 ) 
+				{ continue; }
+			this.cells.get(x).setLabel( textLabels.get(x) );
+			n++;
+			}
+		return(n);
+		}
 
 	/**  It is possible to use VImages (icons) as labels instead of text 
 	 */
-	public void setIconContent(
-			HashMap<Integer, VImage> imageItems)
+	public void setIconContent( HashMap<Integer, VImage> imageItems )
+		{ this.setIconContent( imageItems ,false ); return; }
+	public void setIconContent( HashMap<Integer, VImage> imageItems,
+			Boolean turnOnImages )
 		{	
-		this.imgLabels = imageItems;
+		for( Integer x : imageItems.keySet() )
+			{
+			this.cells.get(x).setIcon( imageItems.get(x) );
+			if( turnOnImages == true )
+				{ this.cells.get(x).setImageForLabel( true ); }
+			}
 		return;
 		}
 
@@ -643,11 +937,17 @@ public class VmiDataTable implements Vmenuitem
 	 */
 	public void setIconContent( VImage[] images )
 		{
-		int max = this.theData.size();
+		int max = this.cells.size();
 		for( Integer x = 0; x < images.length; x++ )
 			{
 			if( x > max )	{ continue; }
-			this.imgLabels.put(x, images[x] );
+			if( ! this.cells.containsKey(x) ) 
+				{
+				System.out.println("WARN:  Icon load failed,  Uninit object # "+
+				   Integer.toString(x) ); 
+				continue; 
+				}
+			this.cells.get(x).setIcon( images[x] );
 			}
 		return;
 		}
@@ -715,11 +1015,11 @@ public class VmiDataTable implements Vmenuitem
 	public void setKeycode(Integer vergeKeyCode)
 		{	return;	}
 
-	public void setFrameThicknessPx(int thick)
+	public void setFrameThicknessPx( int thick)
 		{
 		if( thick < 1 )	{ return; }
 		this.borderWidthPx = thick;
-		this.resolvePositions();
+		this.analyzeRowsCols();
 		return;
 		}
 
@@ -727,7 +1027,7 @@ public class VmiDataTable implements Vmenuitem
 		{
 		if( thick < 1 )	{ return; }
 		this.borderPaddingPx = thick;
-		this.resolvePositions();
+		this.analyzeRowsCols();
 		return;
 		}
 	
@@ -776,7 +1076,7 @@ public class VmiDataTable implements Vmenuitem
 	//   hide it away in a negative index.
 	public void processInput(String input)
 		{
-		this.theData.put(-1, input);
+		this.cells.put(-1, new TableCell(-1,0,0,input,this.fnt) );
 		return;
 		}
 
@@ -805,6 +1105,13 @@ public class VmiDataTable implements Vmenuitem
 		if( descriptions.length >= 2 )	
 			{ this.desc  = descriptions[1]; }
 		return;
+		}
+	
+	private Integer determineColumn( int index )
+		{
+		if( this.scanMode == true )
+			{ return( index / this.rownum ); }
+		return( index % this.colnum );
 		}
 	
 	/**  --   Drawing and Scroll related support methods ----------  */
@@ -837,94 +1144,145 @@ public class VmiDataTable implements Vmenuitem
 	/** Examine data and determine metrics needed for cols & rows. */
 	private void analyzeRowsCols()
 		{
-		final FontMetrics vbfm = 
-			this.virtualBody.getImage().getGraphics().getFontMetrics(this.fnt);
-		Integer virtualX = 0;
-		Integer virtualY = 0;
-		Integer maxHeight = 0;
-		int[] colWidths = new int[ this.colnum ];
-		for( Integer c = 0; c < this.colnum; c++ )
-			{ colWidths[c] = 0; }
 		Integer widthTotal = 0;
-		Integer heightTotal = 0;
-		this.theXpos.clear();
-		this.theYpos.clear();
-
-		Integer indent = this.borderPaddingPx + this.borderWidthPx;
-
-		for( Integer s = 0; s < this.theData.size(); s++ )
-			{
-			int cNum = s % this.colnum;
-			if( cNum == 0 )
-				{ virtualY += (indent + vbfm.getHeight() ); }
-
-			String lab = this.theLabels.get(s);
-			String val = this.theData.get(s);
-			String cellText = new String("");
-			int lenVal = 0; 
-			int lenLab = 0;
-			if( val != null )   { cellText = val; }
-			if( lab != null )   { cellText = lab + ": " + cellText; }
-			
-//			Double tmpDbl = vbfm.getStringBounds( cellText, 
-//				this.virtualBody.getImage().getGraphics() ).getMaxX();
-//			Double tmpYa = vbfm.getStringBounds( cellText, 
-//				this.virtualBody.getImage().getGraphics() ).getMaxY();
-//			Double tmpYb = vbfm.getStringBounds( cellText, 
-//				this.virtualBody.getImage().getGraphics() ).getMinY();
-//			widthTotal = tmpDbl.intValue() + 1;
-			
-			Rectangle metrics = 
-				this.virtualBody.getStringPixelBounds( this.fnt, cellText );
-			int heightTotalCalc = metrics.height;
-			widthTotal = metrics.width;
-
-			if( heightTotalCalc > heightTotal )
-				{ heightTotal = heightTotalCalc; }
-			
-			System.out.println( cellText  + " [metrics] " + metrics.toString() );
-
-			// Integer widthTotal = lenVal + lenLab;
-
-			if( this.useImagesAsLabels == true ) 
-				{ widthTotal = lenVal; }   // TODO Use icon widths instead.
-			
-			if( widthTotal > colWidths[cNum] )
-				{  colWidths[cNum] = widthTotal;  } 
-
-//			System.out.println( "Test: # "+Integer.toString(s) + ":" + val + " = " + lab +
-//					" :len: "  + Integer.toString(lenVal) + " - " + Integer.toString(lenLab) + 
-//					" COL # " + Integer.toString( cNum ) );
-			}
-
-		int cellNum = -1;
-		int thisX = indent;
-		for( Integer c = 0; c < this.colnum; c++ )
-			{ 
-			virtualX += (indent + colWidths[c] );
-			int thisY = indent;
-			for( Integer y = 0; y < this.rownum; y++ )
-				{
-				cellNum = y * this.colnum + c;
-				System.out.println("POS "+Integer.toString(cellNum)+" :|: "+Integer.toString(thisX) + 
-				    " :: " + Integer.toString(thisY) );
-				this.theXpos.put( cellNum, thisX );
-				this.theYpos.put( cellNum, thisY );
-				thisY +=  ( 1 + this.borderPaddingPx + heightTotal );
-				}
-			thisX += ( 1 + this.borderPaddingPx + colWidths[c] );
-			if( c == (this.colnum-1) )
-				{ virtualY = thisY; }
-			}
+		Integer heightMax = 0;
 		
-		this.virtualBody = new VImage( virtualX, virtualY );
+		if( this.cells == null  ||  this.cells.isEmpty()  ||  this.cells.size() == 0 )
+			{ System.out.println("WARN:  VmiDataTable has no data!");  return; } 
+		
+		this.justifyCaption( 1.2d );
 		
 		//  This measures the font accent by using a non-descent char
 		this.textAccent = 
 			this.virtualBody.getStringPixelBounds( this.fnt, "8" ).height;
 		
+		int[] colWidths = new int[ this.colnum ];
+		for( Integer c = 0; c < this.colnum; c++ )
+			{ colWidths[c] = 0; }
+		
+		// For each cell... gather hgt metrics so that column and height
+		//    requirements can be gathered.   Also insert color info.
+		for( Integer x : this.cells.keySet() )
+			{
+			this.cells.get(x).update( this.virtualBody );
+			this.cells.get(x).setColors( this.clrSettings.get(
+					enumMenuDataTableCOLORS.GRIDLINES_X),
+				this.clrSettings.get(
+					enumMenuDataTableCOLORS.GRIDLINES_Y), 
+				this.clrSettings.get(
+					enumMenuDataTableCOLORS.TEXT_DATA), 
+				this.clrSettings.get(
+					enumMenuDataTableCOLORS.TEXT_LABELS));
+			
+			int heightTotalCalc = this.cells.get(x).getTextHeight();
+			if( heightTotalCalc > heightMax )
+				{ heightMax = heightTotalCalc; }			
+			}
+		
+		//  Calculate the Y void space for each cell
+		// The scaleVoid var is false when scaling happens, this is 
+		//      due to how the virtualBody is sized.
+		Integer yXS = this.h - ( heightMax * this.rownum );
+		Integer yVoid = 0;  
+		System.out.println( "heightMax is "+Integer.toString(heightMax) + 
+				" Extra H space = " + Integer.toString( yXS ) );
+		if( ! this.scaleVoid  &&  yXS > this.rownum )
+			{ yVoid = yXS / this.rownum; }
+			
+		// Now that the tallest text is known, 
+		//   Scale the image icons as they might affect the width
+		// Then calculate the set of column widths 
+
+		for( Integer x : this.cells.keySet() )
+			{
+			int cNum = this.determineColumn(x);
+			this.cells.get(x).setFixedHeight( heightMax );
+
+			// This should never happen... but guard against it anyway.
+			if( cNum > this.colnum )   { continue; }
+
+			if( this.useImagesAsLabels == true )
+				{ this.cells.get(x).setImageForLabel( true ); }
+			
+			this.cells.get(x).update( this.virtualBody );
+
+			if( this.cells.get(x).getTextWidth() > colWidths[cNum]  )
+				{ colWidths[cNum] = this.cells.get(x).getTextWidth(); }
+			// If set - Column width cannot exceed the user imposed limit.
+			if( this.cellTruncationBounds.get(cNum)  > 0  &&
+				colWidths[cNum] > this.cellTruncationBounds.get( cNum ) )
+				{ colWidths[cNum] = this.cellTruncationBounds.get(cNum); }
+			
+			// Check for text that is too long and truncate them.
+			
+//			System.out.println( "Test: # "+Integer.toString(s) + ":" + val + " = " + lab +
+//					" :len: "  + Integer.toString(lenVal) + " - " + Integer.toString(lenLab) + 
+//					" COL # " + Integer.toString( cNum ) );
+			}
+		
+		//  Compute x void.  -- Equally divided filler space
+		Integer wVoidCalc = 0;
+		Integer xVoid  =  0;
+		for( int a = 0; a < this.colnum; a++ )
+			{  wVoidCalc += colWidths[a]; }
+		if( ! this.scaleVoid  &&  wVoidCalc + this.colnum < this.w )	// Width void space available
+			{ xVoid = (this.w - wVoidCalc) / this.colnum; }
+		
+		for( Integer x : this.cells.keySet() )
+			{
+			int cNum = this.determineColumn( x );
+			if( cNum > this.colnum )   { continue; }
+			this.cells.get(x).setFixedWidth( colWidths[cNum] );
+			this.cells.get(x).setXvoid( xVoid );
+			this.cells.get(x).setYvoid( yVoid );
+			}
+		
+		// Assembles the cells in the final row/column matrix.
+		//  Also save off maximum extents for resizing virtualBody below.
+		Integer cx = 0, cy = 0;
+		Integer virtualX = 0, virtualY = 0;
+		for( Integer x : this.cells.keySet() )
+			{
+			if( this.scanMode == false )
+				{
+				this.cells.get(x).reposition( cx, cy );
+				cx += (this.cells.get(x).getTotalWidth() + xVoid);
+				if( cx > virtualX )  { virtualX = cx; }
+				if( this.determineColumn( x ) == (this.colnum-1) )
+					{	// End of a row
+					cx = 0;
+					cy += this.cells.get(x).getTotalHeight() + yVoid;
+					}
+				if( cy > virtualY )  { virtualY = cy; }
+				}
+			else
+				{
+				this.cells.get(x).reposition( cx, cy );
+				cy += (this.cells.get(x).getTotalHeight() + yVoid);
+				if( cx > virtualX )  { virtualX = cx; }
+				if( cy > virtualY )  { virtualY = cy; }
+				if( this.determineColumn(x)  != this.determineColumn(x+1) )
+					{	// time to move over to next column
+					cx += (this.cells.get(x).getTotalWidth() + xVoid);
+					cy = 0; 
+					}
+				}
+			}
+		
+		this.rowMaxH = new Double( heightMax );
+
+		// Resize the the virtual body to its final dimensions
+		if(		virtualX != this.virtualBody.width ||  
+				virtualY != this.virtualBody.height )
+			{	// If the VI is resized, it must also be promptly redrawn
+			this.virtualBody = new VImage( virtualX, virtualY );
+			this.redrawVirtualTable();
+			}
+		
 		System.out.println( " --- Final: " + Integer.toString(virtualX) +
-				" x "+Integer.toString(virtualY) );
+			" x "+Integer.toString(virtualY) + " :: " +
+			 Integer.toString( this.colnum ) + "x" + Integer.toString(this.rownum) );
+		
 		return;
 		}
 
@@ -940,79 +1298,29 @@ public class VmiDataTable implements Vmenuitem
 		
 		Integer vbw = this.virtualBody.getWidth();
 		Integer vbh = this.virtualBody.getHeight();
+		Integer cellMax = this.getDataCellCount();
 		
 			// Background bounding box (or image)
 		if( this.enableImageBackdrop == true && this.bkgImg != null )
 			{
 				// Scale desired image to fit the box.
-			this.virtualBody.scaleblit( this.x, this.y, vbw, vbh, this.bkgImg ); 
+			this.virtualBody.scaleblit( 0, 0, vbw, vbh, this.bkgImg ); 
 			}
 		else	
 			{
-			this.virtualBody.rectfill( this.x, this.y, vbw, vbh, 
+			this.virtualBody.rectfill( 0, 0, vbw, vbh, 
 				this.clrSettings.get(
 					enumMenuDataTableCOLORS.BKG_MAIN.value()) );
 			}
+			
+		// Paint all the cells using their internal settings
+		for( Integer tc : this.cells.keySet() )
+			{  this.cells.get(tc).paint( this.virtualBody ); }
 
-		String tmpLabel = new String("");
-		tmpLabel.trim();
-		String tmpData = new String("");
-		tmpData.trim();
-		Color theColor = this.clrSettings.get(
-			enumMenuDataTableCOLORS.TEXT_DATA.value() );
-		
-		for( Integer s = 0; s < this.theData.size(); s++ )
-			{
-			if( s+1 > this.getDataCellCount() )	{ continue; }
-			tmpData = this.theData.get(s);
-			tmpLabel = this.theLabels.get(s)+this.labelTerminator;
-			if( ! this.theXpos.containsKey(s) )  { continue; }
-			if( ! this.theYpos.containsKey(s) )  { continue; }
-			Integer xPos = this.theXpos.get(s).intValue();
-			Integer yPos = this.theYpos.get(s).intValue();
-			
-			System.out.println( "display"+Integer.toString(s) + " of " +
-					Integer.toString( this.getDataCellCount() ) + " :: " +
-					Integer.toString(xPos) + " : " + Integer.toString(yPos) + 
-					" ==> " + this.theData.get(s) );
-			
-			int yAdj = new Double( this.textAccent * 0.5 + 0.5).intValue();
-			this.virtualBody.printString( xPos - yAdj, yPos + yAdj, 
-					this.fnt, theColor, tmpData	 );
-			}
-			
+		if( this.useImagesAsLabels == true )
+			{  this.virtualBody.copyImageToClipboard(); }
 
-		if( this.enableGrid == true )
-			{
-			int xStart = 0;
-			int yStart = 0;
-			Color xColor = this.clrSettings.get(
-					enumMenuDataTableCOLORS.GRIDLINES_Y.value() );
-			Color yColor = this.clrSettings.get(
-					enumMenuDataTableCOLORS.GRIDLINES_X.value() );
-			for( Integer s = 0; s < this.theData.size(); s++ )
-				{
-				int myCol = s % this.colnum;
-				if( ! this.theXpos.containsKey(s) )  { continue; }
-				if( ! this.theYpos.containsKey(s) )  { continue; }
-				if( s >= 1 && s < this.colnum )				// VERTICAL
-					{
-					xStart = this.theXpos.get(s) - this.borderPaddingPx - 1;
-					this.virtualBody.line( xStart, 0,  
-						xStart, this.virtualBody.height,  xColor );
-					}
-				if( s >= this.colnum && myCol == 0 )		// HORIZONTAL
-					{
-					yStart = this.theYpos.get(s) - this.borderPaddingPx - 1;
-					this.virtualBody.line( 0, yStart,  
-						this.virtualBody.width, yStart,  yColor );
-					}
-				}
-			}  // End Gridlines
-				
-		
-		// 1: (Re)Size an appropriate virtual image.
-		// 2: Print all infromation to this virtual image	
+		return;
 		}
 	
 	// External methods for manipulating the scrolling
@@ -1025,8 +1333,11 @@ public class VmiDataTable implements Vmenuitem
 		this.scrollX += new Double( amount * this.scrollSpeed).intValue();
 		if( this.scrollX < 0 )   { this.scrollX = 0; }
 		if( (this.scrollX + this.w) > this.virtualBody.width )
-			{ this.scrollX = this.virtualBody.width - this.w; }
-		System.out.println("Scroll X = "+Integer.toString(this.scrollX));
+			{ this.scrollX = this.virtualBody.getWidth() - this.w; }
+		this.scrollFractionX = new Double( this.scrollX / 
+			new Double(this.virtualBody.getWidth() - this.w) );
+		System.out.println("Scroll X = "+Integer.toString(this.scrollX) + " " +
+				Double.toString(this.scrollFractionX) + " % " );
 		return( this.scrollX );
 		}
 	public int doScrollVertical( double amount )
@@ -1036,8 +1347,11 @@ public class VmiDataTable implements Vmenuitem
 		this.scrollY += new Double( amount * this.scrollSpeed).intValue();
 		if( this.scrollY < 0 )   { this.scrollY = 0; }
 		if( (this.scrollY + this.h) > this.virtualBody.height )
-			{ this.scrollY = this.virtualBody.height - this.h; }
-		System.out.println("Scroll Y = "+Integer.toString(this.scrollY ));
+			{ this.scrollY = this.virtualBody.getHeight() - this.h; }
+		this.scrollFractionY = new Double( this.scrollY / 
+			new Double( this.virtualBody.getHeight() - this.h) );
+		System.out.println("Scroll Y = "+Integer.toString(this.scrollY) + " " +
+				Double.toString(this.scrollFractionY) + " % " );
 		return( this.scrollY );
 		}
 	public void doScroll( int x, int y)  // Operates both at once.
@@ -1074,19 +1388,18 @@ public class VmiDataTable implements Vmenuitem
 		}
 
 	/** Directly adds a value to the table in most direct form.  */
-	public void addEntry( String label, String data )
+	public void addEntry( Integer cellNum, String label, String data )
 		{
-		int newone = this.theData.size();
-		this.theLabels.put(newone, label );
-		this.theData.put(newone, data );
-		this.resolvePositions();
+		this.cells.get(cellNum).setText( data );
+		this.cells.get(cellNum).setLabel( label );
+		this.analyzeRowsCols();
 		return;
 		}
 
 	public void setFont(Font newFnt )
 		{
 		this.fnt = newFnt;
-		this.resolvePositions();
+		this.analyzeRowsCols();
 		return;
 		}
 
@@ -1108,7 +1421,7 @@ public class VmiDataTable implements Vmenuitem
 		if( columns == this.colnum )	 { return(false); }
 		if( columns < 1 )	 { return(false); }
 		this.colnum = columns;
-		this.resolvePositions();
+		this.analyzeRowsCols();
 		return(true);
 		}
 
@@ -1117,7 +1430,7 @@ public class VmiDataTable implements Vmenuitem
 		if( rows == this.rownum )	 { return(false); }
 		if( rows < 1 )	 { return(false); }
 		this.rownum = rows;
-		this.resolvePositions();
+		this.analyzeRowsCols();
 		return(true);
 		}
 	
@@ -1139,13 +1452,21 @@ public class VmiDataTable implements Vmenuitem
 		this.theCaption = caption;
 		this.theCaptionFont = capFont;
 		this.enableCaption(enable);
-		this.resolvePositions();
+		this.analyzeRowsCols();
 		return;
 		}
-	
 
 	public boolean isEmpty()
-		{	return(this.theData.isEmpty());	}
+		{	return(this.cells.isEmpty());	}
+		
+	/** If there is more space allocated by the tables width & height
+	 * then the data contents need, the content will scale into the 
+	 * void space when this is ON. */	
+	public void setScaleVoid( Boolean onOff )
+		{
+		this.scaleVoid = onOff;
+		return;
+		}
 
 	public String getDecimalFormatter()
 		{	return decimalFormatter;	}
@@ -1156,11 +1477,59 @@ public class VmiDataTable implements Vmenuitem
 		/** Assignes integer numeric labels to data */
 	public void autoNumericLabels( )
 		{
-		for( Integer x = 0; x < this.theData.size(); x++ )
-			{	this.theLabels.put(x, x.toString() );	}
+		for( Integer x :  this.cells.keySet() )
+			{ this.cells.get(x).setLabel( x.toString() ); }
 		return;
 		}
-	
+
+	/** When the internal inspection routine runs, This setting 
+	 * will truncate cell content longer then the given pixel-length in set column 
+	 * Returns the previous value for the column, 0 if none.  */
+	public Integer setColumnWidthLimitsByColumn( 
+			Integer columnNum, Integer maxWidthPx )
+		{
+		if( this.cellTruncationBounds == null )
+			{ this.cellTruncationBounds = new HashMap<Integer,Integer>(); }
+		Integer previous = 0;
+		if( this.cellTruncationBounds.containsKey(columnNum) )
+			{  previous = this.cellTruncationBounds.get( columnNum ); }
+		this.cellTruncationBounds.put( columnNum, maxWidthPx );
+		return( previous );
+		}
+
+	/** When the internal inspection routine runs, This setting 
+	 * will truncate cell content longer then the given pixel-width in ALL columns 
+	 * Returns the Number of columns changed.  */
+	public Integer setColumnWidthLimits( Integer maxWidthsPx )
+		{
+		Integer setCount = 0;
+		for( Integer a = 0;  a < this.colnum;  a++ )
+			{
+			if( this.setColumnWidthLimitsByColumn(a, maxWidthsPx) > 0 )
+				{ setCount++; }
+			}
+		return( setCount );
+		}
+
+	/** Reduce a string to the given pixel-width or less by 
+	 *     repeatedly chopping characters off the end of it. 
+	 *     Used to ensure text content fits within table cells.  */
+	private String shortenOverbounds( String oversized, Integer bound )
+		{
+		String tmpStr = new String("");
+		int shorten = bound;
+		int breaker = 0;
+		while( (shorten >= bound) && tmpStr.length() > 2 
+				&& breaker < 500 ) 
+			{
+			breaker++;
+			tmpStr = oversized.substring( 0, tmpStr.length()-1 );
+			shorten = this.virtualBody.getStringPixelBounds(
+						this.fnt, tmpStr ).width;
+			}
+		return( tmpStr );
+		}
+
 	}			// END class  VmiDataTable.
 
 
