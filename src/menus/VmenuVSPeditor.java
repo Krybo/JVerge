@@ -828,17 +828,17 @@ public class VmenuVSPeditor implements Vmenu
 				{
 				case 8:   case 10:  this.toggleHelp();   //  get out
 					break;
-				case 100: case 37:  this.helpTable.doScrollHorizontal(-10);
+				case 100: case 37:  this.helpTable.doScrollHorizontalByCell(-1);
 					break;
-				case 102: case 39:  this.helpTable.doScrollHorizontal(10);
+				case 102: case 39:  this.helpTable.doScrollHorizontalByCell(1);
 					break;
-				case 104: case 38:  this.helpTable.doScrollVertical(-10);
+				case 104: case 38:  this.helpTable.doScrollVerticalByCell(-1);
 					break;
-				case 98: case 40:   this.helpTable.doScrollVertical(10);
+				case 98: case 40:   this.helpTable.doScrollVerticalByCell(1);
 					break;
-				case 33:	 this.helpTable.doScrollVertical(-33);
+				case 33:	 this.helpTable.doScrollVerticalByCell( -8 );
 					break;
-				case 34:	this.helpTable.doScrollVertical(33);
+				case 34:	this.helpTable.doScrollVerticalByCell( 8 );
 					break;
 				default:  break;
 				}
@@ -4162,7 +4162,8 @@ public class VmenuVSPeditor implements Vmenu
 		try {
 			this.helpTable = 
 				new VmiDataTable( 20, 20, 600, 400, 3, 86, info);
-			this.helpTable.setScrollable( 3, 12, 3.0d, true );
+			this.helpTable.setScrollable( 1, 1, 3.0d, true );
+			this.helpTable.doScrollReset();
 			}
 		catch (Exception e )
 			{
