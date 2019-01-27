@@ -440,7 +440,8 @@ public class VmenuVertical implements Vmenu
 		return;
 		}
 
-	public Vmenuitem getMenuItem(int index) throws IndexOutOfBoundsException
+	public Vmenuitem getMenuItem( int index ) 
+			throws IndexOutOfBoundsException
 		{
 		if (index < 0 || index >= this.content.size())
 			{
@@ -448,7 +449,7 @@ public class VmenuVertical implements Vmenu
 					+ Integer.toString(index) + " max "
 					+ Integer.toString(this.content.size() - 1));
 			}
-		return this.content.get(index);
+		return( this.content.get(index) );
 		}
 	
 	public Vmenuitem getMenuItemSelected()

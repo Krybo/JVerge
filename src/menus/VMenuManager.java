@@ -147,6 +147,14 @@ public class VMenuManager
 		{
 		return(this.getMenuByID( this.getSystemMenuFocusID() ));
 		}
+	/** Searches the system menu for an item with given ID, returns it. */
+	public Vmenuitem getSystemMenuItemByID( Long itemID )
+		{
+		Vmenu tmp = this.getMenuByID( this.getSystemMenuFocusID() );
+		if( tmp.getMenuItemByID( itemID ) instanceof Vmenuitem )
+			{ return( tmp.getMenuItemByID( itemID ) );  }
+		return( null );
+		}
 	public Vmenu getMenuByID( Long id )
 		{
 		for( Vmenu vm : this.menus )
@@ -154,6 +162,7 @@ public class VMenuManager
 			if( vm.getFocusId() == id )
 				{ return(vm);  }
 			}
+		System.out.println("WARN getMenuByID : Item was not found");
 		return(null);
 		}
 

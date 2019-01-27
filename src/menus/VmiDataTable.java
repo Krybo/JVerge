@@ -242,6 +242,7 @@ public class VmiDataTable implements Vmenuitem
 	public void init( int pinX, int pinY, int pixelWidth, int pixelHeight,
 			int numColumns, int numRows )
 		{
+		this.id = Vmenuitem.getRandomID();
 		this.x = pinX;
 		this.y = pinY;
 		this.w = pixelWidth;
@@ -299,7 +300,7 @@ public class VmiDataTable implements Vmenuitem
 		private String labelTerminator;
 		private Integer pxW, pxH, pxBorder, pxPadding;
 		private Integer calcW, calcH;
-		private Boolean showLabel, showImageAsLabel;
+		private Boolean showGrid, showLabel, showImageAsLabel;
 		private Boolean needsUpdate;
 		private Boolean showVoidSpace;
 		private Font myFont;
@@ -363,10 +364,22 @@ public class VmiDataTable implements Vmenuitem
 			}
 			
 		public void setFont( Font newFont )
-			{ this.myFont = newFont;  return; }
+			{
+			this.myFont = newFont;
+			this.needsUpdate = true;
+			return;
+			}
 		
 		public Font getFont( )
 			{ return( this.myFont ); }
+		
+		public void setShowGrid( boolean onOff )
+			{
+			this.showGrid = onOff;
+			return;
+			}
+		public boolean getShowGrid()
+			{  return( this.showGrid );  }
 		
 		public void setIcon( VImage vimg )
 			{
@@ -374,6 +387,25 @@ public class VmiDataTable implements Vmenuitem
 			this.needsUpdate = true;
 			return; 
 			}
+		
+		public void setBorderPx( Integer cellBorderWidthPx )
+			{
+			this.pxBorder = cellBorderWidthPx;
+			this.needsUpdate = true; 
+			return;
+			}
+		
+		public void setPaddingPx( Integer cellPaddingPx )
+			{
+			this.pxPadding = cellPaddingPx;
+			this.needsUpdate = true; 
+			return;
+			}
+		
+		public Integer getPaddingPx()
+			{ return( this.pxPadding ); }
+		public Integer getBorderPx()
+			{ return( this.pxBorder ); }
 		
 		public void setLabelTerminator( String joiner )
 			{
@@ -506,10 +538,11 @@ public class VmiDataTable implements Vmenuitem
 //		System.out.println("DEBUG: "+Integer.toString(shorten));
 					oversized = new String( tmpStr );
 					}
-				System.out.println("Need to shorten # "+Integer.toString( this.id ) +
-						" by " + Integer.toString(breaker) + " of " +
-						Integer.toString(fullText.length()));
-				if( fullText.length() > breaker )
+//				System.out.println("Need to shorten # "+Integer.toString( this.id ) +
+//						" by " + Integer.toString(breaker) + " of " +
+//						Integer.toString(fullText.length()));
+				if( (fullText.length() > breaker) &&
+					( this.myText.length() > (fullText.length() - breaker))  )
 					{
 					this.myText = this.myText.substring( 0, 
 						fullText.length() - breaker);
@@ -517,7 +550,8 @@ public class VmiDataTable implements Vmenuitem
 					}
 				else { 
 					this.myText = new String("|||");
-					this.calcW = 20;	// TODO - get this right. 
+					this.calcW = new VImage(50,50).getStringPixelBounds(
+							this.myFont, this.myText).width;
 					}	
 				}
 			
@@ -537,6 +571,7 @@ public class VmiDataTable implements Vmenuitem
 			Integer inset = this.pxPadding + this.pxBorder;
 			Integer outset = this.pxPadding * 2 + this.pxBorder;
 			
+			String fullText = new String( myText );
 			int imgAdj = 0;
 			if( this.showImageAsLabel == true )
 				{
@@ -544,27 +579,33 @@ public class VmiDataTable implements Vmenuitem
 						this.imgW, this.imgH, this.icon );
 				imgAdj = this.imgW + 1;
 				}
+			else if( this.showLabel )
+				{
+				fullText = this.myLabel + this.labelTerminator + this.myText;
+				}
 			
 			target.printString( inset + this.myX + imgAdj, 
 				inset + this.myY + this.bareAccent, 
-				this.myFont, this.clrText, this.myText );
-
+				this.myFont, this.clrText, fullText );
 			
-			target.line( this.myX, this.myY, 
-				this.myX+this.pxW+outset+this.xVoidSpace,
-				this.myY, this.clrGridX );
-			target.line(  this.myX, 
-				this.myY + this.pxH + outset + this.yVoidSpace,
-				this.myX + this.pxW + outset + this.xVoidSpace,
-				this.myY + this.pxH + outset + this.yVoidSpace, 
-				this.clrGridX );
-			target.line(  this.myX, this.myY, 
-				this.myX, this.myY + this.pxH + outset + this.yVoidSpace,
-				this.clrGridY );
-			target.line( this.myX + this.pxW + outset + this.xVoidSpace, 
-				this.myY, 
-				this.myX + this.pxW + outset + this.xVoidSpace,
-				this.myY + this.pxH + outset + this.yVoidSpace, this.clrGridY );
+			if( this.showGrid == true )
+				{
+				target.line( this.myX, this.myY, 
+					this.myX+this.pxW+outset+this.xVoidSpace,
+					this.myY, this.clrGridX );
+	//			target.line(  this.myX, 
+	//				this.myY + this.pxH + outset + this.yVoidSpace - this.pxBorder,
+	//				this.myX + this.pxW + outset + this.xVoidSpace,
+	//				this.myY + this.pxH + outset + this.yVoidSpace - this.pxBorder, 
+	//				this.clrGridX );
+				target.line(  this.myX, this.myY, 
+					this.myX, this.myY + this.pxH + outset + this.yVoidSpace,
+					this.clrGridY );
+	//			target.line( this.myX + this.pxW + outset + this.xVoidSpace, 
+	//				this.myY, 
+	//				this.myX + this.pxW + outset + this.xVoidSpace,
+	//				this.myY + this.pxH + outset + this.yVoidSpace, this.clrGridY );
+				}
 			return;
 			}
 
@@ -726,7 +767,7 @@ public class VmiDataTable implements Vmenuitem
 		int bodyWidth =  this.w - (this.borderWidthPx * 2) + 1;
 		int bodyHeight =  this.h - (this.borderWidthPx * 2) + 1;
 
-		//  -- Caption Calculations --
+		//  -- Caption Pre-calculation --
 		Double captionStartX = new Double( 0.0d );
 		Double captionStartY = new Double( 0.0d );
 		if( this.enableCaption == true  &&  ! this.theCaption.isEmpty() )
@@ -1266,6 +1307,20 @@ public class VmiDataTable implements Vmenuitem
 			System.out.println("WARN:  VmiDataTable has no data!"); 
 			return; 
 			}
+		
+		//  Ensure all global settings are passed into the internal table cells
+		for( Integer x : this.cells.keySet() )
+			{
+			TableCell tc = this.cells.get(x);
+			tc.setLabelTerminator( this.labelTerminator );
+			tc.setShowLabel( this.useLabels );
+			tc.setPaddingPx( this.borderPaddingPx );
+			tc.setBorderPx( this.borderPaddingPx );
+			tc.setFont( this.fnt );
+			tc.setShowGrid( this.enableGrid );
+			tc.update( this.virtualBody );
+			}
+
 
 		//  Save off Text space for the caption.		
 		Rectangle captionMetrics = this.virtualBody.getStringPixelBounds(
@@ -1284,7 +1339,7 @@ public class VmiDataTable implements Vmenuitem
 		for( Integer c = 0; c < this.colnum; c++ )
 			{ colWidths[c] = 0; }
 		
-		// For each cell... gather hgt metrics so that fixed column and height
+		// For each cell... gather hgt metrics so that fixed column and heigth
 		//    requirements can be gathered.   Also insert color info.
 		for( Integer x : this.cells.keySet() )
 			{
@@ -1441,6 +1496,18 @@ public class VmiDataTable implements Vmenuitem
 					enumMenuDataTableCOLORS.BKG_MAIN.value()) );
 			}
 			
+		// Due to the way the grid lines draw inside cells, 
+		//   we need a line at the right and bottom edge here.
+		if( this.enableGrid )
+			{
+			this.virtualBody.line( vbw-1, 0, vbw-1, vbh-1, 
+				this.clrSettings.get(
+				enumMenuDataTableCOLORS.GRIDLINES_X.value()) );
+			this.virtualBody.line( 0, vbh-1, vbw-1, vbh-1, 
+				this.clrSettings.get(
+				enumMenuDataTableCOLORS.GRIDLINES_Y.value()) );
+			}
+			
 		// Paint all the cells using their internal settings
 		for( Integer tc : this.cells.keySet() )
 			{  this.cells.get(tc).paint( this.virtualBody ); }
@@ -1449,7 +1516,6 @@ public class VmiDataTable implements Vmenuitem
 			{  this.virtualBody.copyImageToClipboard(); }
 
 		this.needsRefresh = false;
-		System.out.println("VMIDataTAble draw refresh complete");
 		return;
 		}
 	
@@ -1591,8 +1657,6 @@ public class VmiDataTable implements Vmenuitem
 	public void setFont( Font newFnt )
 		{
 		this.fnt = newFnt;
-		for( Integer x : this.cells.keySet() )
-			{ this.cells.get(x).setFont( newFnt ); }
 		this.needsRefresh = true;
 		return;
 		}
@@ -1661,6 +1725,7 @@ public class VmiDataTable implements Vmenuitem
 		return(this.enableCaption);
 		}
 
+	/** Sets the caption, with its own font */
 	public void setCaption( String caption, Font capFont, boolean enable)
 		{
 		if( caption.length() < 1 )  { return; }
@@ -1670,10 +1735,21 @@ public class VmiDataTable implements Vmenuitem
 		this.needsRefresh = true;
 		return;
 		}
+	/** Sets the caption using the same font as the rest of the table.  */
+	public void setCaption( String caption, boolean enable )
+		{ this.setCaption( caption, this.fnt, enable);   return; }
+
+	/** Change the caption font */
+	public void setCaptionFont( Font capfont )
+		{
+		this.theCaptionFont = capfont;
+		this.needsRefresh = true;
+		return;
+		}
 
 	public boolean isEmpty()
 		{	return(this.cells.isEmpty());	}
-		
+	
 	/** If there is more space allocated by the tables width & height
 	 * then the data contents need, the content will scale into the 
 	 * void space when this is ON. */	
@@ -1695,7 +1771,10 @@ public class VmiDataTable implements Vmenuitem
 	public void autoNumericLabels( )
 		{
 		for( Integer x :  this.cells.keySet() )
-			{ this.cells.get(x).setLabel( x.toString() ); }
+			{
+			if( ! this.cells.containsKey(x) )  { continue; }
+			this.cells.get(x).setLabel( x.toString() );
+			}
 		this.needsRefresh = true;
 		return;
 		}
@@ -1730,24 +1809,69 @@ public class VmiDataTable implements Vmenuitem
 		return( setCount );
 		}
 
-	/** Reduce a string to the given pixel-width or less by 
-	 *     repeatedly chopping characters off the end of it. 
-	 *     Used to ensure text content fits within table cells.  */
-//	private String shortenOverbounds( String oversized, Integer bound )
-//		{
-//		String tmpStr = new String("");
-//		int shorten = bound;
-//		int breaker = 0;
-//		while( (shorten >= bound) && tmpStr.length() > 2 
-//				&& breaker < 500 ) 
-//			{
-//			breaker++;
-//			tmpStr = oversized.substring( 0, tmpStr.length()-1 );
-//			shorten = this.virtualBody.getStringPixelBounds(
-//						this.fnt, tmpStr ).width;
-//			}
-//		return( tmpStr );
-//		}
+	/** adds a column to the table.  Returns the total column count. */
+	public Integer addColumn( )
+		{
+		this.colnum++;
+		this.needsRefresh = true;
+		for( int a = 0; a < this.colnum; a++ )
+			{
+			if( ! this.cellTruncationBounds.containsKey(a) )
+				{ this.cellTruncationBounds.put( a, 0 ); }
+			}
+		return( this.colnum );
+		}
+	/** adds a row to the table.  Returns the total row count. */
+	public Integer addRow( )
+		{
+		this.rownum++;
+		this.needsRefresh = true;
+		return( this.rownum );
+		}
+	/** adds a column to the table.  Returns the total column count. */
+	public Integer removeColumn( )
+		{
+		if( this.colnum <= 1 )   { return(1); }
+		this.colnum--;
+		this.needsRefresh = true;
+		return( this.colnum );
+		}
+	/** adds a row to the table.  Returns the total row count. */
+	public Integer removeRow( )
+		{
+		if( this.rownum <= 1 )   { return(1); }
+		this.rownum--;
+		this.needsRefresh = true;
+		return( this.rownum );
+		}	
+
+	public boolean toggleScaleVoid()
+		{
+		this.scaleVoid = ! this.scaleVoid;
+		this.needsRefresh = true;
+		return( this.scaleVoid );
+		}
+
+	public boolean toggleLabels( )
+		{
+		this.useLabels = ! this.useLabels;
+		this.needsRefresh = true;
+		return( this.useLabels );		
+		}
+	
+	public boolean toggleFrame()
+		{
+		this.enableBorder = ! this.enableBorder;
+		this.needsRefresh = true;
+		return( this.enableBorder );		
+		}
+
+	public boolean toggleGridlines()
+		{
+		this.enableGrid = ! this.enableGrid;
+		this.needsRefresh = true;
+		return( this.enableGrid );
+		}
 
 	}			// END class  VmiDataTable.
 

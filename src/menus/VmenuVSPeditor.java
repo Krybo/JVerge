@@ -25,6 +25,7 @@ import persist.ExtendedDataInputStream;
 import persist.ExtendedDataOutputStream;
 import menus.Vmenuitem.enumMenuItemSTATE;
 import menus.VmiButton.enumMenuButtonCOLORS;
+import menus.VmiDataTable.enumMenuDataTableCOLORS;
 import menus.VmiTextSimple.enumMenuStxtCOLORS;
 import core.Controls;
 import core.DefaultPalette;
@@ -4161,9 +4162,14 @@ public class VmenuVSPeditor implements Vmenu
 
 		try {
 			this.helpTable = 
-				new VmiDataTable( 20, 20, 600, 400, 3, 86, info);
+				new VmiDataTable( 20, 10, 600, 420, 3, 86, info );
 			this.helpTable.setScrollable( 1, 1, 3.0d, true );
 			this.helpTable.doScrollReset();
+			this.helpTable.setCaption( "KEYBOARD CONTROLS", true );
+			this.helpTable.setFramePaddingPx(2);
+			this.helpTable.setColor( 
+				enumMenuDataTableCOLORS.GRIDLINES_Y, 
+				Color.darkGray );
 			}
 		catch (Exception e )
 			{
