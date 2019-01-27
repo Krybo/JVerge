@@ -958,11 +958,9 @@ public class VmenuVSPeditor implements Vmenu
 					this.prevTile();
 					break;
 					}
-				if( this.cFocus == 1 )		// Control is in color keybar.
-					{
-					this.setColorEditorToCurrentColorKey();
-					}
 				this.getControlItem().doControls(ext_keycode);
+				if( this.cFocus == 1 )		// Control is in color keybar.
+					{ this.setColorEditorToCurrentColorKey(); }
 				break;
 
 			case 104:
@@ -999,11 +997,9 @@ public class VmenuVSPeditor implements Vmenu
 					this.nextTile();
 					break;
 					}
-				if( this.cFocus == 1 )		// Control is in color keybar.
-					{
-					this.setColorEditorToCurrentColorKey();
-					}
 				this.getControlItem().doControls(ext_keycode);
+				if( this.cFocus == 1 )		// Control is in color keybar.
+					{ this.setColorEditorToCurrentColorKey(); }
 				break;
 
 			case 98:
@@ -1561,7 +1557,7 @@ public class VmenuVSPeditor implements Vmenu
 	public Integer countMenuItems()
 		{	return(0);	}
 
-	// Disabled - cannot add or remove stuff to this. 
+	/** Disabled: cannot externally modify menu items from VmenuVSPeditor */ 
 	public Integer addItem(Vmenuitem vmi)
 		{ return(null); }
 	public Vmenuitem popItem()
@@ -1706,6 +1702,7 @@ public class VmenuVSPeditor implements Vmenu
 
 	/** ----------------  Non-Interface Methods  --------------------  */
 	
+	/** Returns the Vmenu object with the current keyboard focus */
 	private Vmenu getControlItem()
 		{
 		switch( this.cFocus )
@@ -1718,7 +1715,6 @@ public class VmenuVSPeditor implements Vmenu
 				return( this.colorEditor );
 			default:
 				return( this.main );
-
 			}
 		}
 
@@ -1745,7 +1741,7 @@ public class VmenuVSPeditor implements Vmenu
 				int cidx = this.getSelectedColorkeyCIDX();
 				this.statusMessage("Modified color "+
 						Integer.toString(cidx) );
-				// TODO: perhaps alpha this shouldn't be hard set
+				// TODO: should the alpha value 255 be made editable?
 				Color nc = new Color( this.gR.getValue(), 
 					this.gG.getValue(), this.gB.getValue(), 255 );
 				if( this.editColorInPlace == true )
@@ -1776,7 +1772,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( this.clrs.get(cidx) == null ) 
 					{  break;  }
 				
-				// Actually abort..... color wasn't changed.
+				//  abort because the color was not changed.
 				if( nc.getRGB() == this.clrs.get(cidx).getRGB() ) 
 					{
 					this.statusMessage("Color not changed");
@@ -1790,9 +1786,9 @@ public class VmenuVSPeditor implements Vmenu
 				hmTmp.put(
 					enumMenuButtonCOLORS.BODY_ACTIVE.value(), nc );
 				hmTmp.put(
-					enumMenuButtonCOLORS.BODY_INACTIVE.value(),nc); 
+					enumMenuButtonCOLORS.BODY_INACTIVE.value(),nc ); 
 				hmTmp.put(
-					enumMenuButtonCOLORS.BODY_SELECTED.value(),nc); 						 
+					enumMenuButtonCOLORS.BODY_SELECTED.value(),nc ); 						 
 				this.colorkey.getMenuItemSelected().setColorContent(
 					hmTmp );
 				if( cidx != -1 )
@@ -1820,10 +1816,11 @@ public class VmenuVSPeditor implements Vmenu
  			return(false); 
  			}
 		
-		System.out.println("DEBUG : Attempting to activate method : "+
-				action.getName() + " with " + 
-				Integer.toString( args.length ) + " args (" +
-				action.getModifiers() + ")."  );
+		System.out.println("DEBUG : VmenuVSPeditor object is " +
+		 	" Attempting to activate method : "+
+			action.getName() + " with " + 
+			Integer.toString( args.length ) + " args (" +
+			action.getModifiers() + ")."  );
 		if( args.length > 0 )
 			{
 			Integer n = -1;
@@ -2233,8 +2230,8 @@ public class VmenuVSPeditor implements Vmenu
 	private void setColorEditorToCurrentColorKey()
 		{
 		Color tmp = 
-		this.colorkey.getMenuItemSelected().getColorComponent(
-			enumMenuButtonCOLORS.BODY_ACTIVE.value());
+			this.colorkey.getMenuItemSelected().getColorComponent(
+				enumMenuButtonCOLORS.BODY_ACTIVE.value() );
 		this.setColorEditor( tmp );
 		return;
 		}
