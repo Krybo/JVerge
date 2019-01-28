@@ -1512,9 +1512,6 @@ public class VmiDataTable implements Vmenuitem
 		for( Integer tc : this.cells.keySet() )
 			{  this.cells.get(tc).paint( this.virtualBody ); }
 
-		if( this.useImagesAsLabels == true )
-			{  this.virtualBody.copyImageToClipboard(); }
-
 		this.needsRefresh = false;
 		return;
 		}

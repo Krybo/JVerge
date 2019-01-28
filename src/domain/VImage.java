@@ -1675,13 +1675,36 @@ public class VImage implements Transferable
 	
 // Klark @ 
 // http://stackoverflow.com/questions/3514158/how-do-you-clone-a-bufferedimage
-	public static BufferedImage ImageDeepCopy( BufferedImage bi ) 
+	public static BufferedImage ImageDeepCopyOld( BufferedImage bi ) 
 		{
 		ColorModel cm = bi.getColorModel();
 		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
 		WritableRaster raster = bi.copyData(null);
-		return( new BufferedImage(cm, raster, isAlphaPremultiplied, null) );
+
+		BufferedImage bimg = new VImage(
+				bi.getWidth(), bi.getHeight() ).getImage();		
+				
+		try {
+			bimg = new BufferedImage( 
+				cm, raster, isAlphaPremultiplied, null);
+			}
+		catch( Exception e )
+			{
+			System.out.println("ImageDeepCopy Critical error");
+			}
+		return( bimg );
 		}
+		
+	public static BufferedImage ImageDeepCopy( BufferedImage src )
+		{
+		BufferedImage img= new BufferedImage( 
+			src.getWidth(), src.getHeight(), new VImage(16,16).getImage().getType() );
+		Graphics2D g2d= img.createGraphics();
+		g2d.drawImage(src, 0, 0, null);
+		g2d.dispose();
+		return( img );
+		}
+		
 
 	
 	/** Krybo (Jan 2019) : 

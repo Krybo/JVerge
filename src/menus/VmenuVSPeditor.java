@@ -2459,7 +2459,8 @@ public class VmenuVSPeditor implements Vmenu
 		}
 
 	/** Paste a VSP from an image in the clipboard. 
-	 * Compatibility with external editors is unknown */
+	 * Compatibility with external editors is unknown 
+	 * Always check return for false, which means something failed. */
 	private boolean handleVspPaste( VImage clipboardVImage )
 		{
 		if( clipboardVImage == null )
@@ -2471,6 +2472,7 @@ public class VmenuVSPeditor implements Vmenu
 		int inY = clipboardVImage.getHeight();
 		Integer tcx, tcy;	// tile count in x and y.
 		int z = this.vsp.getTileSquarePixelSize();
+		if( z < 2 )   { return( false );  }		// stop any nonsense here.
 		Integer inportCount = 0;
 		boolean r;
 		// The incoming size must be a multiple of the square tile size
@@ -2482,7 +2484,7 @@ public class VmenuVSPeditor implements Vmenu
 			if( tcx <= 1 && tcy <= 1 )		// refuse to copy 1 tile vsp.
 				{
 				System.err.println("Refused to inport 1 tile VSP");
-				return(false); 
+				return( false );
 				}
 			this.setUndoPoint( new Vsp(this.vsp), 23 );
 			System.out.println("Clipboard paste in no-padding form x "+
@@ -2496,7 +2498,7 @@ public class VmenuVSPeditor implements Vmenu
 				}	}
 			System.out.println("Inported "+inportCount.toString()+" tiles.");
 			this.loadWorkingTile();
-			return(true);
+			return( true );
 			}
 		if( ((inX-1) % (z+1) == 0) &&  ((inY-1) % (z+1) == 0) ) //1px pad
 			{
@@ -2521,10 +2523,10 @@ public class VmenuVSPeditor implements Vmenu
 			this.statusMessage( "Inported " +
 				inportCount.toString()+" tiles.");
 			this.loadWorkingTile();
-			return(true);
+			return( true );
 			}
 		this.statusMessage( "Error: incompatible VSP Paste" );
-		return(false);
+		return( false );
 		}
 
 /**  Takes clipboard contents and splits them into new tiles.
