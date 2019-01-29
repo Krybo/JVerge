@@ -726,7 +726,7 @@ public class VmenuVSPeditor implements Vmenu
 		int thistile = 0;
 		int max, xAdj, yAdj = 0;
 
-		this.loadTilePreview();
+		this.loadTilePreview( false );
 
 		Integer rowMax = VmenuVSPeditor.DEFAULT_TILES_PER_ROW;
 		Integer rowHalf = rowMax / 2;
@@ -750,7 +750,7 @@ public class VmenuVSPeditor implements Vmenu
 				target.scaleblit( 350+xAdj, 380+yAdj, 32, 32,
 						this.vmPrev[ntile] );
 			}	}
-
+			
 		target.rect(349, 379, 383, 413, Color.WHITE );
 		target.rect(348, 378, 384, 414, Color.BLACK );
 		target.rect(347, 377, 385, 415, Color.WHITE );
@@ -1393,7 +1393,7 @@ public class VmenuVSPeditor implements Vmenu
 					{ break; }
 				if( isCntl == true && isAlt == true )
 					{		// Full VSP inport from clipboard.
-					this.handleVspPaste(core.Script.getClipboardVImage());
+					this.handleVspPaste( core.Script.getClipboardVImage());
 					this.statusMessage("VSP import from clipboard");
 					break;					
 					}
@@ -2489,6 +2489,8 @@ public class VmenuVSPeditor implements Vmenu
 			this.setUndoPoint( new Vsp(this.vsp), 23 );
 			System.out.println("Clipboard paste in no-padding form x "+
 				tcx.toString() + " y " + tcy.toString() );
+			while( this.vsp.getNumtiles() < (tcx * tcy) )  
+				{ this.vsp.insertReplicaTile(0); }
 			for( int iy = 0; iy < tcy; iy++ )
 				{ for( int ix = 0; ix < tcx; ix++ )
 					{
@@ -2498,6 +2500,7 @@ public class VmenuVSPeditor implements Vmenu
 				}	}
 			System.out.println("Inported "+inportCount.toString()+" tiles.");
 			this.loadWorkingTile();
+			this.loadTilePreview( true );
 			return( true );
 			}
 		if( ((inX-1) % (z+1) == 0) &&  ((inY-1) % (z+1) == 0) ) //1px pad
@@ -2512,9 +2515,12 @@ public class VmenuVSPeditor implements Vmenu
 			this.setUndoPoint( new Vsp(this.vsp), 24 );
 			System.out.println("Clipboard paste in padded form   x "+
 				tcx.toString() + " y " + tcy.toString() );
+			while( this.vsp.getNumtiles() < (tcx * tcy) )  
+				{ this.vsp.insertReplicaTile(0); }
 			for( int iy = 0; iy < tcy; iy++ )
 				{ for( int ix = 0; ix < tcx; ix++ )
 					{
+					
 					r = this.vsp.modifyTile( iy * tcx + ix, 
 						clipboardVImage.getRegion( ix*(z+1), iy*(z+1), 
 							z, z) );
@@ -2523,6 +2529,7 @@ public class VmenuVSPeditor implements Vmenu
 			this.statusMessage( "Inported " +
 				inportCount.toString()+" tiles.");
 			this.loadWorkingTile();
+			this.loadTilePreview( true );
 			return( true );
 			}
 		this.statusMessage( "Error: incompatible VSP Paste" );
@@ -2740,6 +2747,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.updatePreview();
 		
 		this.statusMessage("Started a new VSP.");
+		this.loadTilePreview( true );
 
 		return;
 		}
@@ -3711,14 +3719,16 @@ public class VmenuVSPeditor implements Vmenu
 	/** method that updates image data in the tile navigator preview. 
 	 * This holds a matrix of double sized tiles 
 	 * The paint method needs to only call this
-	 *     then draw the vmPrev data */
-	private void loadTilePreview( )
+	 *     then draw the vmPrev data 
+	 *   Arg: forceUpdate set to true will proceed even if the 
+	 *       cursor position has not changed since last draw.   */
+	private void loadTilePreview( boolean forceUpdate )
 		{
 		// Prevents unnecessary cycles.
 		if( this.obsEditMode == true &&
 				this.vmPrevLastIdx == this.obsEditNum )
 			{ return; }
-		if( this.obsEditMode == false &&
+		if(  ! forceUpdate  &&  this.obsEditMode == false &&
 				this.vmPrevLastIdx == this.tIndex )
 			{ return; }		
 
@@ -4105,7 +4115,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		info.add("{CNTL+ALT} V ");
 		info.add("ALL");
-		info.add("attempt full VSP clipboard paste into tileset");
+		info.add("attempt full VSP clipboard paste-overwrite from tile 0");
 
 		info.add(" W ");
 		info.add("MAIN");

@@ -24,10 +24,12 @@ import java.awt.image.AffineTransformOp;
 //import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.awt.image.DirectColorModel;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
+import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 //import java.awt.image.WritableRaster;
 import java.io.IOException;
@@ -44,6 +46,9 @@ import static core.Script.*;
 public class VImage implements Transferable 
 	{
 	public BufferedImage image;
+	//  Define a preferred image color model to use
+	public static final ColorModel VergeColorModel = 
+			new DirectColorModel( 32, 0xff0000, 0xff00 , 0xff, 0xff000000 );
 	public Graphics2D g;
 	// Death Magenta (verge transparent color) in RGB only form.
 	private static final Color COLOR_DEATHMAG =
@@ -54,7 +59,7 @@ public class VImage implements Transferable
 
 	public int width, height;
 	
-	public VImage(int x, int y) 
+	public VImage( int x, int y ) 
 		{
 		if( x < 1 )   { x = 1; }
 		if( y < 1 )   { y = 1; }
@@ -80,19 +85,24 @@ public class VImage implements Transferable
 			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 			GraphicsDevice gs = ge.getDefaultScreenDevice();
 			GraphicsConfiguration gc = gs.getDefaultConfiguration();
-			image = gc.createCompatibleImage(x, y, Transparency.TRANSLUCENT);
-			//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
-			g = (Graphics2D)image.getGraphics();
+			this.image = gc.createCompatibleImage( x, y, 
+					Transparency.TRANSLUCENT);
+//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
+			this.g = (Graphics2D) image.getGraphics();
 			}
 		catch( Exception e )
 			{
 			e.printStackTrace();
 			g.dispose();
 			}
+//		System.out.println("DEBUG: new VImage :: " +
+//			" x = "+ Integer.toString(this.width)+
+//			" y = " + Integer.toString(this.height) 
+//			+ " CM = " + this.image.getColorModel().toString() );
 		return;
 		}
 
-	// Krybo (Feb.2016)  : builds a new VImage & fills it with solid Color c
+	// Krybo (Feb.2016)  : create a new VImage & fills it with solid Color c
 	public VImage( int x, int y, Color c ) 
 		{
 		this(x,y);
@@ -107,61 +117,61 @@ public class VImage implements Transferable
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice gs = ge.getDefaultScreenDevice();
 		GraphicsConfiguration gc = gs.getDefaultConfiguration();
-		image = gc.createCompatibleImage( existingVImage.getWidth(), 
+		this.image = gc.createCompatibleImage( existingVImage.getWidth(), 
 				existingVImage.getHeight(), Transparency.TRANSLUCENT);
-		//image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
-		g = (Graphics2D)image.getGraphics();
-		g.drawImage(existingVImage.getImage(), 0, 0, null );
-		g.dispose();
+// image = new BufferedImage(x, y, BufferedImage.TYPE_INT_ARGB);
+		this.g = (Graphics2D) this.image.getGraphics();
+		this.g.drawImage( existingVImage.getImage(), 0, 0, null );
+		this.g.dispose();
 		return;
 		}	
 
 
-	 public VImage(URL url, boolean transparent) {
-		  try {
+	 public VImage( URL url, boolean transparent )
+		 {
+		 try {
 			  if(url==null) {
-				  System.err.println("Unable to find image from URL " + url);
+				  System.err.println("Unable to find image from URL " + url );
 				  return;
 			  }
 			  if(url.getFile().toUpperCase().endsWith("PCX")) {
-				  image = PCXReader.loadImage(url.openStream());
+				  this.image = PCXReader.loadImage(url.openStream());
 			  } else
-			  {			  
-				  image = ImageIO.read(url);
-			  }
+				  {	this.image = ImageIO.read(url); }
 		  } catch (IOException e) {
-			  System.err.println("Unable to read image from URL " + url);
-		  }
-		  this.width = image.getWidth();
-		  this.height = image.getHeight();
+			System.err.println("Unable to read image from URL " + url);
+			}
+		  this.width = this.image.getWidth();
+		  this.height = this.image.getHeight();
 
-		  // Make death magenta = transparent
-		  if(transparent) {
-			  Image img = makeColorTransparent(image, new Color(255, 0, 255));
-			  this.image = imageToBufferedImage(img);
-		  }
+		  // Makes death magenta (255)  transparent
+			if(transparent) {
+				Image img = makeColorTransparent( image, 
+					new Color(255, 0, 255));
+					this.image = imageToBufferedImage(img);
+				}
 		  
-		  g = (Graphics2D)image.getGraphics();
+		  this.g = (Graphics2D) this.image.getGraphics();
 	 }
 	 	// A constructor with configurable transparent color
 	 public VImage(URL url, int transR, int transG, int transB ) 
 		 {
 		  try {
-			  if(url==null) {
+			  if( url==null ) {
 				  System.err.println("Unable to find image from URL " + url);
 				  return;
 			  }
 			  if(url.getFile().toUpperCase().endsWith("PCX")) {
-				  image = PCXReader.loadImage(url.openStream());
+				  this.image = PCXReader.loadImage(url.openStream());
 			  } else
 			  {			  
-				  image = ImageIO.read(url);
+				  this.image = ImageIO.read(url);
 			  }
 		  } catch (IOException e) {
 			  System.err.println("Unable to read image from URL " + url);
 		  }
-		  this.width = image.getWidth();
-		  this.height = image.getHeight();
+		  this.width = this.image.getWidth();
+		  this.height = this.image.getHeight();
 	
 		  Image img = makeColorTransparent( image, 
 				  new Color(transR, transG, transB ) );
@@ -1675,10 +1685,19 @@ public class VImage implements Transferable
 	
 // Klark @ 
 // http://stackoverflow.com/questions/3514158/how-do-you-clone-a-bufferedimage
-	public static BufferedImage ImageDeepCopyOld( BufferedImage bi ) 
+	public static BufferedImage ImageDeepCopyConvert( 
+			BufferedImage bi, byte newAlpha ) 
 		{
 		ColorModel cm = bi.getColorModel();
-		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+		
+		WritableRaster meeper = Raster.createWritableRaster(
+			VergeColorModel.createCompatibleSampleModel(
+				bi.getWidth(), bi.getHeight()), null );
+
+		boolean isAlphaPremultiplied = 
+				VergeColorModel.isAlphaPremultiplied();
+		meeper.setDataElements( bi.getWidth(), bi.getHeight(), 
+				bi.getRaster() );
 		WritableRaster raster = bi.copyData(null);
 
 		BufferedImage bimg = new VImage(
@@ -1686,7 +1705,7 @@ public class VImage implements Transferable
 				
 		try {
 			bimg = new BufferedImage( 
-				cm, raster, isAlphaPremultiplied, null);
+				VergeColorModel, meeper, isAlphaPremultiplied, null );
 			}
 		catch( Exception e )
 			{
@@ -1694,14 +1713,15 @@ public class VImage implements Transferable
 			}
 		return( bimg );
 		}
-		
+	
 	public static BufferedImage ImageDeepCopy( BufferedImage src )
 		{
-		BufferedImage img= new BufferedImage( 
+		BufferedImage img = new BufferedImage( 
 			src.getWidth(), src.getHeight(), new VImage(16,16).getImage().getType() );
 		Graphics2D g2d= img.createGraphics();
-		g2d.drawImage(src, 0, 0, null);
+		g2d.drawImage( src, 0, 0, null);
 		g2d.dispose();
+//		VImage.modAlpha( img, 1.0d );
 		return( img );
 		}
 		
@@ -1749,6 +1769,32 @@ public class VImage implements Transferable
 		         gfx.getFontRenderContext(), 0, 0 ) );
 			}
 		return(rslt);
+		}
+
+	public ColorModel getColorModel()
+		{ return( this.image.getColorModel() ); }
+	
+	/**  Change the alpha value for all pixels in a given BufferedImage.
+	 *    Directly changes the image by reference.
+	 *    Thumbz @ https://stackoverflow.com/questions/660580/change-the-alpha-value-of-a-bufferedimage
+	 * */
+	public static void modAlpha( BufferedImage modMe, double alphaNew )
+		{
+		Integer newAlpha = new Double( alphaNew * 255.0d ).intValue();  
+		 for (int x = 0; x < modMe.getWidth(); x++) {          
+		     for (int y = 0; y < modMe.getHeight(); y++) {
+		         int argb = modMe.getRGB(x, y);
+		         int alpha = (argb >> 24) & 0xff;
+		
+		         alpha = newAlpha;
+		         alpha &= 0xff;
+		
+		         argb &= 0x00ffffff;
+		         argb |= (alpha << 24);
+		         modMe.setRGB(x, y, argb );            
+		     }
+		 }
+		return;
 		}
 	
 	}

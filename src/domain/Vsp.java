@@ -32,7 +32,7 @@ import core.Script;
  * 
  * The traditional tile size for Verge is 16x16 pixels and this takes default.
  * 
- * The VSP was designed to be flexable and support non-standard 
+ * The VSP was designed to be flexible and support non-standard 
  *     tile sizes, but this is not yet realized.
  *
  * Supports rudimentary animations by defining a linear stretch of tiles
@@ -854,6 +854,10 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	
 	public boolean modifyTile( int tileIdx, BufferedImage newTileImage )
 		{
+		if( newTileImage.getColorModel().hasAlpha() )
+			{
+			System.out.println("WARN: VSP modifyTile input img has alpha channel.");
+			}
 		if( newTileImage.getWidth() != this.tileSize ) 	{ return(false); }
 		if( newTileImage.getHeight() != this.tileSize ) 	{ return(false); }
 		if( tileIdx < 0 || tileIdx >= this.numtiles )		{ return(false); }
