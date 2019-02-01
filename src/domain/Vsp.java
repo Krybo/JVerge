@@ -465,7 +465,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	public static boolean saveVsp( Vsp v, String filename )
 		{ return( v.save(filename) ); }
 
-	private boolean save(String filename) 
+	private boolean save( String filename ) 
 		{
 		ExtendedDataOutputStream f = null;
 		try {
@@ -480,7 +480,8 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 			f.writeSignedIntegerLittleEndian(this.getCompression());
 
 			// Saves all tiles as a RLE compressed byte block.
-			byte[] pixels = f.getPixelArrayFromFrames(tiles, tiles.length, this.tileSize, this.tileSize);
+			byte[] pixels = f.getPixelArrayFromFrames( tiles,
+					tiles.length, this.tileSize, this.tileSize);
 			f.writeCompressedBytes(pixels);
 
 			f.writeSignedIntegerLittleEndian( this.getNumAnimations() );
@@ -854,10 +855,8 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 	
 	public boolean modifyTile( int tileIdx, BufferedImage newTileImage )
 		{
-		if( newTileImage.getColorModel().hasAlpha() )
-			{
-			System.out.println("WARN: VSP modifyTile input img has alpha channel.");
-			}
+		// It does not matter if the incoming VImage has an alpha channel --
+		//    it will be ignored when saved. 
 		if( newTileImage.getWidth() != this.tileSize ) 	{ return(false); }
 		if( newTileImage.getHeight() != this.tileSize ) 	{ return(false); }
 		if( tileIdx < 0 || tileIdx >= this.numtiles )		{ return(false); }

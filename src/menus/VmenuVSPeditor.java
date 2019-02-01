@@ -5,6 +5,8 @@ import static core.Script.setMenuFocus;
 import static core.Script.getInput;
 
 import java.awt.Color;
+import java.awt.image.ColorModel;
+import java.awt.image.DirectColorModel;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -1393,8 +1395,19 @@ public class VmenuVSPeditor implements Vmenu
 					{ break; }
 				if( isCntl == true && isAlt == true )
 					{		// Full VSP inport from clipboard.
-					this.handleVspPaste( core.Script.getClipboardVImage());
-					this.statusMessage("VSP import from clipboard");
+					if( this.handleVspPaste( core.Script.getClipboardVImage(),
+							0,0,1,0 ) )
+						{ 
+						this.statusMessage("VSP clipboard import OK - 1px padding");
+						}
+					else { this.statusMessage("VSP clipboard import FAILURE"); }
+					break;					
+					}
+				if( isCntl == true && isShift == true )
+					{		// Full VSP inport from clipboard.
+					this.handleVspPaste( core.Script.getClipboardVImage(),
+							0,0,0,0 );
+					this.statusMessage("VSP import from clipboard - No Padding");
 					break;					
 					}
 				if( isCntl == true )
@@ -1913,7 +1926,7 @@ public class VmenuVSPeditor implements Vmenu
 
 /**  Sets the working tile to an arbituary VImage.
  * If source is larger, this will only use the top x,y pixels.
- * No padding is involved. 
+ * No padding is involved.   All color values are forced to opaque alpha.
  * @param vi  Any Source VImage
  */
 	private void loadWorkingImage( VImage vi )
@@ -1923,7 +1936,6 @@ public class VmenuVSPeditor implements Vmenu
 		if( vi.getHeight() < z )		{ return; }
 		
 		Color cTmp;
-		
 		for( int y = 0; y < z; y++ )
 			{ 
 			for( int x = 0; x < z; x++ )			
@@ -1931,11 +1943,13 @@ public class VmenuVSPeditor implements Vmenu
 				int idx = (y*z)+x;
 				if( idx >= this.main.countMenuItems() )
 					{ continue; }
-				cTmp = vi.getPixelColor(x, y);
+				// Color Transparency must not be allowed past here.
+				//   This method forces the color to an opaque alpha.
+				cTmp = vi.getPixelColorAtIndex( idx, 255 );
 				if( VImage.colorRGBcomp(cTmp, this.clrTrans ) == true )
 					{ cTmp = this.clrTrans; }
 				VmiButton element = 
-						(VmiButton) this.main.getMenuItem(idx);
+					(VmiButton) this.main.getMenuItem(idx);
 				element.setColorComponent(
 					enumMenuButtonCOLORS.BODY_INACTIVE, 
 					cTmp );
@@ -1959,7 +1973,7 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if( this.obsEditMode )
 			{ return; }
-//		System.out.println( " load tile # "+Integer.toString(vspIdx) );
+		System.out.println( " load tile # "+Integer.toString(vspIdx) );
 		if( this.vsp.checkTile(vspIdx) == false )
 			{  vspIdx = 0; }
 		this.tIndex = vspIdx;
@@ -2457,84 +2471,69 @@ public class VmenuVSPeditor implements Vmenu
 		this.statusMessage("Paste External Image");
 		return(true);
 		}
-
-	/** Paste a VSP from an image in the clipboard. 
-	 * Compatibility with external editors is unknown 
-	 * Always check return for false, which means something failed. */
-	private boolean handleVspPaste( VImage clipboardVImage )
+	
+	/** Chops up a source clipboard image starting at startX/startY
+	 *    into appropriately sized VSP tiles, 
+	 *    accounts for a padding between tiles which is ignored.
+	 *    Tiles are imported into the current VSP at tileOffset. 
+	 *    VSP will be automatically expanded to account for overflow.
+	 *    Unneeded space at the right/bottom edges of the source image
+	 *    	that are too small to fit into a tile+padding will be discarded. */
+	private boolean handleVspPaste( VImage clipboardVImage,
+			Integer startX, Integer startY, Integer paddingGridPx,
+			Integer tileOffset )
 		{
 		if( clipboardVImage == null )
 			{ 
 			System.err.println("VSP Paste : non-compatible data"); 
 			return(false);
 			}
-		int inX = clipboardVImage.getWidth();
-		int inY = clipboardVImage.getHeight();
+		if( startX < 0 )   { startX = 0; }
+		if( startY < 0 )   { startY = 0; }
+		if( paddingGridPx < 0 )   { paddingGridPx = 0; }
+		if( tileOffset >= this.vsp.getNumtiles() )
+			{ tileOffset = this.vsp.getNumtiles() - 1; }
+		Integer inX = clipboardVImage.getWidth();
+		Integer inY = clipboardVImage.getHeight();
+		if( (paddingGridPx * 2) > inX )   { return( false ); }
+		if( (paddingGridPx * 2) > inY )   { return( false ); }
 		Integer tcx, tcy;	// tile count in x and y.
 		int z = this.vsp.getTileSquarePixelSize();
 		if( z < 2 )   { return( false );  }		// stop any nonsense here.
 		Integer inportCount = 0;
 		boolean r;
-		// The incoming size must be a multiple of the square tile size
-		//  +1 padding is also acceptable.
-		if( (inX % z == 0) && (inY % z == 0) )		// No padding.
+		tcx = (inX - paddingGridPx) / (z + paddingGridPx);
+		tcy = (inY - paddingGridPx) / (z+paddingGridPx);
+		if( tcx <= 1 && tcy <= 1 )		// refuse to copy 1 tile vsp.
 			{
-			tcx = inX / z;
-			tcy = inY / z;
-			if( tcx <= 1 && tcy <= 1 )		// refuse to copy 1 tile vsp.
-				{
-				System.err.println("Refused to inport 1 tile VSP");
-				return( false );
-				}
-			this.setUndoPoint( new Vsp(this.vsp), 23 );
-			System.out.println("Clipboard paste in no-padding form x "+
-				tcx.toString() + " y " + tcy.toString() );
-			while( this.vsp.getNumtiles() < (tcx * tcy) )  
-				{ this.vsp.insertReplicaTile(0); }
-			for( int iy = 0; iy < tcy; iy++ )
-				{ for( int ix = 0; ix < tcx; ix++ )
-					{
-					r = this.vsp.modifyTile( iy * tcx + ix, 
-						clipboardVImage.getRegion( ix*z, iy*z, z, z) );
-					if( r == true ) { inportCount++; }
-				}	}
-			System.out.println("Inported "+inportCount.toString()+" tiles.");
-			this.loadWorkingTile();
-			this.loadTilePreview( true );
-			return( true );
+			System.err.println("Refused to inport 1 tile VSP");
+			return( false );
 			}
-		if( ((inX-1) % (z+1) == 0) &&  ((inY-1) % (z+1) == 0) ) //1px pad
-			{
-			tcx = (inX-1) / (z+1);
-			tcy = (inY-1) / (z+1);
-			if( tcx <= 1 && tcy <= 1 )		// refuse to copy 1 tile vsp.
+		this.setUndoPoint( new Vsp(this.vsp), 23 );
+		System.out.println( "Clipboard paste in no-padding form x " +
+			tcx.toString() + " y " + tcy.toString() );
+		while( this.vsp.getNumtiles() < (tileOffset + (tcx * tcy)) )  
+			{ this.vsp.insertReplicaTile(0); }
+		for( int iy = 0; iy < tcy; iy++ )
+			{ for( int ix = 0; ix < tcx; ix++ )
 				{
-				System.err.println("Refused to inport 1 tile VSP");
-				return(false); 
-				}
-			this.setUndoPoint( new Vsp(this.vsp), 24 );
-			System.out.println("Clipboard paste in padded form   x "+
-				tcx.toString() + " y " + tcy.toString() );
-			while( this.vsp.getNumtiles() < (tcx * tcy) )  
-				{ this.vsp.insertReplicaTile(0); }
-			for( int iy = 0; iy < tcy; iy++ )
-				{ for( int ix = 0; ix < tcx; ix++ )
-					{
-					
-					r = this.vsp.modifyTile( iy * tcx + ix, 
-						clipboardVImage.getRegion( ix*(z+1), iy*(z+1), 
-							z, z) );
-					if( r == true ) { inportCount++; }
-				}	}
-			this.statusMessage( "Inported " +
-				inportCount.toString()+" tiles.");
-			this.loadWorkingTile();
-			this.loadTilePreview( true );
-			return( true );
-			}
-		this.statusMessage( "Error: incompatible VSP Paste" );
-		return( false );
+				r = this.vsp.modifyTile( tileOffset + (iy * tcx + ix), 
+					clipboardVImage.getRegion( 
+						ix*(z+paddingGridPx) + startX + paddingGridPx, 
+						iy*(z+paddingGridPx) + startY + paddingGridPx,
+						 z, z) );
+				System.out.println(" DEBUG >> " + Integer.toString(ix) + " / " +
+					Integer.toString( iy ) +  "   " + 
+					Integer.toString( ix*(z+paddingGridPx) + startX + paddingGridPx) + " , " +
+					Integer.toString( iy*(z+paddingGridPx) + startY + paddingGridPx) );
+				if( r == true ) { inportCount++; }
+			}	}
+		System.out.println("Inported "+inportCount.toString()+" tiles.");
+		this.loadWorkingTile();
+		this.loadTilePreview( true );
+		return( true );
 		}
+
 
 /**  Takes clipboard contents and splits them into new tiles.
  * then inserts them starting at the current tile Index.
