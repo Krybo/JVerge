@@ -1395,19 +1395,16 @@ public class VmenuVSPeditor implements Vmenu
 					{ break; }
 				if( isCntl == true && isAlt == true )
 					{		// Full VSP inport from clipboard.
-					if( this.handleVspPaste( core.Script.getClipboardVImage(),
-							0,0,1,0 ) )
-						{ 
-						this.statusMessage("VSP clipboard import OK - 1px padding");
-						}
-					else { this.statusMessage("VSP clipboard import FAILURE"); }
+					if( ! this.handleVspPaste( core.Script.getClipboardVImage(),
+							0,0,0,0 ) )
+						{ this.statusMessage("VSP clipboard import FAILURE"); }
 					break;					
 					}
 				if( isCntl == true && isShift == true )
 					{		// Full VSP inport from clipboard.
-					this.handleVspPaste( core.Script.getClipboardVImage(),
-							0,0,0,0 );
-					this.statusMessage("VSP import from clipboard - No Padding");
+					if( ! this.handleVspPaste( core.Script.getClipboardVImage(),
+							0,0,1,0 ) )
+						{ this.statusMessage("VSP clipboard import FAILURE"); }
 					break;					
 					}
 				if( isCntl == true )
@@ -2522,15 +2519,21 @@ public class VmenuVSPeditor implements Vmenu
 						ix*(z+paddingGridPx) + startX + paddingGridPx, 
 						iy*(z+paddingGridPx) + startY + paddingGridPx,
 						 z, z) );
-				System.out.println(" DEBUG >> " + Integer.toString(ix) + " / " +
-					Integer.toString( iy ) +  "   " + 
-					Integer.toString( ix*(z+paddingGridPx) + startX + paddingGridPx) + " , " +
-					Integer.toString( iy*(z+paddingGridPx) + startY + paddingGridPx) );
+//				System.out.println(" DEBUG >> " + Integer.toString(ix) + " / " +
+//					Integer.toString( iy ) +  "   " + 
+//					Integer.toString( ix*(z+paddingGridPx) + startX + paddingGridPx) + " , " +
+//					Integer.toString( iy*(z+paddingGridPx) + startY + paddingGridPx) );
 				if( r == true ) { inportCount++; }
 			}	}
 		System.out.println("Inported "+inportCount.toString()+" tiles.");
 		this.loadWorkingTile();
 		this.loadTilePreview( true );
+		String addendum = new String("");
+		if( paddingGridPx > 0 )
+			{ addendum = ": " + paddingGridPx.toString() + " px Padding "; }
+		this.statusMessage("Imported " +
+				inportCount.toString() + " Tiles from clipboard @ tile " + 
+				tileOffset.toString() +  addendum );
 		return( true );
 		}
 
@@ -4115,6 +4118,10 @@ public class VmenuVSPeditor implements Vmenu
 		info.add("{CNTL+ALT} V ");
 		info.add("ALL");
 		info.add("attempt full VSP clipboard paste-overwrite from tile 0");
+		
+		info.add("{CNTL+SHIFT} V ");
+		info.add("ALL");
+		info.add("Same as previous, sources with 1 px padding");
 
 		info.add(" W ");
 		info.add("MAIN");
