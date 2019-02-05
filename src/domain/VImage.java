@@ -101,6 +101,8 @@ public class VImage implements Transferable
 //			+ " CM = " + this.image.getColorModel().toString() );
 		return;
 		}
+		
+	
 
 	// Krybo (Feb.2016)  : create a new VImage & fills it with solid Color c
 	public VImage( int x, int y, Color c ) 

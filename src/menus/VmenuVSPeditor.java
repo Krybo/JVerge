@@ -1408,17 +1408,16 @@ public class VmenuVSPeditor implements Vmenu
 					break;					
 					}
 				if( isCntl == true )
-					{		// tile paste + working save.
+					{		// working tile paste and save.
 					this.handleTilePaste( core.Script.getClipboardVImage() );
 					this.saveWorkingTile();
 					this.statusMessage("VSP import+save from clipboard");
 					break;
 					}
 				if( isShift == true )
-					{		// Insert tiles from clipboard.
-					this.handleTileInsert( 
-							core.Script.getClipboardVImage() );
-					this.saveWorkingTile();
+					{		// Insert single tile from OS clipboard.
+					if( ! this.handleTileInsert(core.Script.getClipboardVImage()))
+						{ this.statusMessage("Clipboard tile insert FAILURE" ); }
 					break;
 					}
 				this.handleTilePaste( core.Script.getClipboardVImage() );
@@ -2545,15 +2544,52 @@ public class VmenuVSPeditor implements Vmenu
  *
  * @param clipboardVImage		Image to chop & insert.
  */
-	private void handleTileInsert( VImage clipboardVImage )
+	private boolean handleTileInsert( VImage clipboardVImage )
 		{
-		if( clipboardVImage == null )	{ return; }
+		if( clipboardVImage == null )	{ return( false ); }
+		int z = this.vsp.getTileSquarePixelSize();
+		
 		this.setUndoPoint( new Vsp(this.vsp), 25 );
-		VImage parts[] = VImage.splitIntoTiles( clipboardVImage,
-				0, 0, this.vsp.getTileSquarePixelSize() );
-		for( int n = (parts.length-1); n >= 0; n-- )
-			{	this.vsp.insertTile( this.tIndex, parts[n].getImage() );	}
-		return;
+		this.vsp.insertReplicaTile( this.tIndex );
+		this.clearWorkingTile( new Color(0.0f, 0.0f, 0.0f, 1.0f ) );
+		int srcW = clipboardVImage.getWidth();
+		int srcH = clipboardVImage.getHeight();
+		
+		/* Trying to use VImage routines with a clipboard img subRegion
+		 * into a copied vsp tile failed.   Not sure why... but the old
+		 * fashioned way does the job accurately & fast enough  */
+		for( int cx = 0; cx < z; cx++ )
+			{
+			for( int cy = 0; cy < z; cy++ )	
+				{
+				if(	cx > srcW  ||  cy > srcH )
+					{
+					this.setPixel( cx+1, cy+1, 
+							core.Script.Color_DEATH_MAGENTA );
+					continue;
+					}
+				int idx = cy * srcW + cx; 
+				Color clr = new Color(
+					clipboardVImage.getPixelColorAtIndex(idx, 255).getRed(),
+					clipboardVImage.getPixelColorAtIndex(idx, 255).getGreen(),
+					clipboardVImage.getPixelColorAtIndex(idx, 255).getBlue() );
+				this.setPixel(cx+1, cy+1, clr ); 
+				}
+			}
+		
+		Double srcZ = new Double( 
+				clipboardVImage.getWidth() * clipboardVImage.getHeight());
+		Double tileZ = new Double( z * z );
+		Double percentile =  100d - ((srcZ - tileZ) / srcZ * 100d);
+		if( percentile > 100.d )   { percentile = 100.d; }
+
+		this.saveWorkingTile();
+		this.updatePreview();
+		this.statusMessage( "Clipboard tile inserted @ "+
+				Integer.toString(this.tIndex) + " :: " + 
+				Integer.toString( percentile.intValue() ) +
+				" % of clipboard size");
+		return( true );
 		}
 
 	private void toggleVspOverview()
@@ -3010,6 +3046,26 @@ public class VmenuVSPeditor implements Vmenu
 		hmC.put(enumMenuButtonCOLORS.BODY_SELECTED.value(), 
 				VmenuVSPeditor.invertColor(c) );
 		this.main.setColorAll( hmC );
+		return;
+		}
+	
+	/** Change pixel color of given coordinates within working tile.
+	 * 	Cell coordinates are Base 1
+	 *    does nothing if coordinates are invalid.  */
+	private void setPixel( int x, int y, Color c )
+		{
+		if( c == null )
+			{ c = this.clrTrans; }
+		int z = this.vsp.getTileSquarePixelSize();
+		if( x < 1  ||  y < 1 )   { return; }
+		if( x > z  ||  y > z )   { return; }
+		HashMap<Integer,Color> hmC = 
+			new HashMap<Integer,Color>();
+		hmC.put(enumMenuButtonCOLORS.BODY_ACTIVE.value(), c );
+		hmC.put(enumMenuButtonCOLORS.BODY_INACTIVE.value(), c );
+		hmC.put(enumMenuButtonCOLORS.BODY_SELECTED.value(), 
+				VmenuVSPeditor.invertColor(c) );
+		this.main.getMenuItemAsButton( x-1, y-1 ).setColorContent( hmC );
 		return;
 		}
 
@@ -4105,11 +4161,11 @@ public class VmenuVSPeditor implements Vmenu
 
 		info.add(" V ");
 		info.add("ALL");
-		info.add("clipboard paste into working tile");
+		info.add("clipboard paste: overwrite working tile");
 
 		info.add("{CNTL} V ");
 		info.add("ALL");
-		info.add("clipboard paste into working tile & save");
+		info.add("clipboard paste: overwrite working tile & save");
 
 		info.add("{SHIFT} V ");
 		info.add("ALL");

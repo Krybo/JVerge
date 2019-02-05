@@ -1145,6 +1145,10 @@ public class VmenuButtonPalette implements Vmenu
 		{
 		return( (VmiButton) this.hmButtons.get(index) );
 		}
+	public VmiButton getMenuItemAsButton( int cellX, int cellY )
+		{
+		return( (VmiButton) this.hmButtons.get( cellY*this.col + cellX ));
+		}		
 	public VmiButton[] getMenuItemAsButtonArray()
 		{
 		VmiButton[] mbs = new VmiButton[this.countMenuItems()];
