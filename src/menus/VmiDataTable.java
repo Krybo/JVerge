@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import domain.VImage;
+import menus.VmiButton.enumMenuButtonCOLORS;
 
 /**  VmiDataTable - a VERGE menu item element intended for displaying 
  *    a lot of tabular data at once, intended to help inventory display or shops.
@@ -113,6 +114,9 @@ public class VmiDataTable implements Vmenuitem
 	//    zero or null means unlimited.
 	private HashMap<Integer,Integer> cellTruncationBounds;
 	private HashMap<Integer,Integer> calcColumnWidth;
+	// TODO:  implement blinking by enabling it on a cell based property
+	private boolean oscillatingSelection;
+	private Integer oscillatingFreq;
 
 	public static enum enumMenuDataTableCOLORS
 		{
@@ -252,6 +256,8 @@ public class VmiDataTable implements Vmenuitem
 		this.hotkeyCode = -1;
 		this.captionTextWidth = 0;
 		this.captionTextHeight = 0;
+		this.oscillatingSelection = false;
+		this.oscillatingFreq = 0;
 		this.captionHeight = new Double( 0.0d );
 		this.cells = new HashMap<Integer,TableCell>();
 		
@@ -303,6 +309,7 @@ public class VmiDataTable implements Vmenuitem
 		private Boolean showGrid, showLabel, showImageAsLabel;
 		private Boolean needsUpdate;
 		private Boolean showVoidSpace;
+		private Boolean isBlinking;
 		private Font myFont;
 		private Color clrGridX, clrGridY, clrText, clrLabel;
 		private Integer bareAccent;		// Text accent value of font
@@ -321,6 +328,7 @@ public class VmiDataTable implements Vmenuitem
 			this.showImageAsLabel = false;
 			this.myFont = fnt;
 			this.needsUpdate = true;
+			this.isBlinking = false;
 			this.yVoidSpace = 0;
 			this.xVoidSpace = 0;
 			this.pxW = 0;
@@ -570,6 +578,15 @@ public class VmiDataTable implements Vmenuitem
 			// Padding & border adjustments
 			Integer inset = this.pxPadding + this.pxBorder;
 			Integer outset = this.pxPadding * 2 + this.pxBorder;
+			
+			if( this.isBlinking )
+				{
+//  TODO : implement this by blitting a colored rectangle first.
+//              Use the bounds set below for the gridlines
+//				bodyColor = Vmenuitem.oscillateColor( this.hmColorItems.get(
+//					enumMenuButtonCOLORS.BODY_SELECTED.value()), 
+//					Vmenuitem.generateTimeCycler( this.oscillatingFreq ) );
+				}
 			
 			String fullText = new String( myText );
 			int imgAdj = 0;
@@ -1176,6 +1193,29 @@ public class VmiDataTable implements Vmenuitem
 			{ this.desc  = descriptions[1]; }
 		return;
 		}
+	
+	
+	public void enableOscillation( Integer freqMsec )
+		{
+		this.oscillatingSelection = true;
+		this.oscillatingFreq = freqMsec;
+		return;
+		}
+	public void disableOscillation( )
+		{
+		this.oscillatingSelection = false;
+		this.oscillatingFreq = 0;
+		return;
+		}
+	public boolean isOscillating()
+		{
+		return( this.oscillatingSelection );	
+		}
+	public Integer getOscillationFrequency()
+		{ return( this.oscillatingFreq); }
+
+	
+	// ----------------------------- end interface funcs ----------------------------
 	
 	/** Returns the column number from an index number, 
 	 *    taking into account the scan mode.  */

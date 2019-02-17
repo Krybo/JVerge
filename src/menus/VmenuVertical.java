@@ -48,6 +48,9 @@ public class VmenuVertical implements Vmenu
 	private Long focusID = new Long(-1);
 	private Long parentID = new Long(-1);
 	private Long childID = new Long(-1);
+	private int blinkMsec;
+	private int blinkingState;
+	private boolean isBlinkingCursor;
 
 	public VmenuVertical()
 		{
@@ -285,6 +288,7 @@ public class VmenuVertical implements Vmenu
 		if (redraw)
 			{
 			this.resolvePositions();
+			this.resolveStates();
 			}
 		return (redraw);
 		}
@@ -339,15 +343,17 @@ public class VmenuVertical implements Vmenu
 			{
 			counter++;
 			if (myvmi.isActive() == false)
-				{
-				continue;
-				}
+				{ continue; }
+			Vmenuitem vm = this.content.get( counter );
+			if( this.isBlinkingCursor  &&  vm.getState() == this.getBlinkingState())
+				{ vm.enableOscillation( this.blinkMsec ); }
+			else { vm.disableOscillation(); }
 
 			// Manage state based on selectedIndex
 			// Do different things to selected/non-selected items
 			// sometimes based on their individual state
-			if (counter == this.selectedIndex)
-				{ // This is the currently selected content
+			if( counter == this.selectedIndex)
+				{      // This is the currently selected content			
 				switch (this.content.get(counter).getState())
 					{
 					case 2: // Activated
@@ -854,57 +860,89 @@ public class VmenuVertical implements Vmenu
 		return;
 		}
 
-	//
-	// private ArrayList<Long> getSubmenuFocusID()
-	// {
-	// boolean recurse = true;
-	// ArrayList<Long> rslt = new ArrayList<Long>();
-	//
-	// // Recurses up to 5 levels and gets IDs
-	// for( Integer x : this.hmSubmenus.keySet() ))
-	// {
-	// rslt.add( this.hmSubmenus.get(x).getFocusId() );
-	// if( this.hmSubmenus.get(x).hasSubmenus() == true )
-	// {
-	// Vmenu tmp = this.getSubmenus(x);
-	// rslt.add(tmp.getFocusId());
-	// if( tmp.hasSubmenus() == true )
-	// {
-	// Vmenu tmp2 = tmp.getSubmenus(x);
-	// rslt.add(tmp2.getFocusId());
-	// if( tmp2.hasSubmenus() == true )
-	// {
-	// Vmenu tmp3 = tmp2.getSubmenus(x);
-	// rslt.add(tmp3.getFocusId());
-	// if( tmp3.hasSubmenus() == true )
-	// {
-	// Vmenu tmp4 = tmp3.getSubmenus(x);
-	// rslt.add(tmp4.getFocusId());
-	// if( tmp4.hasSubmenus() == true )
-	// {
-	// Vmenu tmp5 = tmp4.getSubmenus(x);
-	// rslt.add( tmp5.getFocusId() );
-	// }
-	// }
-	// }
-	// }
-	// }
-	// }
-	// return(rslt);
-	// }
-
-	// public Vmenu getSubmenuByID( Long targetID )
-	// {
-	//
-	// for( Integer x : this.hmSubmenus.keySet() ))
-	// {
-	// Vmenu tmp = this.hmSubmenus.get(x);
-	// if( tmp.getFocusId() == targetID ) { return(tmp); }
-	// if( tmp.hasSubmenus() == true )
-	// {
-	//
-	// }
-	// }
-	// }
+	/** Cause all menuitems in the given state to blink by oscillating 
+	 * their defined background colors between black & white. */
+	public void setBlinking( boolean onOff, int frqMsec, int state )
+		{
+		this.blinkMsec = frqMsec;
+		this.blinkingState = state;
+		if( this.blinkMsec < 0 )
+			{ this.blinkMsec = 0; }
+		this.isBlinkingCursor = onOff;
+		if( ! this.isBlinkingCursor )
+			{ this.blinkMsec = 0; }
+		return;
+		}
+	/** Turns blinking on or off.   The full constructor must be called
+	 * before using this toggle, or it will do nothing. 
+	 * Enforces that the frequency is not zero. */	
+	public void setBlinking( boolean onOff )
+		{
+		if( this.blinkMsec > 0 ) 
+			{ this.isBlinkingCursor = onOff; } 
+		return;
+		}
+	public boolean isBlinkingCursor()
+		{ return( this.isBlinkingCursor ); }
+	public Integer getBlinkingFrequency()
+		{ return( this.blinkMsec ); }
+	public int getBlinkingState()
+		{ return( this.blinkingState ); }
 
 	}
+	
+	
+
+//  * GRAVEYARD *
+// private ArrayList<Long> getSubmenuFocusID()
+// {
+// boolean recurse = true;
+// ArrayList<Long> rslt = new ArrayList<Long>();
+//
+// // Recurses up to 5 levels and gets IDs
+// for( Integer x : this.hmSubmenus.keySet() ))
+// {
+// rslt.add( this.hmSubmenus.get(x).getFocusId() );
+// if( this.hmSubmenus.get(x).hasSubmenus() == true )
+// {
+// Vmenu tmp = this.getSubmenus(x);
+// rslt.add(tmp.getFocusId());
+// if( tmp.hasSubmenus() == true )
+// {
+// Vmenu tmp2 = tmp.getSubmenus(x);
+// rslt.add(tmp2.getFocusId());
+// if( tmp2.hasSubmenus() == true )
+// {
+// Vmenu tmp3 = tmp2.getSubmenus(x);
+// rslt.add(tmp3.getFocusId());
+// if( tmp3.hasSubmenus() == true )
+// {
+// Vmenu tmp4 = tmp3.getSubmenus(x);
+// rslt.add(tmp4.getFocusId());
+// if( tmp4.hasSubmenus() == true )
+// {
+// Vmenu tmp5 = tmp4.getSubmenus(x);
+// rslt.add( tmp5.getFocusId() );
+// }
+// }
+// }
+// }
+// }
+// }
+// return(rslt);
+// }
+
+// public Vmenu getSubmenuByID( Long targetID )
+// {
+//
+// for( Integer x : this.hmSubmenus.keySet() ))
+// {
+// Vmenu tmp = this.hmSubmenus.get(x);
+// if( tmp.getFocusId() == targetID ) { return(tmp); }
+// if( tmp.hasSubmenus() == true )
+// {
+//
+// }
+// }
+// }
+

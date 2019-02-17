@@ -42,6 +42,10 @@ public class VmiButton implements Vmenuitem
 	private boolean centered = false;
 	private boolean active = false;
 	private boolean visible = false;
+		// Turning this on will cause the body color to oscillate with time. (blink)
+		//  Frequency in msec. per cycle
+	private boolean oscillatingSelection = false;
+	private Integer oscillatingFreq = 0;
 
 	private Long parentID = new Long(-1);
 	private Long id = new Long(-1);
@@ -120,6 +124,9 @@ public class VmiButton implements Vmenuitem
 		this.keycode = -1;
 		this.state = new Integer(0);
 		this.FrameThicknessPx = frameThickness;
+		
+		this.oscillatingSelection = false;
+		this.oscillatingFreq = 0;
 		
 		// Enforce minimum dimensions.
 		if( this.w < VmiButton.getMinDimensionPx() )	
@@ -330,8 +337,12 @@ public class VmiButton implements Vmenuitem
 	
 	public void paint(VImage target)
 		{
-		if( this.visible == false ) { return; }
-
+		if( this.visible == false )  { return; }
+		
+		Color bodyColor;
+		Color shellColor;
+		Color blinkColor;
+		
 		int x1 = (this.ax + this.rx) - (this.w / 2);
 		int y1 = (this.ay + this.ry)  - (this.h / 2);
 		int x2 = x1 + this.w - 1;
@@ -362,7 +373,7 @@ public class VmiButton implements Vmenuitem
 			x2 -= this.shadowThicknessPx;
 			y2 -= this.shadowThicknessPx;
 			}
-
+		
 			// We're drawing a circle/oval, not a square.
 		int radX = 0;
 		int radY = 0;
@@ -404,8 +415,6 @@ public class VmiButton implements Vmenuitem
 				}
 			}
 		
-		Color bodyColor;
-		Color shellColor;
 		Color shadowColor = new Color(0.0f,0.0f,0.0f,0.0f);
 
 		switch( state.intValue() )
@@ -434,6 +443,13 @@ public class VmiButton implements Vmenuitem
 				shellColor = this.hmColorItems.get(
 					enumMenuButtonCOLORS.FRAME_OUTER.value() );
 				break;
+			}
+		
+		if( this.isOscillating() )	// Calculate "blinking cursor" oscillated color
+			{
+			bodyColor = Vmenuitem.oscillateColor( this.hmColorItems.get(
+				enumMenuButtonCOLORS.BODY_SELECTED.value()), 
+				Vmenuitem.generateTimeCycler( this.oscillatingFreq ), false );
 			}
 		
 		int tmpX1, tmpY1, tmpX2, tmpY2;
@@ -831,5 +847,24 @@ public class VmiButton implements Vmenuitem
 	 * Typicall zero if it is not referenced by anything. */
 	public int getYrel()
 		{ return(this.ry); }
+	
+	public void enableOscillation( Integer freqMsec )
+		{
+		this.oscillatingSelection = true;
+		this.oscillatingFreq = freqMsec;
+		return;
+		}
+	public void disableOscillation( )
+		{
+		this.oscillatingSelection = false;
+		this.oscillatingFreq = 0;
+		return;
+		}
+	public boolean isOscillating()
+		{
+		return( this.oscillatingSelection );	
+		}
+	public Integer getOscillationFrequency()
+		{ return( this.oscillatingFreq); }
 	
 	}

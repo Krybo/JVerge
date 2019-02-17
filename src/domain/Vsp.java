@@ -860,7 +860,7 @@ https://github.com/chuckrector/maped2w/blob/master/src/MAPED.cpp
 		if( newTileImage.getWidth() != this.tileSize ) 	{ return(false); }
 		if( newTileImage.getHeight() != this.tileSize ) 	{ return(false); }
 		if( tileIdx < 0 || tileIdx >= this.numtiles )		{ return(false); }
-		tiles[tileIdx] = newTileImage;
+		tiles[tileIdx] = VImage.ImageDeepCopy( newTileImage );
 		return(true);
 		}
 	public boolean modifyTile( int tileIdx, VImage newTileImage )

@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import domain.VImage;
+import menus.VmiButton.enumMenuButtonCOLORS;
  
 
 /**	Vmenuitem: 
@@ -111,6 +112,18 @@ public interface Vmenuitem
 	public boolean isActive();
 	public boolean isVisible();
 	
+	/* Enables blinking highlighting in menuitems
+	 * Vmenuitem implementations display the blinking using background colors 
+	 *    along with trig. and the system clock.
+	 * Vmenu implementations must control the blinking amongst their items.
+	 * Proper animation needs to be enabled in Vmenu for this to be shown.
+	 * Blinking image backgrounds could be implemented but thats not 
+	 *    recommended due to performance concerns.. 
+	 */
+	public void enableOscillation( Integer freqMsec );
+	public void disableOscillation();
+	public boolean isOscillating();
+	public Integer getOscillationFrequency();
 
 	//  To attach a menuitem to a keystroke.
 	public Integer getKeycode();
@@ -153,4 +166,66 @@ public interface Vmenuitem
 	public void setTip( String[] descriptions );
 	public void setTip( String helpCaption );
 
+	/** Varies a color between white > color > black on a 
+	 * cycle (trig) variable that varies between -1 and 1 */
+	public static Color oscillateColor( Color in, Double cycle, boolean invert)
+		{
+		int r = in.getRed();
+		int g = in.getGreen();
+		int b = in.getBlue();
+		int dr = 255 - r;
+		int dg = 255 - g;
+		int db = 255 - b;
+		if( cycle == 0.0d )   { return( in ); }
+		if( ! invert )
+			{
+			if( cycle < 0.0d )
+				{
+				r = r - new Double( r * Math.abs( cycle ) ).intValue();
+				g = g - new Double( g * Math.abs( cycle ) ).intValue();
+				b = b - new Double( b * Math.abs( cycle ) ).intValue();
+				}
+			else {
+				r += ( dr * cycle);
+				g += ( dg * cycle);
+				b += ( db * cycle);
+				}
+			}
+		else
+			{
+			if( cycle > 0.0d )
+				{
+				r = r - new Double( r * Math.abs( cycle ) ).intValue();
+				g = g - new Double( g * Math.abs( cycle ) ).intValue();
+				b = b - new Double( b * Math.abs( cycle ) ).intValue();
+				}
+			else {
+				r += ( dr * cycle);
+				g += ( dg * cycle);
+				b += ( db * cycle);
+				}
+			}
+		return( new Color( r,g,b ) );
+		}		
+	
+	/** Returns a value between one and negative one depending
+	 * on the current system time and a given frequency. 
+	 * To be used by blinking animations and similar. 
+	 * Frequency must be a positive integer, internally enforced.  */
+	public static Double generateTimeCycler( Long frequencyMsec )
+		{
+		if( frequencyMsec <= 0 )   { return( 0.0d ); }
+		Long nsCycle = frequencyMsec * new Long( 1000000 );
+		Long t = System.nanoTime();
+		Long nsTime = Long.remainderUnsigned( t, nsCycle ); // t % nsCycle;
+//		Long nsTime = Math.floorMod( t, nsCycle );  
+		if( nsTime <= 0 )   {  nsTime = new Long(1); }  // not allowed to be 0
+		Double rads = (nsTime.doubleValue() / nsCycle.doubleValue()) *
+				Math.PI * 2.0d;
+		return( Math.sin( rads ) );
+		}
+	// a simple type cast overload.
+	public static Double generateTimeCycler( Integer freqencyMsec )
+		{ return( Vmenuitem.generateTimeCycler( new Long( freqencyMsec ))); }
+	
 	}

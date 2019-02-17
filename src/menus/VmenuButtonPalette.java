@@ -29,7 +29,9 @@ public class VmenuButtonPalette implements Vmenu
 	private boolean enableWrap = true;
 	private boolean autoCenter = true;
 	private boolean isMultiSelect = false;
-	
+	private boolean isBlinkingCursor = false;
+	private int blinkingState = 0;
+	private int blinkMsec = 0; 
 
 	private Integer row = 3;
 	private Integer col = 3;
@@ -76,7 +78,7 @@ public class VmenuButtonPalette implements Vmenu
 	 * @param hm	HashMap<Integer,Vmenuitem> pre-defined content
 	 *   only Vmenuitems of tyhpe VmiButton will be accepted. rest nulled 
 	 */
-	public VmenuButtonPalette(int x0, int y0, int widthPx, int hgtPx,
+	public VmenuButtonPalette( int x0, int y0, int widthPx, int hgtPx,
 			int numCols, int numRows, HashMap<Integer,Vmenuitem> hm )
 		{
 		this.x = x0;
@@ -90,13 +92,12 @@ public class VmenuButtonPalette implements Vmenu
 		this.hmButtons = hm;
 		for( Integer n : this.hmButtons.keySet() )	// Check em.
 			{
-				// someone trying to insert something besides a VmiButton. 
-				// Stop them.
+				// stops attempt to insert something besides a VmiButton. 
 			if( ! this.hmButtons.get(n).getClass().isInstance( 
 					VmiButton.class ) )
 				{
 				System.err.print("Incompatible Vmenuitem sent to button palette!");
-				this.hmButtons.put(n,new VmiButton() );
+				this.hmButtons.put( n,new VmiButton() );
 				this.hmButtons.get(n).setState(
 					enumMenuItemSTATE.DISABLED.value());
 				}
@@ -105,6 +106,9 @@ public class VmenuButtonPalette implements Vmenu
 		
 		this.selectedIndex = -1;
 		this.focusID = Vmenu.getRandomID();
+		this.blinkingState = enumMenuItemSTATE.SELECTED.value();
+		this.blinkMsec = 0;
+		this.isBlinkingCursor = false;
 		
 		this.caption = new VmiTextSimple(" Button Palette ");
 		this.helpBar = new VmiTextSimple(" ");
@@ -192,7 +196,7 @@ public class VmenuButtonPalette implements Vmenu
 	public boolean animate( VImage target )
 		{ return false; }
 	
-	public boolean paint(VImage target)
+	public boolean paint( VImage target )
 		{
 		// System.out.println("VerticalMenu draw called.");
 		if (this.isVisible == false)
@@ -293,6 +297,23 @@ public class VmenuButtonPalette implements Vmenu
 		
 		return(true);
 		}
+	
+	/** A special paint method that only redraws the sub menuitems
+	 * which are in the provided state.  It does not redraw the caption, frame, 
+	 * or anything else.  Will not draw non-visible items. */
+	public void paintInState( VImage target, int menuitemState )
+		{
+		for( Integer n : this.hmButtons.keySet() )
+			{
+			Vmenuitem myvmi = this.hmButtons.get(n);
+			if( myvmi.getState() != menuitemState )
+				{ continue; }
+			if (myvmi.isVisible() == false )
+				{	continue;		}
+			myvmi.paint( target );
+			}
+		return;
+		}
 
 	public boolean reposition(int posX, int posY, 
 			int relPosX, int relPosY)
@@ -340,7 +361,7 @@ public class VmenuButtonPalette implements Vmenu
 			// Bad button got in palette... fix it.
 			if( this.hmButtons.get(n) == null )
 				{
-				this.hmButtons.put(n, new VmiButton() );
+				this.hmButtons.put( n, new VmiButton() );
 				this.hmButtons.get(n).setState(
 						enumMenuItemSTATE.DISABLED.value() );
 				}
@@ -348,11 +369,11 @@ public class VmenuButtonPalette implements Vmenu
 			if( tmp01 != null )
 				{ this.hmHotkeyMap.put(n, tmp01 ); }
 			}
-
+		
 		Double dx = new Double( this.w-(this.pad*(this.col+1))) / 
 			this.col.doubleValue();
 		Double dy = new Double( (ySpace-(this.pad*(this.row+1)))) /
-				this.row.doubleValue();
+			this.row.doubleValue();
 
 		this.xCellDiff = dx;
 		this.yCellDiff = dy;
@@ -387,7 +408,7 @@ public class VmenuButtonPalette implements Vmenu
 		}
 
 
-	public boolean doControls(Integer kc )
+	public boolean doControls( Integer kc )
 		{
 		boolean redraw = false;
 		
@@ -401,8 +422,11 @@ public class VmenuButtonPalette implements Vmenu
 		boolean isShift = Controls.extcodeGetSHIFT(kc);
 		boolean isCntl = Controls.extcodeGetCNTL(kc);
 			// The selected button.  This simplifies code alot.
-		Vmenuitem sltd = this.hmButtons.get(this.selectedIndex);
+		Vmenuitem sltd = this.hmButtons.get( this.selectedIndex );
 		
+		// Avoid using return() in this switch statement, as certain states need
+		//  to be negotiated prior, depending on what the keystroke does.
+		int oldSelectedIndex = this.selectedIndex;
 		switch( basecode )
 			{
 			case 8: // BACKSPACE <CANCEL>
@@ -517,7 +541,7 @@ public class VmenuButtonPalette implements Vmenu
 					+ basecode.toString() + "> ");
 				break;
 			}
-
+		
 //		System.out.println(Integer.toString( this.selectedIndex ));
 		
 		// Inactive item ward:  prevent Inf-loop
@@ -635,6 +659,10 @@ public class VmenuButtonPalette implements Vmenu
 
 			if( myvmi.isActive() == false )
 				{	continue;	}
+			if( this.isBlinkingCursor && myvmi.getState() == this.blinkingState )
+				{ myvmi.enableOscillation( this.getBlinkingFrequency() ); }
+			else { myvmi.disableOscillation(); }
+			
 			// Do not monkey with the button states if in multi-select mode.
 			if( this.isMultiSelect == true )
 				{ 	continue; }
@@ -1145,6 +1173,10 @@ public class VmenuButtonPalette implements Vmenu
 		{
 		return( (VmiButton) this.hmButtons.get(index) );
 		}
+	public VmiButton getSelectedMenuItemAsButton()
+		{
+		return( (VmiButton) this.hmButtons.get( this.selectedIndex ) );
+		}
 	public VmiButton getMenuItemAsButton( int cellX, int cellY )
 		{
 		return( (VmiButton) this.hmButtons.get( cellY*this.col + cellX ));
@@ -1204,6 +1236,61 @@ public class VmenuButtonPalette implements Vmenu
 		{
 		for( Integer n : this.hmButtons.keySet() )
 			{	this.hmButtons.get(n).setState(e.value());	}
+		return;
+		}
+	/** Set the state of the selected / cursor button. 
+	 *   This does nothing unless in multi select mode  */
+	public void setSelectedButtonState( enumMenuItemSTATE e )
+		{
+		if( ! this.isMultiSelect)  { return; }
+		this.hmButtons.get( this.selectedIndex ).setState( e.value() );
+		return;
+		}
+	
+	/** Set the state of the selected / cursor button.
+	 *    with the option to set all non-selected items to a state. 
+	 *   Does nothing unless in multi select mode */	
+	public void setSelectedButtonState( enumMenuItemSTATE select,
+			enumMenuItemSTATE others )
+		{
+		if( ! this.isMultiSelect)  { return; }
+		for( Integer n : this.hmButtons.keySet() )
+			{
+			if( n == this.selectedIndex )
+				{ this.hmButtons.get(n).setState( select.value() ); }
+			else
+				{ this.hmButtons.get(n).setState( others.value() ); }
+			}
+		return;
+		}
+	
+	public boolean isBlinkingCursor()
+		{ return( this.isBlinkingCursor ); }
+	public Integer getBlinkingFrequency()
+		{ return( this.blinkMsec ); }
+	public int getBlinkingState()
+		{ return( this.blinkingState ); }
+
+	/** Turns blinking on or off.   The full constructor must be called
+	 * before using this toggle, or it will do nothing. 
+	 * Enforces that the frequency is not zero. */	
+	public void setBlinking( boolean onOff )
+		{
+		if( this.blinkMsec > 0 ) 
+			{ this.isBlinkingCursor = onOff; } 
+		return;
+		}
+	/** Cause all menuitems in the given state to blink by oscillating 
+	 * their defined background colors between black & white. */
+	public void setBlinking( boolean onOff, int frqMsec, int state )
+		{
+		this.blinkMsec = frqMsec;
+		this.blinkingState = state;
+		if( this.blinkMsec < 0 )
+			{ this.blinkMsec = 0; }
+		this.isBlinkingCursor = onOff;
+		if( ! this.isBlinkingCursor )
+			{ this.blinkMsec = 0; }
 		return;
 		}
 	

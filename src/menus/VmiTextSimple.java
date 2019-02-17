@@ -72,6 +72,8 @@ public class VmiTextSimple implements Vmenuitem
 	private Method myAction = null;
 	private String desc;
 	private String tip;
+	private boolean oscillatingSelection;
+	private Integer oscillatingFreq;
 	
 	public static enum enumMenuStxtCOLORS
 		{
@@ -109,6 +111,8 @@ public class VmiTextSimple implements Vmenuitem
 		this.keycode = -1;
 		this.state = new Integer(0);
 		this.FrameThicknessPx = 1;
+		this.oscillatingSelection = false;
+		this.oscillatingFreq = 0;
 //		this.setAllColorIcon( 16,Color_DEATH_MAGENTA );
 		this.setAllColorIcon( 16,Color.red  );
 		this.calcDims();
@@ -332,6 +336,14 @@ public class VmiTextSimple implements Vmenuitem
 				tColor = this.colorItems.get(
 					enumMenuStxtCOLORS.TEXT_ACTIVE.value() );
 				break;
+			}			
+		
+		if( this.isOscillating() )	// Make the menuitem's color change with time
+			{
+			bgFlatColor = Vmenuitem.oscillateColor( bgFlatColor, 
+				Vmenuitem.generateTimeCycler( this.oscillatingFreq ), false );
+			tColor = Vmenuitem.oscillateColor( tColor, 
+				Vmenuitem.generateTimeCycler( this.oscillatingFreq ), true );
 			}
 		
 		if( this.showBG == true && this.imageItems.get(state) != null )
@@ -809,7 +821,26 @@ public class VmiTextSimple implements Vmenuitem
 	public void setActionArgs(Object[] actionArgs)
 		{	this.actionArgs = actionArgs;	 return; }
 
-
+	public void enableOscillation( Integer freqMsec )
+		{
+		this.oscillatingSelection = true;
+		this.oscillatingFreq = freqMsec;
+		return;
+		}
+	public void disableOscillation( )
+		{
+		this.oscillatingSelection = false;
+		this.oscillatingFreq = 0;
+		return;
+		}
+	public boolean isOscillating()
+		{
+		return( this.oscillatingSelection );	
+		}
+	public Integer getOscillationFrequency()
+		{
+		return( this.oscillatingFreq );
+		}
 
 	}
 

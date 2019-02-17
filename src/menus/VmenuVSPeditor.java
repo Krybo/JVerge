@@ -231,6 +231,7 @@ public class VmenuVSPeditor implements Vmenu
 	// undoLastOp : to prevent undoing repeated similar actions
 	private Integer undoLastOp = 0;   
 	private static final int MAX_UNDO = 10;
+	private Long animFrame;
 	
 	private boolean obsEditMode = false;
 	private Integer obsEditNum = 0;
@@ -257,14 +258,20 @@ public class VmenuVSPeditor implements Vmenu
 	public VmenuVSPeditor( Vsp sourceTileSet )
 		{
 		this.focusID = Vmenu.getRandomID();
+		this.animFrame = new Long(0);
 		// copy the VSP from the source.  So we do not edit it directly.
 		this.vsp = new Vsp( sourceTileSet );
 		this.sidebar = new VmenuVertical( 30, 60 );
+		this.sidebar.setBlinking( true, 1500, 
+				enumMenuItemSTATE.SELECTED.value() );
 		this.colorEditor = new VmenuSliders( 20, 380, 128, 3, 
 				false, true, true );
 		this.main = new VmenuButtonPalette(250, 60, 256, 256, 
 				VmenuVSPeditor.STANDARD_TSIZE, 
 				VmenuVSPeditor.STANDARD_TSIZE  );
+		this.main.setBlinking( true, 1500, 
+				enumMenuItemSTATE.SELECTED.value() );
+		this.main.setMultiSelect( true );
 		this.colorkey = new VmenuHorizontal( 68,1 );
 		// instantly sets the default verge color palette as the 
 		//  hashmap of available colors at hand.
@@ -471,7 +478,18 @@ public class VmenuVSPeditor implements Vmenu
 
 	public boolean animate( VImage target )
 		{
-		if( this.cFocus != 4 )	{ return(false); }
+		this.animFrame++;
+		if( this.cFocus == 0 )   // Side bar cursor
+			{
+			this.sidebar.getMenuItemSelected().paint( target );
+			}
+		if( this.cFocus == 3 )   // Blinking invert main cursor
+			{
+			this.main.paintInState( target,
+					enumMenuItemSTATE.SELECTED.value() );
+			}
+		if( this.cFocus != 4 && (this.animFrame % 2 == 0) )
+			{ return(false); }
 		return( this.animEd.animate(target) ); 
 		}		
 
@@ -480,10 +498,10 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if(  this.isBkgImg == true && this.bkgImg != null  )
 			{
-			target.scaleblit(0, 0, 
+			target.scaleblit( 0, 0, 
 				target.getWidth(), target.height, this.bkgImg);
 			}
-		
+				
 		// Update color editor status.
 		this.colorEditor.setHighlight( false );
 		if( this.cFocus != 2 )
@@ -571,10 +589,16 @@ public class VmenuVSPeditor implements Vmenu
 				core.Script.fntLogicalScans18, Color.WHITE, 
 				this.statusBar );
 
-		// Large Brush mode.   Expand selected area.
+
+
+		//  Ensure the cursor cell is always in "Selected" state
+		this.main.setSelectedButtonState( 
+				enumMenuItemSTATE.SELECTED,
+				enumMenuItemSTATE.NORMAL );
+		
+		// Large Brush mode.   Expand selected area.		
 		if( this.brushSize > 1 )
 			{
-			this.main.setMultiSelect( true );
 			this.main.setAllButtonStates(enumMenuItemSTATE.NORMAL);
 			for( int by = 0; by < this.brushSize; by++ )
 				{ for( int bx = 0; bx < this.brushSize; bx++ )
@@ -591,7 +615,10 @@ public class VmenuVSPeditor implements Vmenu
 							enumMenuItemSTATE.SELECTED.value() );
 				}	}
 			}
-		else {  this.main.setMultiSelect( false ); }
+//		else {  this.main.setMultiSelect( false ); }
+		
+		if( this.cFocus != 3 )
+			{ this.main.setAllButtonStates(enumMenuItemSTATE.NORMAL); }
 
 		// Paint the primary sub-menus objects.
 
@@ -874,7 +901,7 @@ public class VmenuVSPeditor implements Vmenu
 					{
 					if( this.cFocus != 0 )
 						{
-						this.cFocus = 0;
+						this.changeFocus( 0 );
 						this.statusMessage("End Obstruction Mode");
 						}
 					else
@@ -887,20 +914,20 @@ public class VmenuVSPeditor implements Vmenu
 						VmenuVSPeditor.returnToSystem();
 						break;
 					case 2:		// Return to color key, discarding changes.
-						this.cFocus = 1;
+						this.changeFocus( 1 );
 						this.statusMessage("Discarded Changes to Pal# "+
 							Integer.toString( 
 								this.colorkey.getSelectedIndexAsInt() ) );
 						if( this.editColorInPlace == true )
 							{
-							this.cFocus = 3;
+							this.changeFocus( 3 );
 							this.editColorInPlace = false;
 							this.statusMessage("Discarded Changes to Cell");
 							}
 						this.setColorEditorToCurrentColorKey();
 						break;
 					default:
-						this.cFocus = 0;
+						this.changeFocus( 0 );
 						this.statusMessage("Main menu");
 						break;
 					}
@@ -914,7 +941,7 @@ public class VmenuVSPeditor implements Vmenu
 				if( this.cFocus == 3 && isCntl == true && isShift == true)
 					{
 					this.setColorEditorToCursor();
-					this.cFocus = 2;
+					this.changeFocus( 2 );
 					this.editColorInPlace = true;
 					this.statusMessage(
 						"Directly modify this cell's color components");
@@ -1154,7 +1181,7 @@ public class VmenuVSPeditor implements Vmenu
 						{ this.arealToolCRandom = true; }
 					this.arealTool = this.main.getSelectedIndex();
 					}
-				else			// actually create line. - reset mark.
+				else			//  create line. - reset mark.
 					{
 					this.main.setSelectedIndex(this.arealTool);
 					this.arealTool = -1;
@@ -1257,7 +1284,7 @@ public class VmenuVSPeditor implements Vmenu
 						this.lineTool = this.main.getSelectedIndex();
 						this.lineContiguous = isShift;
 						}
-					else			// actually create line. - reset mark.
+					else			//  create line. - reset mark.
 						{
 						this.main.setSelectedIndex( this.lineTool );
 						this.lineTool = -1;
@@ -1360,7 +1387,7 @@ public class VmenuVSPeditor implements Vmenu
 					this.rectTool = this.main.getSelectedIndex();
 					this.rectContiguous = isShift;
 					}
-				else			// actually create line. - reset mark.
+				else			//  create line. - reset mark.
 					{
 					this.main.setSelectedIndex(this.rectTool);
 					this.rectTool = -1;
@@ -1431,7 +1458,7 @@ public class VmenuVSPeditor implements Vmenu
 					this.disableAllTools();
 					this.circleTool = this.main.getSelectedIndex();	
 					}
-				else			// actually create line. - reset mark.
+				else			//  create line. - reset mark.
 					{
 					this.main.setSelectedIndex(this.circleTool);
 					this.circleTool = -1;
@@ -1606,7 +1633,7 @@ public class VmenuVSPeditor implements Vmenu
 	public int getSelectedIndexPosY()
 		{	return(0);  }
 	public void setSelectedIndex(Integer index)
-		{	this.cFocus = index;	}
+		{ this.changeFocus( index ); }
 
 	public void setFocusId(Long id)
 		{	this.focusID = id;	}
@@ -1722,6 +1749,8 @@ public class VmenuVSPeditor implements Vmenu
 				return( this.colorkey );
 			case 2:
 				return( this.colorEditor );
+			case 4:
+				return( this.animEd );
 			default:
 				return( this.main );
 			}
@@ -1742,8 +1771,9 @@ public class VmenuVSPeditor implements Vmenu
 				break;
 
 			case 1:		// Color key bar - edit this color pod
-				this.cFocus = 2;
-				this.statusMessage("Editing color palette entry");
+				this.changeFocus( 2 );
+				this.statusMessage("Editing color palette entry # " +
+					Integer.toString( this.colorkey.getSelectedIndexAsInt()) );
 				break;
 
 			case 2:		// Color Editor - Save color, back to palette.
@@ -1755,7 +1785,7 @@ public class VmenuVSPeditor implements Vmenu
 					this.gG.getValue(), this.gB.getValue(), 255 );
 				if( this.editColorInPlace == true )
 					{	// Directly edit the cursor cell.
-					this.cFocus = 3;
+					this.changeFocus( 3 );
 					this.editColorInPlace = false;
 					Color oc = this.getCursorCell().getColorComponent( 
 						enumMenuButtonCOLORS.BODY_ACTIVE.value() );
@@ -1776,7 +1806,7 @@ public class VmenuVSPeditor implements Vmenu
 					break;
 					}
 				// Else - return it to the palette.
-				this.cFocus = 1;
+				this.changeFocus( 1 );
 
 				if( this.clrs.get(cidx) == null ) 
 					{  break;  }
@@ -3684,12 +3714,12 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		if( this.cFocus != 4 )
 			{
-			this.cFocus = 4;
+			this.changeFocus( 4 );
 			this.statusMessage("Entered animation editor");
 			}
 		else
 			{
-			this.cFocus = 0;
+			this.changeFocus( 0 );
 			this.statusMessage("Quit animation editor");
 			}
 		this.animEd.setVisible( true );
@@ -4249,6 +4279,45 @@ public class VmenuVSPeditor implements Vmenu
 			}
 		}
 
-
+	/** Change the keyboard focus to a new area of the editor. 
+	 * 0	Sidebar menu
+	 * 1	Palette bar (top)
+	 * 2	Color RGB value editor (lower left)
+	 * 3	Main tile editing area (center)
+	 * 4	animation editor (center)
+	 * */
+	public int changeFocus( int areaNum )
+		{
+		int old = this.cFocus;
+		this.cFocus = areaNum;
+		switch( this.cFocus )
+			{
+			case 0:
+				this.statusMessage(" > Main menu <");
+				break;
+			case 1:
+				this.statusMessage(" > Palette entry editor <");
+				break; 
+			case 2:
+				this.statusMessage(" > Color RGB editor <");
+				break;
+			case 3:
+				this.statusMessage(" > Tile editor <");
+				break;
+			case 4:
+				this.statusMessage(" > Animation editor <");
+				break;
+			default:
+				break;
+			}
+		// Keep the focus blinking - and the rest not blinking.
+		if( this.cFocus != 0 )
+			{ this.sidebar.setBlinking( false ); }
+		else	{ this.sidebar.setBlinking( true ); }
+		if( this.cFocus != 3 )
+			{ this.main.setBlinking( false ); }
+		else	{ this.main.setBlinking( true ); }
+		return( old );
+		}
 
 	}		// END CLASS  VmenuVSPeditor
