@@ -5,6 +5,7 @@ import static core.Script.setMenuFocus;
 import static core.Script.getInput;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.image.ColorModel;
 import java.awt.image.DirectColorModel;
 import java.io.File;
@@ -116,8 +117,6 @@ import domain.Vsp;
 
 public class VmenuVSPeditor implements Vmenu
 	{
-	
-	
 	// Krybo: Jan.2017
 	// simple sub-class to hold the state information of the 
 	//   current tile pixel color array.
@@ -168,6 +167,10 @@ public class VmenuVSPeditor implements Vmenu
 	  4 = Animation ed.
 	  */
 	private Integer cFocus = 0;
+	
+	private Font fntSmall;
+	private Font fntLarge;
+	private Font fntHuge;
 
 	// tile index: This is the current tile being edited.
 	private Integer tIndex = 0;
@@ -259,23 +262,28 @@ public class VmenuVSPeditor implements Vmenu
 		{
 		this.focusID = Vmenu.getRandomID();
 		this.animFrame = new Long(0);
+		this.fntSmall = core.Script.fntLogicalScans10;
+		this.fntLarge = core.Script.fntLogicalScans14;
+		this.fntHuge = core.Script.fntLogicalScans18;
 		// copy the VSP from the source.  So we do not edit it directly.
 		this.vsp = new Vsp( sourceTileSet );
+		//  Now - build the major sub-components.
 		this.sidebar = new VmenuVertical( 30, 60 );
 		this.sidebar.setBlinking( true, 1500, 
 				enumMenuItemSTATE.SELECTED.value() );
 		this.colorEditor = new VmenuSliders( 20, 380, 128, 3, 
 				false, true, true );
-		this.main = new VmenuButtonPalette(250, 60, 256, 256, 
+		this.main = new VmenuButtonPalette( 250, 60, 256, 256, 
 				VmenuVSPeditor.STANDARD_TSIZE, 
 				VmenuVSPeditor.STANDARD_TSIZE  );
+		this.main.setMultiSelect( true );
 		this.main.setBlinking( true, 1500, 
 				enumMenuItemSTATE.SELECTED.value() );
-		this.main.setMultiSelect( true );
 		this.colorkey = new VmenuHorizontal( 68,1 );
+		
 		// instantly sets the default verge color palette as the 
 		//  hashmap of available colors at hand.
-		this.clrs = this.vPal.getAllColors(255);
+		this.clrs = this.vPal.getAllColors( 255 );
 
 		this.undoStack =	new Stack<Object>();
 
@@ -292,7 +300,7 @@ public class VmenuVSPeditor implements Vmenu
 		
 		HashMap<Integer,Color> hmSideBarClrs = 
 			new HashMap<Integer,Color>();
-		hmSideBarClrs.put(enumMenuStxtCOLORS.BKG_ACTIVE.value(), 
+		hmSideBarClrs.put( enumMenuStxtCOLORS.BKG_ACTIVE.value(), 
 			new Color(0.0f, 0.2f, 0.8f, 0.8f ) );
 		hmSideBarClrs.put(enumMenuStxtCOLORS.BKG_INACTIVE.value(), 
 			Color.BLACK );
@@ -301,6 +309,7 @@ public class VmenuVSPeditor implements Vmenu
 		hmSideBarClrs.put(enumMenuStxtCOLORS.FRAME_OUTER.value(), 
 			Color.GRAY );
 		
+		//  This is to assign control for what the sidebar buttons do.
 		Method m2 = null;   Method m2a = null;
 		Method m2b = null;
 		Method m3 = null;
@@ -339,7 +348,7 @@ public class VmenuVSPeditor implements Vmenu
 
 		VmiTextSimple vts01 = new VmiTextSimple("Return to Map");
 		vts01.setKeycode( 66 );		// Cntl+Backspace exits anywhere.
-		vts01.setAction( getFunction(Script.class,"focusSystemMenu") );
+		vts01.setAction( getFunction( Script.class,"focusSystemMenu") );
 
 		VmiTextSimple vts02a = new VmiTextSimple("New VSP");
 		vts02a.setKeycode( 1538 );		// Cntl Tilda
@@ -400,7 +409,6 @@ public class VmenuVSPeditor implements Vmenu
 		this.sidebar.addItem( vts08 );	this.sidebar.addItem( vts09 );
 
 		this.sidebar.setColorContentAll( hmSideBarClrs );
-		this.sidebar.setFontAll(core.Script.fntLogicalScans14 );
 
 		this.resetPalette();
 
@@ -420,18 +428,17 @@ public class VmenuVSPeditor implements Vmenu
 		
 		VmiTextSimple clrEdHelp = new VmiTextSimple("");
 		clrEdHelp.setFrameThicknessPx(0);
-		clrEdHelp.enableBackdrop(false);
-		clrEdHelp.setColor(enumMenuStxtCOLORS.BKG_ACTIVE, 
+		clrEdHelp.enableBackdrop( false );
+		clrEdHelp.setColor( enumMenuStxtCOLORS.BKG_ACTIVE, 
 				core.Script.Color_DEATH_MAGENTA);
 		clrEdHelp.setColor(enumMenuStxtCOLORS.BKG_INACTIVE, 
 				core.Script.Color_DEATH_MAGENTA);
 		clrEdHelp.enableIcons(false);
-		clrEdHelp.enableFrame(false);
-		clrEdHelp.setFont(core.Script.fntLogicalScans10 );
+		clrEdHelp.enableFrame( false );
 
 		this.colorEditor.setAllGuagesBorder(false);
 		this.colorEditor.setPaddingWidthPx(2);
-		this.colorEditor.setStatusBarObject(clrEdHelp);
+		this.colorEditor.setStatusBarObject( clrEdHelp );
 		this.colorEditor.setGuageHeight( 12 );
 		this.colorEditor.setHighlight(false);
 
@@ -468,6 +475,7 @@ public class VmenuVSPeditor implements Vmenu
 		this.statusBar = new String("VSP Editor Initialized");
 		this.toolStatus = new String("MENUS");
 		
+		this.applyFonts();
 		this.initHelpTable();
 
 		return;
@@ -1648,7 +1656,6 @@ public class VmenuVSPeditor implements Vmenu
 		return (false);
 		}
 
-
 	// Visibility and Active-ness are not applicable.  They are both - always.
 	public void setActive(boolean active)
 		{ return;	}
@@ -1737,6 +1744,32 @@ public class VmenuVSPeditor implements Vmenu
 
 
 	/** ----------------  Non-Interface Methods  --------------------  */
+	
+	/** Ensure the menu fonts are applied to sub members   */ 
+	private void applyFonts()
+		{
+		this.sidebar.setFontAll( this.fntLarge );
+		this.colorEditor.getStatusBarObject().setFont( this.fntSmall );
+		return;
+		}
+	
+	/** Sets fonts used in various sub-elements and applys them.
+	 * Any of these may be null, allowing select fonts to be changed.
+	 * helpFont :  Used in the help table display
+	 * sbFont :  Used in the sidebar menu
+	 * Huge : Used in on-screen annotations 
+	 * */
+	public void setFonts( Font helpFont, Font sbFont, Font hugeFont )
+		{
+		if( helpFont != null )
+			{ this.fntSmall = helpFont; }
+		if( sbFont != null )
+			{ this.fntLarge = sbFont; }
+		if( hugeFont != null )
+			{ this.fntHuge = hugeFont; }
+		this.applyFonts();
+		return;			
+		}
 	
 	/** Returns the Vmenu object with the current keyboard focus */
 	private Vmenu getControlItem()
@@ -2153,8 +2186,6 @@ public class VmenuVSPeditor implements Vmenu
 		return;
 		}
 
-	
-	
 	private void setCurrentCell( int keyNum )
 		{	this.setCell( this.main.getSelectedIndex(), keyNum );	}
 	
@@ -2565,7 +2596,6 @@ public class VmenuVSPeditor implements Vmenu
 				tileOffset.toString() +  addendum );
 		return( true );
 		}
-
 
 /**  Takes clipboard contents and splits them into new tiles.
  * then inserts them starting at the current tile Index.
